@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sito 5 Tab</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav>
+    <a href="#" onclick="showTab('home')">Home</a>
+    <a href="#" onclick="showTab('unisciti')">Unisciti a noi</a>
+    <a href="#" onclick="showTab('trofei')">Albo d'Oro</a>
+    <a href="#" onclick="showTab('noi')">Noi</a>
+  </nav>
+
+  <div id="home" class="tab-content active">
+    <div class="hero-section">
+      <div class="hero-text">
+        <h1>VI PRESENTIAMO</h1>
+        <h2>I MONACI SHAOLIN</h2>
+      </div>
+      
+      <div class="gradient-content">
+        <h2>🥋 DISCIPLINA • PASSIONE • VITTORIA 🥋</h2>
+        <p> ""Non c'è cosa che non venga resa più semplice attraverso la costanza e la familiarità e l'allenamento. Attraverso l'allenamento noi possiamo cambiare; noi possiamo trasformare noi stessi."(Dalai Lama)</p>
+        <p><br><br>
+          "Non indugiare sul passato; non sognare il futuro, concentra la mente sul momento presente."(Buddha)</p>
+      </div>
+    </div>
+    
+    <div class="content-section">
+      <div id="presentazione" class="presentazione">
+         <h3>⚽ BENVENUTI CARI ELETTI ⚽</h3>
+        <p>
+          Non è una squadra, non è un club, non è nemmeno un'associazione.
+        </p>
+        <p>
+          <strong>Questa è una famiglia</strong> che condivide la stessa passione: dominare i campi virtuali di FC!
+        </p>
+        <p>
+          La nostra storia inizia nel lontano 2018 quando la mente del nostro Capitano e Fondatore RageeVII partorì una malsana idea in un noioso pomeriggio invernale:
+        </p>
+        <p>
+          Fondare un Club dove poter giocare con i suoi amici e riunirsi per passare del tempo insieme, partendo della creazione dei personaggi più strambi, alcuni divenuti ICONICI! 🌟
+        </p>
+        <p>
+          Dal puro passatempo si passò a qualche anno più tardi, nel 2020, durante il lockdown, quando il team rimase con soli 4 elementi.
+        </p>
+        <p>
+          Dall'ingegno del Capitano e del suo Vice di allora, nacque l'idea di avvicinarsi al mondo dell'eSports con tornei e competizioni!
+        </p>
+        <p>
+          Partirono ricerche su Telegram, Twitch e su qualsiasi piattaforma social pur di arrivare ad 11 titolari, con scarsi risultati.
+        </p>
+        <p>
+          E ad oggi nel 2025 siamo riusciti a realizzare il nostro sogno, o almeno in parte:
+        </p>
+        <p>
+          Quello di entrare nell'Olimpo dei grandi e di quelli che contano. 🏯
+        </p>
+        <p>
+          Ormai la famiglia si è allargata ed è in continua espansione, tutto all'insegna del bel gioco, dei meme, del divertimento e dei legami profondi creati attraverso un joystick e un paio di cuffie.🎮🎧
+        </p>
+        <p>
+          <em>Perché a volte, basta solo sognare, crederci e osare...💭</em>
+        </p>
+      </div>
+    </div>
+    
+    <!-- NUOVA SEZIONE COMPETIZIONI -->
+    <div class="competitions-section">
+      <h2>🏆 LE NOSTRE COMPETIZIONI 🏆</h2>
+      <div class="competitions-grid">
+        <div class="competition-card">
+          <span class="competition-logo">⚽</span>
+          <div class="competition-name">FVPA</div>
+          <div class="competition-series">Serie A</div>
+        </div>
+        
+        <div class="competition-card">
+          <span class="competition-logo">🥅</span>
+          <div class="competition-name">ELUDO</div>
+          <div class="competition-series">Serie C</div>
+        </div>
+        
+        <!-- <div class="competition-card"> -->
+          <!-- <span class="competition-logo">🏟️</span>
+          <div class="competition-name">VPG</div>
+          <div class="competition-series">Serie A</div> -->
+        <!-- </div> -->
+      </div>
+      
+      <!-- Particelle animate -->
+      <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+      <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+      <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+      <div class="particle" style="left: 40%; animation-delay: 0.5s;"></div>
+      <div class="particle" style="left: 50%; animation-delay: 1.5s;"></div>
+      <div class="particle" style="left: 60%; animation-delay: 2.5s;"></div>
+      <div class="particle" style="left: 70%; animation-delay: 3s;"></div>
+      <div class="particle" style="left: 80%; animation-delay: 3.5s;"></div>
+      <div class="particle" style="left: 90%; animation-delay: 0.8s;"></div>
+    </div>
+    
+    <!-- BOTTONI SOCIAL - POSIZIONATI CORRETTAMENTE NELLA TAB HOME -->
+    <div class="social-section">
+      <h2>🌐 SEGUICI E UNISCITI AL TEMPIO 🌐</h2>
+      <p>Non lasciartelo raccontare e vivilo in prima persona!</p>
+      
+      <div class="social-buttons">
+        <!-- Bottone X (Twitter) -->
+        <a href="https://x.com/MonaciShaolin_?t=cX8kHaXIBygsebLIv0DYeg&s=09" target="_blank" class="social-btn x-btn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span>Seguici su X</span>
+        </a>
+
+        <!-- Bottone Instagram -->
+        <a href="https://www.instagram.com/monacishaolin?igsh=ZHFjOGcwZ3p1b2Jt" target="_blank" class="social-btn ig-btn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+          </svg>
+          <span>Seguici su Instagram</span>
+        </a>
+
+        <!-- Bottone YouTube -->
+        <a href="https://www.youtube.com/@MonaciShaolin" target="_blank" class="social-btn yt-btn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.498 6.186a2.867 2.867 0 0 0-2.022-2.032C19.605 3.744 12 3.744 12 3.744s-7.605 0-9.476.41A2.867 2.867 0 0 0 .502 6.186C.09 8.067.09 12 .09 12s0 3.933.412 5.814a2.867 2.867 0 0 0 2.022 2.032C4.395 20.256 12 20.256 12 20.256s7.605 0 9.476-.41a2.867 2.867 0 0 0 2.022-2.032C23.91 15.933 23.91 12 23.91 12s0-3.933-.412-5.814zM9.6 15.6V8.4l6.327 3.6L9.6 15.6z"/>
+          </svg>
+          <span>Seguici su YouTube</span>
+        </a>
+        <a href="https://www.tiktok.com/@monacishaolin?_t=ZS-8yNI3LcZozI&_r=1" target="_blank" class="social-btn tiktok-btn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+          </svg>
+          <span>Seguici su TikTok</span>
+        </a>
+        <!-- Bottone Unisciti -->
+        <button onclick="showTab('unisciti')" class="social-btn join-btn">
+          <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Unisciti a Noi!</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Unisciti -->
+  <div id="unisciti" class="tab-content">
+    <div class="background-container">
+      <div class="background-image"></div>
+      <div class="background-overlay"></div>
+    </div>
+    <div class="other-tab">
+      <h1>UNISCITI AL TEMPIO 🥋</h1>
+      <p>Compila il form per iniziare il tuo cammino da Monaco Shaolin!</p>
+      
+      <div class="registration-form">
+        <!-- Selezione Piattaforma -->
+        <div class="form-group">
+          <label for="platformSelect">🎮 Seleziona la tua piattaforma di gioco:</label>
+          <select id="platformSelect" class="platform-dropdown" onchange="handlePlatformChange()">
+            <option value="">-- Scegli la piattaforma --</option>
+            <option value="playstation">PlayStation (Next Gen)</option>
+            <option value="xbox">Xbox (Next Gen)</option>
+            <option value="pc">PC</option>
+          </select>
+        </div>
+
+        <!-- Input ID Player (nascosto inizialmente) -->
+        <div class="form-group" id="playerIdGroup" style="display: none;">
+          <label for="playerId">🆔 Inserisci il tuo ID Player:</label>
+          <input type="text" id="playerId" class="player-id-input" placeholder="Inserisci il tuo ID player">
+          <small class="input-hint" id="playerIdHint"></small>
+        </div>
+        
+        <!-- Selezione Ruoli -->
+        <div class="form-group">
+          <label>⚽ Seleziona i tuoi ruoli preferiti (max 2):</label>
+          <div class="role-selection" onclick="openRolePopup()">
+            <div id="roleSelectionContent">
+              <h3>⚽ Scegli le tue posizioni sul campo</h3>
+              <p>Clicca qui per aprire il selettore ruoli</p>
+            </div>
+            <div id="selectedRolesInWidget" class="selected-roles-widget" style="display: none;">
+              <h4>✅ Ruoli selezionati:</h4>
+              <div id="selectedRolesWidgetList"></div>
+              <p class="change-roles-hint">Clicca per modificare la selezione</p>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>🏆 Competizioni in cui hai militato:</label>
+          <div class="competitions-dropdown-container">
+            <div class="dropdown-wrapper">
+              <div class="dropdown-header" onclick="toggleCompetitionsDropdown()">
+                <span id="selectedCompetitionsText">Seleziona le tue competizioni...</span>
+                <span class="dropdown-arrow">▼</span>
+              </div>
+              <div class="dropdown-content" id="competitionsDropdownContent">
+                <!-- FVPA -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('fvpa');">
+                    <span class="competition-icon">⚽</span>
+                    <span class="competition-name">FVPA</span>
+                    <span class="expand-arrow" id="fvpa-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="fvpa-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie A" onchange="handleDivisionSelection('FVPA', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie B" onchange="handleDivisionSelection('FVPA', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie C" onchange="handleDivisionSelection('FVPA', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- FVPA San Marino -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('fvpa-sm');">
+                    <span class="competition-icon">🏟️</span>
+                    <span class="competition-name">FVPA San Marino</span>
+                    <span class="expand-arrow" id="fvpa-sm-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="fvpa-sm-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="fvpa-sm" value="Serie A" onchange="handleDivisionSelection('FVPA San Marino', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa-sm" value="Serie B" onchange="handleDivisionSelection('FVPA San Marino', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Eludo -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('eludo');">
+                    <span class="competition-icon">🥅</span>
+                    <span class="competition-name">Eludo</span>
+                    <span class="expand-arrow" id="eludo-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="eludo-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie A" onchange="handleDivisionSelection('Eludo', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie B" onchange="handleDivisionSelection('Eludo', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie C" onchange="handleDivisionSelection('Eludo', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie D" onchange="handleDivisionSelection('Eludo', 'Serie D', this)">
+                      <span class="division-text">Serie D</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- VPG -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('vpg');">
+                    <span class="competition-icon">🏆</span>
+                    <span class="competition-name">VPG</span>
+                    <span class="expand-arrow" id="vpg-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="vpg-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie A" onchange="handleDivisionSelection('VPG', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie B" onchange="handleDivisionSelection('VPG', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie C" onchange="handleDivisionSelection('VPG', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie D1" onchange="handleDivisionSelection('VPG', 'Serie D1', this)">
+                      <span class="division-text">Serie D1</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie D2" onchange="handleDivisionSelection('VPG', 'Serie D2', this)">
+                      <span class="division-text">Serie D2</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Area per mostrare le selezioni -->
+            <div class="selected-competitions" id="selectedCompetitionsArea" style="display: none;">
+              <h4>✅ Competizioni selezionate:</h4>
+              <div class="selected-list" id="selectedCompetitionsList"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="clubsInput">🏛️ Club precedenti in cui hai militato:</label>
+          <div class="clubs-input-container">
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="clubsInput" 
+                class="clubs-text-input" 
+                placeholder="Scrivi il nome di un club e premi Invio..."
+                onkeypress="handleClubKeyPress(event)"
+                autocomplete="off"
+              >
+              <button type="button" class="add-club-btn" onclick="addClubFromInput()">
+                <span class="add-icon">+</span>
+              </button>
+            </div>
+            <small class="input-help">💡 Aggiungi un club alla volta premendo Invio o cliccando il pulsante +</small>
+            
+            <!-- Lista dei club aggiunti -->
+            <div class="added-clubs-list" id="addedClubsList" style="display: none;">
+              <h4>⚽ I tuoi club precedenti:</h4>
+              <div class="clubs-tags-container" id="clubsTagsContainer"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>📅 Giorni disponibili per allenamenti/partite:</label>
+          <div class="weekly-calendar">
+            <div class="day-container" onclick="toggleDay('monday')">
+              <div class="day-name">Lunedì</div>
+              <div class="day-checkbox" id="monday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('tuesday')">
+              <div class="day-name">Martedì</div>
+              <div class="day-checkbox" id="tuesday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('wednesday')">
+              <div class="day-name">Mercoledì</div>
+              <div class="day-checkbox" id="wednesday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('thursday')">
+              <div class="day-name">Giovedì</div>
+              <div class="day-checkbox" id="thursday-check">☐</div>
+            </div>
+          </div>
+          <!-- <div class="availability-summary" id="availabilitySummary">
+            <h4>✅ Giorni selezionati:</h4>
+            <div class="selected-days-list" id="selectedDaysList"></div>
+          </div> -->
+          <small class="input-help">💡 Clicca sui giorni in cui sei disponibile</small>
+        </div>
+        <!-- Altri campi del form possono essere aggiunti qui -->
+         <!-- Input Numero di Telefono -->
+        <div class="form-group">
+          <label for="phoneInput">📞 Numero di telefono:</label>
+          <input 
+            type="tel" 
+            id="phoneInput" 
+            class="phone-input" 
+            placeholder="+39 123 456 7890"
+            maxlength="20"
+          >
+          <div class="phone-warning">
+            <span class="warning-icon">⚠️</span>
+            <small class="warning-text">
+              Se le tue informazioni saranno ritenute da noi interessanti utilizzeremo il tuo numero di telefono per aggiungerti al gruppo dei provini. In alternativa aggiungi un altro tuo contatto in "Altro"(discord,mail telegram).
+            </small>
+          </div>
+        </div>
+
+        <!-- Input Informazioni Aggiuntive -->
+        <div class="form-group">
+          <label for="additionalInfo">💬 Informazioni aggiuntive (Altre competizioni, Discord, note, altro):</label>
+          <textarea 
+            id="additionalInfo" 
+            class="additional-info-textarea" 
+            placeholder="Inserisci qui altre competizioni disputate, note personali, o un tuo contatto (se non hai inserito il numero di telefono)..."
+            rows="4"
+          ></textarea>
+          <small class="input-help">💡 Puoi includere il tuo Discord, esperienze particolari, o qualsiasi altra informazione che vuoi condividere</small>
+        </div>
+        <!-- Bottone Conferma -->
+        <div class="form-group submit-section">
+          <button type="button" class="submit-btn" onclick="submitForm()">
+            <span class="submit-icon">🚀</span>
+            <span class="submit-text">INVIA CANDIDATURA</span>
+            <div class="submit-loader" id="submitLoader" style="display: none;"></div>
+          </button>
+          <div class="submit-message" id="submitMessage" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup per selezione ruoli -->
+  <div id="rolePopup" class="popup-overlay">
+    <div class="popup-content">
+      <button class="close-btn" onclick="closeRolePopup()">&times;</button>
+      
+      <div class="popup-header">
+        <!-- <h2>⚽ SELEZIONA I TUOI RUOLI</h2> -->
+        <!-- <p>Scegli fino a 2 posizioni che preferisci giocare</p> -->
+      </div>
+      
+      <div class="selection-counter">
+        <h3>Ruoli selezionati: <span id="selectionCount">0</span>/2</h3>
+        <div class="selected-positions" id="selectedPositions"></div>
+      </div>
+      
+      <div class="football-field">
+        <!-- Portiere -->
+        <div class="player-position por" data-role="POR" data-name="Portiere" onclick="selectPosition(this)">
+          <div class="player-shirt">POR</div>
+          <div class="player-label">PORTIERE</div>
+        </div>
+        
+        <!-- Difensori centrali -->
+        <div class="player-position dc1" data-role="DC" data-name="DC Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        <div class="player-position dc2" data-role="DC" data-name="DC Centrale" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        <div class="player-position dc3" data-role="DC" data-name="DC Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        
+        <!-- Centrocampisti - CDC CDC ED -->
+        <div class="player-position cdc1" data-role="CDC" data-name="CDC Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">CDC</div>
+          <div class="player-label">CDC</div>
+        </div>
+        <div class="player-position cdc2" data-role="CDC" data-name="CDC Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">CDC</div>
+          <div class="player-label">CDC</div>
+        </div>
+        <div class="player-position ed1" data-role="ED" data-name="Esterno Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">ED</div>
+          <div class="player-label">ED</div>
+        </div>
+        <div class="player-position es1" data-role="ES" data-name="Esterno Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">ES</div>
+          <div class="player-label">ES</div>
+        </div>
+        <!-- Centrocampista offensivo -->
+        <div class="player-position coc" data-role="COC" data-name="COC" onclick="selectPosition(this)">
+          <div class="player-shirt">COC</div>
+          <div class="player-label">COC</div>
+        </div>
+        
+        <!-- Attaccanti -->
+        <div class="player-position att1" data-role="ATT" data-name="Attaccante" onclick="selectPosition(this)">
+          <div class="player-shirt">ATT</div>
+          <div class="player-label">ATT</div>
+        </div>
+        <div class="player-position att2" data-role="ATT" data-name="Attaccante" onclick="selectPosition(this)">
+          <div class="player-shirt">ATT</div>
+          <div class="player-label">ATT</div>
+        </div>
+      </div>
+      
+      <div class="popup-buttons">
+        <button class="btn btn-confirm" id="confirmBtn" onclick="confirmSelection()" disabled>
+          ✅ Conferma Selezione
+        </button>
+        <button class="btn btn-cancel" onclick="closeRolePopup()">
+          ❌ Annulla
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Trofei -->
+  <div id="trofei" class="tab-content">
+    <div class="background-container-trofei">
+      <div class="background-image-trofei"></div>
+      <div class="background-overlay-trofei"></div>
+    </div>
+    <div class="other-tab">
+      <h1>🏆 ALBO D'ORO 🏆</h1>
+      <p>I nostri trionfi e conquiste nel mondo dell'eSports!</p>
+      <!-- Qui il contenuto della tab trofei -->
+       <div class="trophies-showcase">
+      
+      <!-- Vittorie Multiple -->
+      <div class="trophy-category">
+        <h2>🔥 DOMINATORI SERIALI 🔥</h2>
+        <div class="trophies-grid">
+          <div class="trophy-card championship">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">esyNEXTCUP</div>
+            <div class="trophy-count">x6 VITTORIE</div>
+            <div class="trophy-record">RECORD: 5-0</div>
+            <div class="trophy-badge">LEGGENDA</div>
+          </div>
+          
+          <div class="trophy-card championship">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">MADRINK VPG CUP</div>
+            <div class="trophy-count">x3 VITTORIE</div>
+            <div class="trophy-record">RECORD: 2-0</div>
+            <div class="trophy-badge">DOMINATORI</div>
+          </div>
+          
+          <div class="trophy-card championship">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">CSP CUP</div>
+            <div class="trophy-count">x3 VITTORIE</div>
+            <div class="trophy-record">TRIPLA CORONA</div>
+            <div class="trophy-badge">MAESTRI</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campionati Vinti -->
+      <div class="trophy-category">
+        <h2>👑 CAMPIONI IN CARICA 👑</h2>
+        <div class="trophies-grid">
+          <div class="trophy-card gold">
+            <div class="trophy-icon">🥇</div>
+            <div class="trophy-name">POSEIDON SERIE E</div>
+            <div class="trophy-count">CAMPIONI</div>
+            <div class="trophy-badge">ORO</div>
+          </div>
+          
+          <div class="trophy-card gold">
+            <div class="trophy-icon">🥇</div>
+            <div class="trophy-name">ELUDO SERIE D</div>
+            <div class="trophy-count">CAMPIONI</div>
+            <div class="trophy-badge">ORO</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coppe Singole -->
+      <div class="trophy-category">
+        <h2>🏅 CONQUISTE STORICHE 🏅</h2>
+        <div class="trophies-grid">
+          <div class="trophy-card single">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">IFL CUP</div>
+            <div class="trophy-badge">VINCITORI</div>
+          </div>
+          
+          <div class="trophy-card special">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">MEMORIAL</div>
+            <div class="trophy-count">28 Dicembre 2023</div>
+            <div class="trophy-badge">SPECIALE</div>
+          </div>
+          
+          <div class="trophy-card single">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">FRP CUP</div>
+            <div class="trophy-badge">VINCITORI</div>
+          </div>
+          
+          <div class="trophy-card single">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">QSA CUP</div>
+            <div class="trophy-badge">VINCITORI</div>
+          </div>
+          
+          <div class="trophy-card single">
+            <div class="trophy-icon">🏆</div>
+            <div class="trophy-name">RFG CUP</div>
+            <div class="trophy-badge">VINCITORI</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Piazzamenti sul Podio -->
+      <div class="trophy-category">
+        <h2>🥉 SUL PODIO 🥉</h2>
+        <div class="trophies-grid">
+          <div class="trophy-card bronze">
+            <div class="trophy-icon">🥉</div>
+            <div class="trophy-name">FVPA C1</div>
+            <div class="trophy-count">TERZO POSTO</div>
+            <div class="trophy-badge">BRONZO</div>
+          </div>
+          
+          <div class="trophy-card bronze">
+            <div class="trophy-icon">🥉</div>
+            <div class="trophy-name">FVPA B</div>
+            <div class="trophy-count">TERZO POSTO</div>
+            <div class="trophy-badge">BRONZO</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistiche Finali -->
+      <div class="stats-summary">
+        <h2>📊 STATISTICHE TOTALI 📊</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number">20+</div>
+            <div class="stat-label">TROFEI VINTI</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">6</div>
+            <div class="stat-label">RECORD esyNEXTCUP</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">2</div>
+            <div class="stat-label">CAMPIONATI ORO</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number">∞</div>
+            <div class="stat-label">GLORIA ETERNA</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Tab Noi - LA NUOVA TAB IMPLEMENTATA -->
+  <div id="noi" class="tab-content">
+    <div class="container">
+      <header>
+        <h1>La Nostra Squadra</h1>
+        <p class="subtitle">Uniti verso la vittoria</p>
+      </header>
+
+      <main>
+        <!-- Sezione Portieri -->
+        <div class="section" data-section="portieri">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon">⚽</div>
+              <h2>Portieri</h2>
+            </div>
+            <div class="toggle-icon">+</div>
+          </div>
+          <div class="section-content">
+            <div class="group-photo">
+              <!-- <img src="./ig/gruppo-portieri.jpeg" alt="Foto gruppo portieri"> -->
+              <p class="group-caption">I nostri guardiani della porta</p>
+            </div>
+            <div class="players-grid">
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/tho.jpeg" alt="tommy-bond-0045">
+                </div>
+                <h3>tommy-bond-0045</h3>
+                <p>Franco-Toscano mix pazzo tra i pali.
+                    Testa fra le nuvole, miracoli e caciarate 
+                    "Tommy, sei sveglio?"</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/Onesto.jpeg" alt="Onesto__">
+                </div>
+                <h3>Onesto__</h3>
+                <p>Colui che a volte fa miracoli e a volte ha le mani bucate.
+Quando non è a litigare col gatto o a spendere soldi per la macchina, è un signor portiere tra i pali, ci affidiamo nei suoi gloriosi miracoli..o papere🦆
+GATTO..in ogni senso 🐈</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione Difensori -->
+        <div class="section" data-section="difensori">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon">🛡️</div>
+              <h2>Difensori</h2>
+            </div>
+            <div class="toggle-icon">+</div>
+          </div>
+          <div class="section-content">
+            <div class="group-photo">
+              <!-- <img src="./immagini/armageddon.jpeg" alt="Foto gruppo difensori"> -->
+              <p class="group-caption">La nostra roccaforte difensiva</p>
+            </div>
+            <div class="players-grid">
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/Danilo.jpeg" alt="danilo90-ita">
+                </div>
+                <h3>danilo90-ita</h3>
+                <p>IL GENERALE 🎖️
+DC roccioso e di esperienza, quando non è in zona di guerra a combattere scorpioni.
+Nel 2025 scambia ancora la skill Ball Roll per il BonRoll.
+Ignoranza brutale.
+
+SPAZZALA DANI'</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/Samu.jpeg" alt="LMDM_xSamuell">
+                </div>
+                <h3>LMDM_xSamuell</h3>
+                <p>Il DC più orribile di sempre.
+
+                  Un ignoranza brutale
+                  Uno stile impeccabile
+                  L'assist man imponente dai calci piazzati.
+                  Procione con la F maiuscola 🦝
+
+                  IL PESCE 🐟🎏</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/Fraocchio.jpeg" alt="fra_occhio_08">
+                </div>
+                <h3>fra_occhio_08</h3>
+                <p>IL CLONE 👥
+Difensore aggressivo
+La Nemesi del Capitano
+Non servono parole per descriverlo.
+Sale in attacco, e puntualmente segna o fa segnare.
+Sembra di essere in un video de @ilvostrocarodexter
+
+ BOMBER PER CASO! 🥅</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/dark.jpeg" alt="Darckr0ck_h3">
+                </div>
+                <h3>Darckr0ck_h3</h3>
+                <p>Sul lato Sinistro della Difesa 🇵🇪
+Un uomo una skill interrotta
+Un baffo ormai divenuto ICONICO! 
+Incubo per gli attaccanti (quando non è all'Olimpico)
+
+EN MISSION ♨️</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/simo.jpeg" alt="Noctis88-ita">
+                </div>
+                <h3>Noctis88-ita</h3>
+                <p>Fuori tattico, dentro Difensore assoluto 
+Colui che veramente aiuta tutti noi ogni anno.
+Le sue tattiche, i premi partita, il suo modo di fare, la sua bontà e spontaneità ci hanno portato ad una forte unione.
+Psicologo, analista, tuttofare della squadra, pianifica e studia, tra un catetere di un vecchio e una siringa di morfina.
+Cuore e colonna portante del nostro team!
+
+IL NOSTRO MISTER ARGENTIERI!
+
+ANAL-ISTA 🩺🩻👁️‍🗨️</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/bandicoot.jpeg" alt="FG_bandicoot06">
+                </div>
+                <h3>FG_bandicoot06</h3>
+                <p>L'incognita 🥸
+Il Jolly che può farti vincere le partite e i campionati
+o farti dannare l'esistenza..
+Non si sa mai se gioca
+Incubo totale (davanti allo specchio, ma non della porta)
+C'è chi ancora non ha mai visto il suo vero volto
+Leggende metropolitane di un essere senza volto
+
+LET HIM COOK 🍝🥘</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/tony.jpeg" alt="aletony10">
+                </div>
+                <h3>aletony10</h3>
+                <p>DC ingombrante 
+Corso in nostro soccorso sempre,ha fatto il vero mostro, una montagna insormontabile. Il quasi sempre presente
+
+VETERANO IN ELUDO</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione Centrocampisti -->
+        <div class="section" data-section="centrocampisti">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon">⚙️</div>
+              <h2>Centrocampisti</h2>
+            </div>
+            <div class="toggle-icon">+</div>
+          </div>
+          <div class="section-content">
+            <div class="group-photo">
+              <!-- <img src="./immagini/gruppo-centrocampisti.jpeg" alt="Foto gruppo centrocampisti"> -->
+              <p class="group-caption">Il motore pulsante della squadra</p>
+            </div>
+            <div class="players-grid">
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/manu.jpeg" alt="Scugnizzo_77">
+                </div>
+                <h3>Scugnizzo_77</h3>
+                <p>LO SCUGNIZZO 🌋💙
+Visione (specialmente per gli oggetti di valore)
+Passaggi, intercetta tutto, anche le monetine lanciate dal pubblico di casa, una sicurezza per gli amici e una minaccia per i turisti in zona Mergellina.
+L'unico Napoletano sano, quando non ha la luna storta.
+Sempre al nostro fianco, lo scimmiotto, non ha mai deluso! 
+
+Anema e core dei Monaci</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/ivan.jpeg" alt="BLACKMAMBA_IVAN">
+                </div>
+                <h3>BLACKMAMBA_IVAN</h3>
+                <p>MARIO VANNI 🖤
+
+Centrocampista sulla Sinistra 
+Sempre ultra presente, punizioni atomiche e carattere.
+Trivele provate sempre dai posti più impensabili..
+Si fa tutta la fascia alla velocità della luce!
+In poche parole un fas***ta..
+Mario Vanni sempre in prima linea e con la camicia stirata
+
+RITORNEREMO! 👔</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/nico.jpeg" alt="Fireniko6">
+                </div>
+                <h3>Fireniko6</h3>
+                <p>LO STIRATO  🎰
+Se c'è una persona che possa essere presa d'esempio per descrivere a pieno il CC perfetto è lui.
+Una Visione che OCCHIO di Sauron spostati.
+Tra gli impegni del suo amato Bologna e del Basket lui c'è e ci sarà sempre dentro e fuori dal campo.
+Stile infinito, classe ed eleganza, cuore e carattere.
+Il nostro gigante buono rimane punto cardine del centrocampo.
+
+THE KING OF SOCCMEL ❤️💙</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/fede.jpeg" alt="yg_phethe_sdf">
+                </div>
+                <h3>yg_phethe_sdf</h3>
+                <p>Centrocampista completo.
+Tenta 6 trivele a partita.
+Cambia più capelli che mutande.
+Spiccano dalle sue caratteristiche elevate doti di passaggio, skill e 15-0 sfiorati.
+Tecnico dentro e fuori dal campo</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/minghio.jpeg" alt="XxManuel01xX_">
+                </div>
+                <h3>XxManuel01xX_</h3>
+                <p>MINGHIO 🐃
+CDC TOTALE
+Recupera palloni, grintoso e cattivo in campo.
+Spiccano già i primi meme all'insegna del buon KekkoNapoli e il suo "Antonio" 
+Ne vedremo delle belle!</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/paulo.jpeg" alt="Paulinho_Jr777">
+                </div>
+                <h3>Paulinho_Jr777</h3>
+                <p>Esterno di fascia Destra 🚀
+Esterno a tutta fascia, rapidissimo, doppia fase ottima e spizzate in aria a gogò! 
+Letteralmente vola di testa per metterla dentro l'aria! PAOOOLOOOAAAHH!
+Il sosia di Macklemore è con noi 🧥</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/cecio.jpeg" alt="M-Cecio">
+                </div>
+                <h3>M-Cecio</h3>
+                <p>CECIO 🧆
+Jolly sulla fascia!
+Sulla fascia Destra alterna fase offensiva e difensiva.
+Ottimo aiuto in caso si bisogno.
+Player dal cuore d'oro e dalla forte costanza e presenza</p>
+              </div>
+              <!-- <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/federico-arancio.jpeg" alt="Federico Arancio">
+                </div>
+                <h3>Federico Arancio</h3>
+                <p>Centrocampista box-to-box con dinamismo incredibile. Perfetto equilibrio tra fase difensiva e offensiva, sempre presente in entrambe le aree.</p>
+              </div> -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione Attaccanti -->
+        <div class="section" data-section="attaccanti">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon">⚡</div>
+              <h2>Attaccanti</h2>
+            </div>
+            <div class="toggle-icon">+</div>
+          </div>
+          <div class="section-content">
+            <div class="group-photo">
+              <img src="./ig/gruppo-attaccanti.jpeg" alt="Foto gruppo attaccanti">
+              <p class="group-caption">Le nostre frecce letali</p>
+            </div>
+            <div class="players-grid">
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/rage.jpeg" alt="RageeVII">
+                </div>
+                <h3>RageeVII</h3>
+                <p>IL CAPITANO 🐺
+
+Ragazzi è l'anima della squadra, se ogni stagione vinciamo o saliamo in competizioni un motivo ci sarà!
+Continuate a seguirlo se la vostra strada è quella per la vittoria e soprattutto per chi crede nel gruppo Monaci.
+Ci siamo fatti un nome in 2 anni di competitive. Tutto nasce da questa mente.
+In campo che dire: assistman e gol a valanga nonostante sia una seconda punta. Sempre disponibile ad ascoltare tutti ( non gli fate finire però la pazienza)
+Onorate il cap così come si venera  il Dio del Football!
+
+... e andremo lontani "INSIEME" ❤️🧡💛🖤
+
+UN CAPITANO! C'È SOLO UN CAPITANO 🗣️🔊</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/zuppo.jpeg" alt="zuppo23_fillo03">
+                </div>
+                <h3>zuppo23_fillo03</h3>
+                <p>MARIAN ZAHARIA 🔪💥
+Il nostro Bomber storico di razza!
+Con il suo protocollo scivolata-cartellino rosso non è mai arrivato al lvl 100.
+La puzza di piedi ha invaso le nostre cuffie per mesi
+Onore al Vichingo Rumeno ⚔️
+Lo Zingaro per eccellenza..
+Il vero BOMBER 🥅
+IL DEMONE DI BARICELLA 👺🇷🇴🦶🏻</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/cigno.jpeg" alt="FRANCESC000SSS">
+                </div>
+                <h3>FRANCESC000SSS</h3>
+                <p>IL CIGNO 🦢💥
+Arrivato a metà stagione nel 2025 ha subito voluto far capire di che pasta fosse fatto (sicuramente pasta di mandorle).
+Con la sua foga, la sua fame, i suoi driven, la sua intelligenza tattica e la sua ambizione, non c'è stato verso per le difese avversarie.
+Arriva e si prende la scarpa d'oro di FVPA Serie A!
+Quando non è allo stadio o al campo, sempre l'unica certezza in campo:
+Il gol te lo deve fare.
+
+Con lui nasce il trio ARMAGEDDON 🔥</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sezione Icons -->
+        <div class="section" data-section="icons">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-icon">⭐</div>
+              <h2>Icons</h2>
+            </div>
+            <div class="toggle-icon">+</div>
+          </div>
+          <div class="section-content">
+            <div class="group-photo">
+              <!-- <img src="./immagini/gruppo-staff.jpeg" alt="Foto gruppo staff"> -->
+              <p class="group-caption">Le leggende e i maestri che guidano il nostro cammino</p>
+            </div>
+            <div class="players-grid">
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/mamba.jpeg" alt="Mamba_nero30">
+                </div>
+                <h3>Mamba_nero30</h3>
+                <p>Fabio Simplicio 🍂 
+
+Esterno rapidissimo, buggatissimo e con un innato senso della difesa.
+Membro attivo assiduamente dal 2020.
+Membro onorario e Senatore a vita.
+Se non fosse per lui il club non sarebbe mai diventato quello che è!
+Grazie a quest'uomo i Monaci Shaolin hanno gettato le basi nel mondo del Competitive.
+Giocatore che pesa 40kg da bagnato, la freccia nera, con la sua esultanza a foglia secca,le sue premonizioni, i suoi tiri dalla distanza e i suoi interventi difensivi, sarà sempre ricordato dal club per il suo spirito di squadra e cuore d'oro.
+Attendiamo un suo ritorno un giorno:
+
+"Ritorno al Futuro" 🔙
+
+BAMBACIONE 🍔
+
+"Mi dite Simplicio, Simplicio..fate giocare Simplicio".</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/ubaldo.jpeg" alt="Mish__97">
+                </div>
+                <h3>Mish__97</h3>
+                <p>UBALDO UBALDO 🥸 
+
+L'uomo dalle mille sfaccettature e capigliature!
+Questo anziano COC è la vera leggenda del Club.
+Membro onorario e Senatore.
+Fin dagli albori della creazione del team nel 2018 lui è stato presente e costante.
+Una creatura dal potenziale divino ✝️
+Ha il potere di evocare San Pietro
+Il nostro rematore di gondole Veneziano è un portento, nella visione e nella costruzione del gioco e amante del bel calcio.
+Ormai stanco di sfornare assist si è ritirato nel suo paese in cerca di pace..per ora 👀
+
+Onore alla celebre esultanza REMATORA! 
+Evento unico nel suo genere, solo pochi eletti lo hanno potuto gustare dal vivo.🚣🏻
+
+LEGGENDA VIVENTE 🪶 📖</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/yoda.jpeg" alt="Maestro_Yoda02">
+                </div>
+                <h3>Maestro_Yoda02</h3>
+                <p>LEGOLAS VERDEFOGLIA 🏹🍃 
+
+Leggenda del Club e Senatore.
+Viene da terre lontane e boschi fantastici, a Latina, vicino Campo Boario per intenderci.
+COC dall'incredibile visione e grande finalizzatore.
+Membro onorario del Club dalla creazione nel lontano 2018.
+Si ricordano le sue gesta e le sue imprese per la vittoria della Divisione 1 in 4 player con full CPU.
+
+A volte si trasforma nei suo alter ego Gennaro Esposito, Beppe Vessicchio e Giovanni Motrombo, quando deve correre in aiuto a fare il Jolly.
+
+Una Freccia in mezzo al campo e incitatore per i compagni di squadra.
+
+"Legolas!! Cosa vedono i tuoi occhi da elfo?" 👀</p>
+              </div>
+              <div class="player-card">
+                <div class="player-image">
+                  <img src="./immagini/brazof.jpeg" alt="TheSpartan333">
+                </div>
+                <h3>TheSpartan333</h3>
+                <p>AJEJE BRAZORF 🧱↪️🇩🇪 
+
+Honorable Mention per il Maestro!
+
+Il mago dei German Cross 🪄
+Uno dei TS migliori della storia del Club e non solo!
+Terzino dall'innato posizionamento difensivo,e dall'astuta visione di gioco.
+Verranno sempre ricordate le sue sovrapposizioni, incursioni e i cross germanici micidiali per servire Marian Zaharia nei tornei!
+Un vero e proprio MURO!
+Non il più skillato, è vero, ma quello con più classe di tutti!
+Sempre presente, a patto che non ci sia LA MAGGGICA in TV! 🐺💛❤️
+Verrà sempre ricordato dai suoi compagni di squadra per i pochi anni passati insieme, ma anni di grande qualità!
+
+Tornerà mai? Non ci è dato saperlo per ora..
+
+Noi ci crediamo ancora, chissà, forse un giorno Il Maestro farà ritorno e ci insegnerà il prossimo passo per arrivare al suo livello.
+
+Semplicemente,
+
+ IL MAGISTER 🧑🏻‍🏫✨</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</body>
+</html>
