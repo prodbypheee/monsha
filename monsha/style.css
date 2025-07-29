@@ -3407,3 +3407,119 @@ header h1 {
         font-size: 16px;
     }
 }
+/* CSS DA AGGIUNGERE - Competizioni cliccabili */
+
+/* Link competizioni - mantiene tutti gli stili esistenti */
+.competition-link {
+  /* Eredita tutti gli stili da .competition-card */
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block !important;
+  position: relative !important;
+  
+  /* Effetto cursor pointer */
+  cursor: pointer !important;
+  
+  /* Transizione più evidente al hover per indicare che è cliccabile */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+/* Stato hover più pronunciato per i link */
+.competition-link:hover {
+  /* Mantiene gli effetti esistenti ma li amplifica leggermente */
+  transform: translateY(-12px) scale(1.03) !important;
+  box-shadow: 0 30px 60px rgba(254, 165, 0, 0.4) !important;
+  border-color: #fea500 !important;
+  
+  /* Effetto glow più intenso */
+  filter: drop-shadow(0 0 20px rgba(254, 165, 0, 0.3)) !important;
+}
+
+/* Indicatore di link (visibile solo al hover) */
+.link-indicator {
+  position: absolute !important;
+  bottom: 15px !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(10px) !important;
+  background: linear-gradient(135deg, #fea500, #ff8c00) !important;
+  color: #000 !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.75rem !important;
+  font-weight: bold !important;
+  opacity: 0 !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+/* Mostra l'indicatore al hover */
+.competition-link:hover .link-indicator {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Effetto click/active */
+.competition-link:active {
+  transform: translateY(-8px) scale(1.01) !important;
+  transition: all 0.1s ease !important;
+}
+
+/* Assicurati che il logo non interferisca con il click */
+.competition-link .competition-logo {
+  pointer-events: none !important;
+}
+
+/* Focus accessibile per tastiera */
+.competition-link:focus {
+  outline: 3px solid #fea500 !important;
+  outline-offset: 4px !important;
+  border-radius: 15px !important;
+}
+
+/* Rimuovi underline se presente */
+.competition-link:visited,
+.competition-link:link {
+  text-decoration: none !important;
+}
+
+/* Animazione extra per feedback visivo */
+@keyframes competition-click {
+  0% { transform: translateY(-10px) scale(1.02); }
+  50% { transform: translateY(-8px) scale(1.05); }
+  100% { transform: translateY(-10px) scale(1.02); }
+}
+
+.competition-link:active {
+  animation: competition-click 0.2s ease !important;
+}
+
+/* Responsive - adatta l'indicatore per mobile */
+@media (max-width: 768px) {
+  .link-indicator {
+    font-size: 0.7rem !important;
+    padding: 4px 8px !important;
+    bottom: 10px !important;
+  }
+  
+  /* Su mobile mostra sempre l'indicatore (dato che non c'è hover) */
+  .competition-link .link-indicator {
+    opacity: 0.8 !important;
+    transform: translateX(-50%) translateY(0) !important;
+  }
+  
+  .competition-link:hover .link-indicator {
+    opacity: 1 !important;
+  }
+}
+
+/* Assicurati che tutti gli elementi interni siano non-cliccabili */
+.competition-link * {
+  pointer-events: none !important;
+}
+
+/* Ma il link principale deve essere cliccabile */
+.competition-link {
+  pointer-events: auto !important;
+}
