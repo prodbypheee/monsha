@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MONACI SHAOLIN - Unisciti a noi</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="unisciti.html" class="active">Unisciti a noi</a>
+    <a href="trofei.html">Albo d'Oro</a>
+    <a href="noi.html">Noi</a>
+  </nav>
+
+  <div id="unisciti" class="tab-content active">
+    <div class="background-container">
+      <div class="background-image"></div>
+      <div class="background-overlay"></div>
+    </div>
+    <div class="other-tab">
+      <h1>UNISCITI AL TEMPIO 🥋</h1>
+      <p>Compila il form per iniziare il tuo cammino da Monaco Shaolin!</p>
+      
+      <div class="registration-form">
+        <!-- Selezione Piattaforma -->
+        <div class="form-group">
+          <label for="platformSelect">🎮 Seleziona la tua piattaforma di gioco:</label>
+          <select id="platformSelect" class="platform-dropdown" onchange="handlePlatformChange()">
+            <option value="">-- Scegli la piattaforma --</option>
+            <option value="playstation">PlayStation (Next Gen)</option>
+            <option value="xbox">Xbox (Next Gen)</option>
+            <option value="pc">PC</option>
+          </select>
+        </div>
+
+        <!-- Input ID Player -->
+        <div class="form-group" id="playerIdGroup" style="display: none;">
+          <label for="playerId">🆔 Inserisci il tuo ID Player:</label>
+          <input type="text" id="playerId" class="player-id-input" placeholder="Inserisci il tuo ID player">
+          <small class="input-hint" id="playerIdHint"></small>
+        </div>
+        
+        <!-- Selezione Ruoli -->
+        <div class="form-group">
+          <label>⚽ Seleziona i tuoi ruoli preferiti (max 2):</label>
+          <div class="role-selection" onclick="openRolePopup()">
+            <div id="roleSelectionContent">
+              <h3>⚽ Scegli le tue posizioni sul campo</h3>
+              <p>Clicca qui per aprire il selettore ruoli</p>
+            </div>
+            <div id="selectedRolesInWidget" class="selected-roles-widget" style="display: none;">
+              <h4>✅ Ruoli selezionati:</h4>
+              <div id="selectedRolesWidgetList"></div>
+              <p class="change-roles-hint">Clicca per modificare la selezione</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Competizioni -->
+        <div class="form-group">
+          <label>🏆 Competizioni in cui hai militato:</label>
+          <div class="competitions-dropdown-container">
+            <div class="dropdown-wrapper">
+              <div class="dropdown-header" onclick="toggleCompetitionsDropdown()">
+                <span id="selectedCompetitionsText">Seleziona le tue competizioni...</span>
+                <span class="dropdown-arrow">▼</span>
+              </div>
+              <div class="dropdown-content" id="competitionsDropdownContent">
+                <!-- FVPA -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('fvpa');">
+                    <span class="competition-icon">⚽</span>
+                    <span class="competition-name">FVPA</span>
+                    <span class="expand-arrow" id="fvpa-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="fvpa-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie A" onchange="handleDivisionSelection('FVPA', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie B" onchange="handleDivisionSelection('FVPA', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa" value="Serie C" onchange="handleDivisionSelection('FVPA', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- FVPA San Marino -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('fvpa-sm');">
+                    <span class="competition-icon">🏟️</span>
+                    <span class="competition-name">FVPA San Marino</span>
+                    <span class="expand-arrow" id="fvpa-sm-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="fvpa-sm-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="fvpa-sm" value="Serie A" onchange="handleDivisionSelection('FVPA San Marino', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="fvpa-sm" value="Serie B" onchange="handleDivisionSelection('FVPA San Marino', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Eludo -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('eludo');">
+                    <span class="competition-icon">🥅</span>
+                    <span class="competition-name">Eludo</span>
+                    <span class="expand-arrow" id="eludo-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="eludo-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie A" onchange="handleDivisionSelection('Eludo', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie B" onchange="handleDivisionSelection('Eludo', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie C" onchange="handleDivisionSelection('Eludo', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="eludo" value="Serie D" onchange="handleDivisionSelection('Eludo', 'Serie D', this)">
+                      <span class="division-text">Serie D</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- VPG -->
+                <div class="competition-group">
+                  <div class="competition-header" onclick="event.stopPropagation(); toggleCompetitionDivisions('vpg');">
+                    <span class="competition-icon">🏆</span>
+                    <span class="competition-name">VPG</span>
+                    <span class="expand-arrow" id="vpg-arrow">▶</span>
+                  </div>
+                  <div class="divisions-list" id="vpg-divisions">
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie A" onchange="handleDivisionSelection('VPG', 'Serie A', this)">
+                      <span class="division-text">Serie A</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie B" onchange="handleDivisionSelection('VPG', 'Serie B', this)">
+                      <span class="division-text">Serie B</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie C" onchange="handleDivisionSelection('VPG', 'Serie C', this)">
+                      <span class="division-text">Serie C</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie D1" onchange="handleDivisionSelection('VPG', 'Serie D1', this)">
+                      <span class="division-text">Serie D1</span>
+                    </label>
+                    <label class="division-option">
+                      <input type="radio" name="vpg" value="Serie D2" onchange="handleDivisionSelection('VPG', 'Serie D2', this)">
+                      <span class="division-text">Serie D2</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Area per mostrare le selezioni -->
+            <div class="selected-competitions" id="selectedCompetitionsArea" style="display: none;">
+              <h4>✅ Competizioni selezionate:</h4>
+              <div class="selected-list" id="selectedCompetitionsList"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Club precedenti -->
+        <div class="form-group">
+          <label for="clubsInput">🏛️ Club precedenti in cui hai militato:</label>
+          <div class="clubs-input-container">
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="clubsInput" 
+                class="clubs-text-input" 
+                placeholder="Scrivi il nome di un club e premi Invio..."
+                onkeypress="handleClubKeyPress(event)"
+                autocomplete="off"
+              >
+              <button type="button" class="add-club-btn" onclick="addClubFromInput()">
+                <span class="add-icon">+</span>
+              </button>
+            </div>
+            <small class="input-help">💡 Aggiungi un club alla volta premendo Invio o cliccando il pulsante +</small>
+            
+            <div class="added-clubs-list" id="addedClubsList" style="display: none;">
+              <h4>⚽ I tuoi club precedenti:</h4>
+              <div class="clubs-tags-container" id="clubsTagsContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Giorni disponibili -->
+        <div class="form-group">
+          <label>📅 Giorni disponibili per allenamenti/partite:</label>
+          <div class="weekly-calendar">
+            <div class="day-container" onclick="toggleDay('monday')">
+              <div class="day-name">Lunedì</div>
+              <div class="day-checkbox" id="monday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('tuesday')">
+              <div class="day-name">Martedì</div>
+              <div class="day-checkbox" id="tuesday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('wednesday')">
+              <div class="day-name">Mercoledì</div>
+              <div class="day-checkbox" id="wednesday-check">☐</div>
+            </div>
+            <div class="day-container" onclick="toggleDay('thursday')">
+              <div class="day-name">Giovedì</div>
+              <div class="day-checkbox" id="thursday-check">☐</div>
+            </div>
+          </div>
+          <small class="input-help">💡 Clicca sui giorni in cui sei disponibile</small>
+        </div>
+
+        <!-- Numero di telefono -->
+        <div class="form-group">
+          <label for="phoneInput">📞 Numero di telefono:</label>
+          <input 
+            type="tel" 
+            id="phoneInput" 
+            class="phone-input" 
+            placeholder="+39 123 456 7890"
+            maxlength="20"
+          >
+          <div class="phone-warning">
+            <span class="warning-icon">⚠️</span>
+            <small class="warning-text">
+              Se le tue informazioni saranno ritenute da noi interessanti utilizzeremo il tuo numero di telefono per aggiungerti al gruppo dei provini. In alternativa aggiungi un altro tuo contatto in "Altro"(discord,mail telegram).
+            </small>
+          </div>
+        </div>
+
+        <!-- Informazioni aggiuntive -->
+        <div class="form-group">
+          <label for="additionalInfo">💬 Informazioni aggiuntive (Altre competizioni, Discord, note, altro):</label>
+          <textarea 
+            id="additionalInfo" 
+            class="additional-info-textarea" 
+            placeholder="Inserisci qui altre competizioni disputate, note personali, o un tuo contatto (se non hai inserito il numero di telefono)..."
+            rows="4"
+          ></textarea>
+          <small class="input-help">💡 Puoi includere il tuo Discord, esperienze particolari, o qualsiasi altra informazione che vuoi condividere</small>
+        </div>
+
+        <!-- Bottone submit -->
+        <div class="form-group submit-section">
+          <button type="button" class="submit-btn" onclick="submitForm()">
+            <span class="submit-icon">🚀</span>
+            <span class="submit-text">INVIA CANDIDATURA</span>
+            <div class="submit-loader" id="submitLoader" style="display: none;"></div>
+          </button>
+          <div class="submit-message" id="submitMessage" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup per selezione ruoli -->
+  <div id="rolePopup" class="popup-overlay">
+    <div class="popup-content">
+      <button class="close-btn" onclick="closeRolePopup()">&times;</button>
+      
+      <div class="popup-header">
+        <!-- <h2>⚽ SELEZIONA I TUOI RUOLI</h2> -->
+        <!-- <p>Scegli fino a 2 posizioni che preferisci giocare</p> -->
+      </div>
+      
+      <div class="selection-counter">
+        <h3>Ruoli selezionati: <span id="selectionCount">0</span>/2</h3>
+        <div class="selected-positions" id="selectedPositions"></div>
+      </div>
+      
+      <div class="football-field">
+        <!-- Portiere -->
+        <div class="player-position por" data-role="POR" data-name="Portiere" onclick="selectPosition(this)">
+          <div class="player-shirt">POR</div>
+          <div class="player-label">PORTIERE</div>
+        </div>
+        
+        <!-- Difensori centrali -->
+        <div class="player-position dc1" data-role="DC" data-name="DC Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        <div class="player-position dc2" data-role="DC" data-name="DC Centrale" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        <div class="player-position dc3" data-role="DC" data-name="DC Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">DC</div>
+          <div class="player-label">DC</div>
+        </div>
+        
+        <!-- Centrocampisti - CDC CDC ED -->
+        <div class="player-position cdc1" data-role="CDC" data-name="CDC Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">CDC</div>
+          <div class="player-label">CDC</div>
+        </div>
+        <div class="player-position cdc2" data-role="CDC" data-name="CDC Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">CDC</div>
+          <div class="player-label">CDC</div>
+        </div>
+        <div class="player-position ed1" data-role="ED" data-name="Esterno Destro" onclick="selectPosition(this)">
+          <div class="player-shirt">ED</div>
+          <div class="player-label">ED</div>
+        </div>
+        <div class="player-position es1" data-role="ES" data-name="Esterno Sinistro" onclick="selectPosition(this)">
+          <div class="player-shirt">ES</div>
+          <div class="player-label">ES</div>
+        </div>
+        <!-- Centrocampista offensivo -->
+        <div class="player-position coc" data-role="COC" data-name="COC" onclick="selectPosition(this)">
+          <div class="player-shirt">COC</div>
+          <div class="player-label">COC</div>
+        </div>
+        
+        <!-- Attaccanti -->
+        <div class="player-position att1" data-role="ATT" data-name="Attaccante" onclick="selectPosition(this)">
+          <div class="player-shirt">ATT</div>
+          <div class="player-label">ATT</div>
+        </div>
+        <div class="player-position att2" data-role="ATT" data-name="Attaccante" onclick="selectPosition(this)">
+          <div class="player-shirt">ATT</div>
+          <div class="player-label">ATT</div>
+        </div>
+      </div>
+      
+      <div class="popup-buttons">
+        <button class="btn btn-confirm" id="confirmBtn" onclick="confirmSelection()" disabled>
+          ✅ Conferma Selezione
+        </button>
+        <button class="btn btn-cancel" onclick="closeRolePopup()">
+          ❌ Annulla
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</body>
+</html>
