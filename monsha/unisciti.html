@@ -60,7 +60,33 @@
           </div>
         </div>
 
-        <!-- Competizioni -->
+        <!-- Club precedenti (SPOSTATO PRIMA) -->
+        <div class="form-group">
+          <label for="clubsInput">🏛️ Club precedenti in cui hai militato:</label>
+          <div class="clubs-input-container">
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="clubsInput" 
+                class="clubs-text-input" 
+                placeholder="Scrivi il nome di un club e premi Invio..."
+                onkeypress="handleClubKeyPress(event)"
+                autocomplete="off"
+              >
+              <button type="button" class="add-club-btn" onclick="addClubFromInput()">
+                <span class="add-icon">+</span>
+              </button>
+            </div>
+            <small class="input-help">💡 Aggiungi un club alla volta premendo Invio o cliccando il pulsante +</small>
+            
+            <div class="added-clubs-list" id="addedClubsList" style="display: none;">
+              <h4>⚽ I tuoi club precedenti:</h4>
+              <div class="clubs-tags-container" id="clubsTagsContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Competizioni (SPOSTATO DOPO) -->
         <div class="form-group">
           <label>🏆 Competizioni in cui hai militato:</label>
           <div class="competitions-dropdown-container">
@@ -176,32 +202,6 @@
             <div class="selected-competitions" id="selectedCompetitionsArea" style="display: none;">
               <h4>✅ Competizioni selezionate:</h4>
               <div class="selected-list" id="selectedCompetitionsList"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Club precedenti -->
-        <div class="form-group">
-          <label for="clubsInput">🏛️ Club precedenti in cui hai militato:</label>
-          <div class="clubs-input-container">
-            <div class="input-wrapper">
-              <input 
-                type="text" 
-                id="clubsInput" 
-                class="clubs-text-input" 
-                placeholder="Scrivi il nome di un club e premi Invio..."
-                onkeypress="handleClubKeyPress(event)"
-                autocomplete="off"
-              >
-              <button type="button" class="add-club-btn" onclick="addClubFromInput()">
-                <span class="add-icon">+</span>
-              </button>
-            </div>
-            <small class="input-help">💡 Aggiungi un club alla volta premendo Invio o cliccando il pulsante +</small>
-            
-            <div class="added-clubs-list" id="addedClubsList" style="display: none;">
-              <h4>⚽ I tuoi club precedenti:</h4>
-              <div class="clubs-tags-container" id="clubsTagsContainer"></div>
             </div>
           </div>
         </div>
