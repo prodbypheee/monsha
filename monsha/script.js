@@ -1099,3 +1099,102 @@ if (typeof window !== 'undefined') {
         submitForm
     };
 }
+// ===== GESTIONE URL DINAMICI =====
+// Configurazione percorsi per ogni tab
+const PATHS = {
+    'home': '/home',
+    'unisciti': '/uniscitianoi',
+    'trofei': '/albodoro',
+    'noi': '/lasquadra'
+};
+
+// Funzione per cambiare URL
+function changeURL(tabName) {
+    const path = PATHS[tabName];
+    if (path && window.history && window.history.pushState) {
+        const baseUrl = window.location.origin; // Es: https://monacishaolin.it
+        const newUrl = `${baseUrl}${path}`;
+        
+        // Cambia l'URL senza ricaricare la pagina
+        window.history.pushState({ tab: tabName }, '', newUrl);
+        
+        // Aggiorna anche il titolo della pagina
+        const titles = {
+            'home': 'MONACI SHAOLIN - Home',
+            'unisciti': 'MONACI SHAOLIN - Unisciti a Noi',
+            'trofei': 'MONACI SHAOLIN - Albo d\'Oro', 
+            'noi': 'MONACI SHAOLIN - La Squadra'
+        };
+        document.title = titles[tabName] || 'MONACI SHAOLIN';
+    }
+}
+
+// ===== GESTIONE TAB E NAVIGAZIONE =====
+function showTab(tabName) {
+    // Nascondi tutte le tab
+    const allTabs = document.querySelectorAll('.tab-content');
+    allTabs.forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Rimuovi classe active da tutti i link nav
+    const allNavLinks = document.querySelectorAll('nav a');
+    allNavLinks.forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Mostra la tab selezionata
+    const selectedTab = document.getElementById(tabName);
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
+    
+    // Aggiungi classe active al link corrispondente
+    const activeLink = document.querySelector(`nav a[onclick="showTab('${tabName}')"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+    
+    // Cambia l'URL
+    changeURL(tabName);
+}
+
+// ===== GESTIONE BACK/FORWARD BROWSER =====
+window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.tab) {
+        // Ricarica la tab senza cambiare nuovamente l'URL
+        const tabName = event.state.tab;
+        const allTabs = document.querySelectorAll('.tab-content');
+        allTabs.forEach(tab => tab.classList.remove('active'));
+        
+        const selectedTab = document.getElementById(tabName);
+        if (selectedTab) {
+            selectedTab.classList.add('active');
+        }
+    }
+});
+
+// ===== INIZIALIZZAZIONE AL CARICAMENTO =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Imposta l'URL iniziale per la home
+    changeURL('home');
+    
+    // Inizializza EmailJS se disponibile
+    if (typeof emailjs !== 'undefined') {
+        emailjs.init("tua_public_key_qui"); // Sostituisci con la tua chiave
+    }
+});
+
+// ===== VARIABILI GLOBALI PER IL FORM =====
+let selectedRoles = [];
+let selectedCompetitions = [];
+let addedClubs = [];
+let selectedDays = [];
+
+// ===== GESTIONE PIATTAFORMA =====
+function handlePlatformChange() {
+    const platformSelect = document.getElementById('platformSelect');
+    const playerIdGroup = document.getElementById('playerIdGroup');
+    const playerIdHint = document.getElementById('playerIdHint');
+    
+    if (platformSelect.
