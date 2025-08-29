@@ -12,11 +12,35 @@
 </head>
 <body>
   <nav>
-    <a href="index.html">Home</a>
-    <a href="unisciti.html">Unisciti a noi</a>
-    <a href="trofei.html">Albo d'Oro</a>
-    <a href="noi.html" class="active">Noi</a>
-  </nav>
+        <div class="mobile-tab-title">NOI</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="unisciti.html">Unisciti a noi</a>
+            <a href="trofei.html">Albo d'Oro</a>
+            <a href="noi.html" class="active">Noi</a>
+            <a href="news.html">News</a>
+        </div>
+    </nav>
+
+    <!-- HAMBURGER MENU (mobile) -->
+    <button class="hamburger-menu" onclick="toggleMobileMenu()">
+        <div class="hamburger-icon">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </div>
+    </button>
+
+    <!-- DROPDOWN MOBILE -->
+    <div class="mobile-dropdown" id="mobileDropdown">
+        <div class="mobile-nav-links">
+            <a href="index.html">Home</a>
+            <a href="unisciti.html">Unisciti a noi</a>
+            <a href="trofei.html">Albo d'Oro</a>
+            <a href="news.html">News</a>
+            <a href="noi.html">Noi</a>
+        </div>
+    </div>
 
   <div id="noi" class="tab-content active">
     <div class="container">
