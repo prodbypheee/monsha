@@ -10,11 +10,40 @@
 </head>
 <body>
   <nav>
-    <a href="index.html" class="active">Home</a>
-    <a href="unisciti.html">Unisciti a noi</a>
-    <a href="trofei.html">Albo d'Oro</a>
-    <a href="noi.html">Noi</a>
-  </nav>
+    <!-- titolo che apparirà su mobile -->
+    <div class="mobile-tab-title">HOME</div>
+
+    <!-- logo normale (desktop) -->
+    <!-- <div class="nav-logo">MONACI SHAOLIN</div> -->
+
+    <div class="nav-links">
+        <a href="index.html" class="active">Home</a>
+        <a href="unisciti.html">Unisciti a noi</a>
+        <a href="trofei.html">Albo d'Oro</a>
+        <a href="noi.html">Noi</a>
+        <a href="news.html">News</a>
+    </div>
+    </nav>
+
+    <!-- HAMBURGER MENU (mobile) -->
+    <button class="hamburger-menu" onclick="toggleMobileMenu()">
+        <div class="hamburger-icon">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+        </div>
+    </button>
+
+    <!-- DROPDOWN MOBILE -->
+    <div class="mobile-dropdown" id="mobileDropdown">
+        <div class="mobile-nav-links">
+            <a href="index.html">Home</a>
+            <a href="unisciti.html">Unisciti a noi</a>
+            <a href="trofei.html">Albo d'Oro</a>
+            <a href="news.html">News</a>
+            <a href="noi.html">Noi</a>
+        </div>
+    </div>
 
   <div id="home" class="tab-content active">
     <div class="hero-section">
@@ -142,7 +171,7 @@
       </div>
     </div>
   </div>
-
+        
   <script src="script.js"></script>
 </body>
 </html>
