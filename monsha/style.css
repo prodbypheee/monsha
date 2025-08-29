@@ -612,7 +612,7 @@ nav a:hover {
 /* --------------------------- */
 /* .black-section,
 .other-tab {
-  background-color: black;
+  
   color: white;
   min-height: calc(100vh - 70px);
   padding: 3em 2em;
@@ -647,7 +647,7 @@ nav a:hover {
 .social-section h2 {
   font-size: 1.8rem;
   margin-bottom: 0.8em;
-  color: #fea500;
+  color: #00fec7;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
@@ -779,17 +779,17 @@ nav a:hover {
 }
 
 .social-section {
-  background-color: black;
   padding: 2em 1.5em;
   text-align: center;
+  position: relative;
+  z-index: 0;
   border-top: 2px solid #fea500;
+  background: transparent; /* <-- oppure puoi anche non scriverlo, default */
 }
 
-.social-section h2 {
-  font-size: 1.8rem;
-  margin-bottom: 0.8em;
-  color: #fea500;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+.social-section p {
+  position: relative;
+  z-index: 0;
 }
 
 .social-section p {
@@ -841,7 +841,7 @@ nav a:hover {
 }
 
 /* OVERRIDE per eventuali regole che nascondono i bottoni */
-.social-btn,
+/* .social-btn,
 .x-btn,
 .ig-btn,
 .yt-btn,
@@ -850,7 +850,7 @@ nav a:hover {
   opacity: 1 !important;
   visibility: visible !important;
   display: inline-flex !important;
-}
+} */
 
 /* Debug - Rimuovi dopo aver verificato che funziona */
 /*
@@ -3522,4 +3522,496 @@ header h1 {
 /* Ma il link principale deve essere cliccabile */
 .competition-link {
   pointer-events: auto !important;
+}
+/* ========================================== */
+/* MENU MOBILE - AGGIUNGERE ALLA FINE DEL CSS */
+/* ========================================== */
+
+/* Logo nella navigazione */
+.nav-logo {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-right: auto;
+    display: none; /* Nascosto su desktop */
+}
+
+/* Contenitore per i link desktop */
+.nav-links {
+    display: flex;
+    align-items: center;
+}
+
+/* Hamburger menu - nascosto su desktop */
+.hamburger-menu {
+    display: none;
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    z-index: 1001;
+    background: #fea500;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    width: 24px;
+    height: 18px;
+    justify-content: space-between;
+}
+
+.hamburger-line {
+    width: 100%;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Animazione hamburger quando attivo */
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(6px, 6px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/* Dropdown mobile */
+.mobile-dropdown {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.mobile-dropdown.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-top: 60px;
+}
+
+.mobile-nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding: 15px 30px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fea500, #ff8c00);
+    min-width: 200px;
+    text-align: center;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(254, 165, 0, 0.3);
+}
+
+.mobile-nav-links a:hover {
+    background: linear-gradient(135deg, #ff8c00, #be2525);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(254, 165, 0, 0.5);
+}
+
+/* RESPONSIVE - Modifica la nav esistente per mobile */
+@media (max-width: 768px) {
+    nav {
+        justify-content: space-between !important;
+        padding-left: 20px !important;
+    }
+
+    /* Nascondi i link desktop su mobile */
+    nav a {
+        display: none !important;
+    }
+
+    /* Mostra il logo su mobile */
+    .nav-logo {
+        display: block !important;
+    }
+
+    /* Mostra hamburger menu su mobile */
+    .hamburger-menu {
+        display: block !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-nav-links a {
+        font-size: 1.2rem;
+        padding: 12px 25px;
+        min-width: 180px;
+    }
+}
+/* ================== */
+/* STILI PAGINA NEWS - AGGIUNGERE ALLA FINE DEL CSS */
+/* ================== */
+
+/* Sfondo animato per News */
+#news {
+    position: relative !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    z-index: 1 !important;
+}
+
+.background-container-news {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: -1 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+.background-image-news {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-image: url('./immagini/sfondo4.jpg') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    
+    opacity: 0;
+    transform: scale(1.1);
+    animation: backgroundFadeIn 2s ease-out forwards;
+}
+
+.background-overlay-news {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.2) 50%,
+        rgba(0, 0, 0, 0.5) 100%
+    ) !important;
+    opacity: 0;
+    animation: overlayFadeIn 2.5s ease-out 0.5s forwards;
+}
+
+/* Contenuto principale News */
+#news .other-tab {
+    position: relative !important;
+    z-index: 2 !important;
+    background: transparent !important;
+    margin: 40px auto !important;
+    padding: 30px !important;
+    max-width: 1000px !important;
+    width: 90% !important;
+    
+    opacity: 0;
+    transform: translateY(30px);
+    animation: contentSlideIn 1.5s ease-out 1s forwards;
+}
+
+/* Header News */
+.news-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+#news .news-header h1 {
+    color: #ffffff !important;
+    text-shadow: 3px 3px 12px rgba(0, 0, 0, 0.9) !important;
+    margin-bottom: 20px !important;
+    font-weight: bold !important;
+    font-size: 2.5rem !important;
+    background: rgba(0, 0, 0, 0.86) !important;
+    padding: 15px 25px !important;
+    border-radius: 15px !important;
+    border: 3px solid #fea500 !important;
+    display: inline-block !important;
+}
+
+#news .news-header p {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 1.2rem !important;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9) !important;
+    background: rgba(0, 0, 0, 0.86) !important;
+    padding: 12px 20px !important;
+    border-radius: 10px !important;
+    margin-bottom: 30px !important;
+    border-left: 4px solid #fea500 !important;
+}
+
+/* Container Twitter */
+.twitter-container {
+    background: rgba(0, 0, 0, 0.86) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 3px solid #fea500 !important;
+    border-radius: 20px !important;
+    padding: 30px !important;
+    margin: 20px auto !important;
+    max-width: 600px !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+.twitter-container h2 {
+    color: #fea500 !important;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Timeline Twitter */
+.twitter-timeline {
+    border-radius: 15px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    width: 100% !important;
+    max-height: 600px !important;
+}
+
+/* Loading placeholder */
+
+.loading-placeholder h3 {
+    color: #fea500;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fallback Twitter */
+.twitter-fallback {
+    background: rgba(231, 76, 60, 0.1);
+    border: 2px solid #e74c3c;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    color: #ffffff;
+    margin-top: 20px;
+    display: none;
+}
+
+.twitter-fallback h3 {
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.social-link-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #1da1f2, #0d8bd9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);
+}
+
+.social-link-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(29, 161, 242, 0.4);
+    background: linear-gradient(135deg, #0d8bd9, #1da1f2);
+}
+
+/* Container Social CTA */
+.social-cta-container {
+    background: rgba(0, 0, 0, 0.86) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 3px solid #fea500 !important;
+    border-radius: 20px !important;
+    padding: 30px !important;
+    margin: 30px auto !important;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+.social-cta-container h2 {
+    color: #fea500 !important;
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Griglia piattaforme social */
+.social-platforms-news {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.social-platform-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 2px solid rgba(254, 165, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    text-align: center;
+    cursor: pointer;
+}
+
+.social-platform-card:hover {
+    transform: translateY(-5px);
+    border-color: #fea500;
+    box-shadow: 0 10px 25px rgba(254, 165, 0, 0.4);
+}
+
+.platform-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.platform-name {
+    color: #fea500;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.platform-desc {
+    color: #cccccc;
+    font-size: 0.9rem;
+}
+
+/* Responsive News */
+@media (max-width: 768px) {
+    .background-image-news {
+        background-attachment: scroll !important;
+    }
+    
+    #news .other-tab {
+        margin: 20px auto !important;
+        padding: 20px !important;
+        width: 95% !important;
+    }
+
+    .twitter-container,
+    .social-cta-container {
+        padding: 20px !important;
+        margin: 15px auto !important;
+    }
+
+    #news .news-header h1 {
+        font-size: 1.8rem !important;
+        padding: 12px 20px !important;
+    }
+
+    #news .news-header p {
+        font-size: 1rem !important;
+        padding: 10px 15px !important;
+    }
+
+    .social-platforms-news {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .platform-icon {
+        font-size: 2rem;
+    }
+
+    .twitter-timeline {
+        max-height: 500px !important;
+    }
+}
+.twitter-embed-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 15px !important;
+    overflow: hidden !important;
+}
+
+.twitter-embed-container iframe {
+    border-radius: 15px !important;
+    width: 100% !important;
+}
+.nav-links a {
+  font-family: 'Montserrat', sans-serif; /* scegli il font */
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  text-decoration: none;
+  padding: 8px 12px;
+}
+
+/* Link attivo */
+.nav-links a.active {
+  color: #fea500;
+  border-bottom: 2px solid #fea500;
+}
+/* di default */
+.mobile-tab-title {
+  display: none; /* nascosto su desktop */
+}
+
+/* su mobile */
+@media (max-width: 768px) {
+  .nav-logo {
+    display: none; /* nasconde logo desktop */
+  }
+  .mobile-tab-title {
+    display: block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+    padding: 8px 12px;
+  }
 }
