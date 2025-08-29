@@ -1,9 +1,63 @@
+
 // ========================================
 // INIZIALIZZAZIONE PRINCIPALE - VERSIONE CORRETTA
 // ========================================
+// ========================================
+// MENU MOBILE HAMBURGER
+// ========================================
 
+function toggleMobileMenu() {
+    const hamburger = document.querySelector('.hamburger-menu');
+    const dropdown = document.getElementById('mobileDropdown');
+    
+    if (!hamburger || !dropdown) return;
+    
+    hamburger.classList.toggle('active');
+    dropdown.classList.toggle('active');
+    
+    if (dropdown.classList.contains('active')) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function closeMobileMenuOnClickOutside(event) {
+    const hamburger = document.querySelector('.hamburger-menu');
+    const dropdown = document.getElementById('mobileDropdown');
+    
+    if (!hamburger || !dropdown) return;
+    
+    if (dropdown.classList.contains('active') && 
+        !hamburger.contains(event.target) && 
+        !dropdown.contains(event.target)) {
+        hamburger.classList.remove('active');
+        dropdown.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function closeMobileMenuOnResize() {
+    const dropdown = document.getElementById('mobileDropdown');
+    const hamburger = document.querySelector('.hamburger-menu');
+    
+    if (!hamburger || !dropdown) return;
+    
+    if (window.innerWidth > 768 && dropdown.classList.contains('active')) {
+        hamburger.classList.remove('active');
+        dropdown.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Inizializza gli event listener per il menu mobile
+function initializeMobileMenu() {
+    document.addEventListener('click', closeMobileMenuOnClickOutside);
+    window.addEventListener('resize', closeMobileMenuOnResize);
+}
 document.addEventListener('DOMContentLoaded', function() {
     // Inizializza EmailJS
+    initializeMobileMenu();
     try {
         emailjs.init("gYs-un27FZbB_6GZc");
         console.log("EmailJS inizializzato correttamente");
@@ -1099,3 +1153,11 @@ if (typeof window !== 'undefined') {
         submitForm
     };
 }
+document.addEventListener('DOMContentLoaded', () => {
+  const activeLink = document.querySelector('.nav-links a.active');
+  const mobileTitle = document.querySelector('.mobile-tab-title');
+
+  if (activeLink && mobileTitle) {
+    mobileTitle.textContent = activeLink.textContent;
+  }
+});
