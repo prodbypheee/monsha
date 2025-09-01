@@ -60,7 +60,59 @@
           "Non indugiare sul passato; non sognare il futuro, concentra la mente sul momento presente."(Buddha)</p>
       </div>
     </div>
-    
+    <!-- VIDEO -->
+    <div class="video-player-section">
+      
+        <div class="video-player-container">
+            <div class="video-header">
+                <h3>🎮 LA NOSTRA STORIA 🎮</h3>
+                <p>Scopri il percorso dei Monaci Shaolin</p>
+            </div>
+            
+            <div class="video-wrapper" id="videoWrapper">
+                <iframe 
+                    id="youtubeVideo"
+                    src="https://www.youtube.com/embed/kzDihDrFhEM?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+                
+                <div class="video-overlay" id="videoOverlay">
+                    <div class="play-button-container" id="playButton">
+                        <div class="play-button">
+                            <div class="play-icon">▶</div>
+                        </div>
+                        <div class="play-text">CLICCA PER INIZIARE</div>
+                    </div>
+                    
+                    <div class="video-particles">
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                        <div class="particle"></div>
+                    </div>
+                </div>
+            </div>
+                
+                
+                <!-- Controlli personalizzati -->
+                <div class="custom-controls" id="customControls">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-handle" id="progressHandle"></div>
+                    </div>
+                    <div class="control-buttons">
+                        <button class="control-btn" id="playPauseBtn">⏸</button>
+                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                        <button class="control-btn" id="volumeBtn">🔊</button>
+                        <button class="control-btn" id="fullscreenBtn">⛶</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="content-section">
       <div id="presentazione" class="presentazione">
          <h3>⚽ BENVENUTI CARI ELETTI ⚽</h3>
