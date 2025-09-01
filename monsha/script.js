@@ -58,6 +58,13 @@ function initializeMobileMenu() {
 document.addEventListener('DOMContentLoaded', function() {
     // Inizializza EmailJS
     initializeMobileMenu();
+    initializeVideoPlayer();
+    loadYouTubeAPI();
+    
+    // Inizializza dopo che l'API è caricata
+    setTimeout(() => {
+        initializeYouTubePlayer();
+    }, 1000);
     try {
         emailjs.init("gYs-un27FZbB_6GZc");
         console.log("EmailJS inizializzato correttamente");
@@ -1161,3 +1168,601 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileTitle.textContent = activeLink.textContent;
   }
 });
+// ========================================
+// VIDEO PLAYER FUNCTIONALITY
+// ========================================
+
+function initializeVideoPlayer() {
+    const video = document.getElementById('mainVideo');
+    const videoWrapper = document.getElementById('videoWrapper');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const playButton = document.getElementById('playButton');
+    const customControls = document.getElementById('customControls');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressHandle = document.getElementById('progressHandle');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const volumeBtn = document.getElementById('volumeBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    
+    if (!video || !videoWrapper) return;
+    
+    let isPlaying = false;
+    let isDragging = false;
+    
+    // Gestione click su play button principale
+    if (playButton) {
+        playButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            startVideo();
+        });
+    }
+    
+    // Gestione click su overlay
+    if (videoOverlay) {
+        videoOverlay.addEventListener('click', function(e) {
+            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
+                startVideo();
+            }
+        });
+    }
+    
+    function startVideo() {
+        if (video && videoOverlay) {
+            // Nascondi overlay con animazione
+            videoOverlay.classList.add('hidden');
+            
+            // Aggiungi animazione di avvio
+            videoWrapper.style.transform = 'scale(0.98)';
+            videoWrapper.style.transition = 'transform 0.5s ease';
+            
+            setTimeout(() => {
+                videoWrapper.style.transform = 'scale(1)';
+                video.play().then(() => {
+                    isPlaying = true;
+                    if (customControls) {
+                        customControls.classList.add('visible');
+                    }
+                    updatePlayPauseButton();
+                }).catch(error => {
+                    console.error('Errore nella riproduzione del video:', error);
+                });
+            }, 100);
+        }
+    }
+    
+    // Gestione play/pause
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', function() {
+            if (isPlaying) {
+                video.pause();
+                isPlaying = false;
+            } else {
+                video.play();
+                isPlaying = true;
+            }
+            updatePlayPauseButton();
+        });
+    }
+    
+    function updatePlayPauseButton() {
+        if (playPauseBtn) {
+            playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+        }
+    }
+    
+    // Gestione barra di progresso
+    if (video && progressBar) {
+        video.addEventListener('timeupdate', function() {
+            if (!isDragging) {
+                const progress = (video.currentTime / video.duration) * 100;
+                progressBar.style.width = progress + '%';
+                
+                if (progressHandle) {
+                    progressHandle.style.left = progress + '%';
+                }
+                
+                updateTimeDisplay();
+            }
+        });
+    }
+    
+    // Click sulla barra di progresso
+    if (progressBar && progressBar.parentElement) {
+        progressBar.parentElement.addEventListener('click', function(e) {
+            const rect = this.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percentage = clickX / rect.width;
+            const newTime = percentage * video.duration;
+            
+            if (!isNaN(newTime)) {
+                video.currentTime = newTime;
+            }
+        });
+    }
+    
+    // Gestione volume
+    if (volumeBtn) {
+        volumeBtn.addEventListener('click', function() {
+            if (video.muted) {
+                video.muted = false;
+                volumeBtn.textContent = '🔊';
+            } else {
+                video.muted = true;
+                volumeBtn.textContent = '🔇';
+            }
+        });
+    }
+    
+    // Gestione fullscreen
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                videoWrapper.requestFullscreen();
+            }
+        });
+    }
+    
+    function updateTimeDisplay() {
+        if (timeDisplay && video) {
+            const current = formatTime(video.currentTime);
+            const duration = formatTime(video.duration);
+            timeDisplay.textContent = `${current} / ${duration}`;
+        }
+    }
+    
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Gestione eventi video
+    if (video) {
+        video.addEventListener('loadedmetadata', function() {
+            updateTimeDisplay();
+        });
+        
+        video.addEventListener('ended', function() {
+            isPlaying = false;
+            updatePlayPauseButton();
+            
+            // Mostra nuovamente l'overlay dopo un delay
+            setTimeout(() => {
+                if (videoOverlay) {
+                    videoOverlay.classList.remove('hidden');
+                }
+                if (customControls) {
+                    customControls.classList.remove('visible');
+                }
+            }, 1000);
+        });
+        
+        video.addEventListener('pause', function() {
+            isPlaying = false;
+            updatePlayPauseButton();
+        });
+        
+        video.addEventListener('play', function() {
+            isPlaying = true;
+            updatePlayPauseButton();
+        });
+    }
+    
+    // Nascondi controlli dopo inattività
+    let controlsTimeout;
+    
+    if (videoWrapper && customControls) {
+        videoWrapper.addEventListener('mousemove', function() {
+            if (isPlaying) {
+                customControls.style.opacity = '1';
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(() => {
+                    if (isPlaying && !videoWrapper.matches(':hover')) {
+                        customControls.style.opacity = '0';
+                    }
+                }, 3000);
+            }
+        });
+        
+        videoWrapper.addEventListener('mouseleave', function() {
+            if (isPlaying) {
+                controlsTimeout = setTimeout(() => {
+                    customControls.style.opacity = '0';
+                }, 1000);
+            }
+        });
+    }
+}
+
+// ========================================
+// VIDEO PLAYER FUNCTIONALITY - MOBILE FIX
+// ========================================
+
+function initializeVideoPlayer() {
+    const video = document.getElementById('mainVideo');
+    const videoWrapper = document.getElementById('videoWrapper');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const playButton = document.getElementById('playButton');
+    const customControls = document.getElementById('customControls');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const progressBar = document.getElementById('progressBar');
+    const progressHandle = document.getElementById('progressHandle');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const volumeBtn = document.getElementById('volumeBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    
+    if (!video || !videoWrapper) return;
+    
+    let isPlaying = false;
+    let controlsTimeout;
+    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Gestione click su play button principale
+    if (playButton) {
+        playButton.addEventListener('click', startVideo);
+        playButton.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            startVideo();
+        });
+    }
+    
+    // Gestione click su overlay
+    if (videoOverlay) {
+        videoOverlay.addEventListener('click', function(e) {
+            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
+                startVideo();
+            }
+        });
+        
+        videoOverlay.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
+                startVideo();
+            }
+        });
+    }
+    
+    function startVideo() {
+        if (video && videoOverlay) {
+            videoOverlay.classList.add('hidden');
+            
+            video.play().then(() => {
+                isPlaying = true;
+                showControls();
+                updatePlayPauseButton();
+                
+                if (isMobile) {
+                    hideControlsAfterDelay();
+                }
+            }).catch(error => {
+                console.error('Errore riproduzione video:', error);
+            });
+        }
+    }
+    
+    function showControls() {
+        if (customControls) {
+            customControls.classList.add('visible');
+            customControls.style.opacity = '1';
+        }
+    }
+    
+    function hideControls() {
+        if (customControls && isPlaying) {
+            customControls.style.opacity = '0';
+        }
+    }
+    
+    function hideControlsAfterDelay() {
+        clearTimeout(controlsTimeout);
+        controlsTimeout = setTimeout(hideControls, 3000);
+    }
+    
+    function showControlsTemporarily() {
+        showControls();
+        if (isMobile && isPlaying) {
+            hideControlsAfterDelay();
+        }
+    }
+    
+    // Touch sul video per mostrare controlli
+    if (videoWrapper) {
+        videoWrapper.addEventListener('click', function(e) {
+            if (isPlaying && !e.target.closest('.custom-controls')) {
+                if (isMobile) {
+                    showControlsTemporarily();
+                }
+            }
+        });
+        
+        videoWrapper.addEventListener('touchstart', function(e) {
+            if (isPlaying && !e.target.closest('.custom-controls')) {
+                e.preventDefault();
+                showControlsTemporarily();
+            }
+        }, { passive: false });
+    }
+    
+    // Play/Pause button
+    if (playPauseBtn) {
+        function togglePlayPause(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (isPlaying) {
+                video.pause();
+            } else {
+                video.play();
+            }
+            
+            if (isMobile) {
+                showControlsTemporarily();
+            }
+        }
+        
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        playPauseBtn.addEventListener('touchend', togglePlayPause);
+    }
+    
+    // Volume button
+    if (volumeBtn) {
+        function toggleMute(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            video.muted = !video.muted;
+            volumeBtn.textContent = video.muted ? '🔇' : '🔊';
+            
+            if (isMobile) {
+                showControlsTemporarily();
+            }
+        }
+        
+        volumeBtn.addEventListener('click', toggleMute);
+        volumeBtn.addEventListener('touchend', toggleMute);
+    }
+    
+    // Fullscreen button
+    if (fullscreenBtn) {
+        function toggleFullscreen(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!document.fullscreenElement) {
+                if (videoWrapper.requestFullscreen) {
+                    videoWrapper.requestFullscreen();
+                } else if (videoWrapper.webkitRequestFullscreen) {
+                    videoWrapper.webkitRequestFullscreen();
+                } else if (videoWrapper.msRequestFullscreen) {
+                    videoWrapper.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+            
+            if (isMobile) {
+                showControlsTemporarily();
+            }
+        }
+        
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        fullscreenBtn.addEventListener('touchend', toggleFullscreen);
+    }
+    
+    // Progress bar
+    if (progressBar && progressBar.parentElement) {
+        function handleProgressClick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const rect = progressBar.parentElement.getBoundingClientRect();
+            const clickX = (e.clientX || e.touches[0].clientX) - rect.left;
+            const percentage = clickX / rect.width;
+            const newTime = percentage * video.duration;
+            
+            if (!isNaN(newTime)) {
+                video.currentTime = Math.max(0, Math.min(newTime, video.duration));
+            }
+            
+            if (isMobile) {
+                showControlsTemporarily();
+            }
+        }
+        
+        progressBar.parentElement.addEventListener('click', handleProgressClick);
+        progressBar.parentElement.addEventListener('touchend', handleProgressClick);
+    }
+    
+    function updatePlayPauseButton() {
+        if (playPauseBtn) {
+            playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
+        }
+    }
+    
+    function updateTimeDisplay() {
+        if (timeDisplay && video) {
+            const current = formatTime(video.currentTime);
+            const duration = formatTime(video.duration);
+            timeDisplay.textContent = `${current} / ${duration}`;
+        }
+    }
+    
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Event listeners del video
+    if (video) {
+        video.addEventListener('loadedmetadata', updateTimeDisplay);
+        
+        video.addEventListener('timeupdate', function() {
+            const progress = (video.currentTime / video.duration) * 100;
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+            if (progressHandle) {
+                progressHandle.style.left = progress + '%';
+            }
+            updateTimeDisplay();
+        });
+        
+        video.addEventListener('play', function() {
+            isPlaying = true;
+            updatePlayPauseButton();
+            if (isMobile) {
+                hideControlsAfterDelay();
+            }
+        });
+        
+        video.addEventListener('pause', function() {
+            isPlaying = false;
+            updatePlayPauseButton();
+            clearTimeout(controlsTimeout);
+            showControls();
+        });
+        
+        video.addEventListener('ended', function() {
+            isPlaying = false;
+            updatePlayPauseButton();
+            clearTimeout(controlsTimeout);
+            showControls();
+            
+            setTimeout(() => {
+                if (videoOverlay) {
+                    videoOverlay.classList.remove('hidden');
+                }
+            }, 1000);
+        });
+    }
+    
+    // Desktop hover (solo se non è mobile)
+    if (!isMobile && videoWrapper && customControls) {
+        videoWrapper.addEventListener('mouseenter', showControls);
+        videoWrapper.addEventListener('mouseleave', function() {
+            if (isPlaying) {
+                setTimeout(hideControls, 1000);
+            }
+        });
+    }
+}
+function loadYouTubeAPI() {
+    if (window.YT) return;
+    
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+let youtubePlayer;
+let isPlayerReady = false;
+
+// Callback richiesta da YouTube API
+function onYouTubeIframeAPIReady() {
+    const iframe = document.getElementById('youtubeVideo');
+    if (!iframe) return;
+    
+    youtubePlayer = new YT.Player('youtubeVideo', {
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    isPlayerReady = true;
+    console.log('YouTube player pronto');
+}
+
+function onPlayerStateChange(event) {
+    const videoOverlay = document.getElementById('videoOverlay');
+    
+    if (event.data === YT.PlayerState.PLAYING) {
+        if (videoOverlay) {
+            videoOverlay.classList.add('hidden');
+        }
+    } else if (event.data === YT.PlayerState.ENDED || event.data === YT.PlayerState.PAUSED) {
+        if (videoOverlay && event.data === YT.PlayerState.ENDED) {
+            setTimeout(() => {
+                videoOverlay.classList.remove('hidden');
+            }, 1000);
+        }
+    }
+}
+
+function initializeYouTubePlayer() {
+    const playButton = document.getElementById('playButton');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const videoWrapper = document.getElementById('videoWrapper');
+    
+    if (!playButton || !videoOverlay) return;
+    
+    // Click sul play button
+    playButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        startYouTubeVideo();
+    });
+    
+    // Click sull'overlay
+    videoOverlay.addEventListener('click', function(e) {
+        if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
+            startYouTubeVideo();
+        }
+    });
+    
+    // Touch events per mobile
+    playButton.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        startYouTubeVideo();
+    });
+    
+    videoOverlay.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
+            startYouTubeVideo();
+        }
+    });
+    
+    function startYouTubeVideo() {
+        if (youtubePlayer && isPlayerReady) {
+            // Animazione di avvio
+            if (videoWrapper) {
+                videoWrapper.style.transform = 'scale(0.98)';
+                videoWrapper.style.transition = 'transform 0.5s ease';
+                
+                setTimeout(() => {
+                    videoWrapper.style.transform = 'scale(1)';
+                }, 100);
+            }
+            
+            // Avvia il video YouTube
+            youtubePlayer.playVideo();
+            
+            // Nascondi overlay
+            if (videoOverlay) {
+                videoOverlay.classList.add('hidden');
+            }
+        } else {
+            console.log('Player non ancora pronto');
+        }
+    }
+}
+
+
+// Assegna la callback globalmente per YouTube API
+window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
