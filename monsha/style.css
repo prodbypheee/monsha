@@ -317,7 +317,7 @@ nav a:hover {
   min-height: 200vh;
   margin-top: -70px;
   padding-top: 70px;
-  background-image: url('immagini/video-poster.jpj');
+  background-image: url('immagini/video-poster.jpg');
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -4471,4 +4471,5 @@ header h1 {
         -webkit-tap-highlight-color: transparent;
     }
 }
+
 
