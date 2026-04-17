@@ -46,21 +46,27 @@ function showTab(tabName) {
     // Nascondi tutte le tab
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
-    
+
     // Mostra la tab selezionata
     const selectedTab = document.getElementById(tabName);
     if (selectedTab) {
         selectedTab.classList.add('active');
     }
-    
-    // Aggiorna navigation
-    const navLinks = document.querySelectorAll('nav a');
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    // Trova e attiva il link corrispondente
-    if (window.event && window.event.target) {
-        window.event.target.classList.add('active');
-    }
+
+    // Aggiorna nav links desktop
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-link').forEach(link => link.classList.remove('active'));
+
+    // Attiva il link corrispondente al tabName tramite onclick
+    document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
+        const onclick = link.getAttribute('onclick') || '';
+        if (onclick.includes("'" + tabName + "'") || onclick.includes('"' + tabName + '"')) {
+            link.classList.add('active');
+        }
+    });
+
+    // Scrolla in cima alla pagina
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ========================================
@@ -931,3 +937,33 @@ document.addEventListener('DOMContentLoaded', function() {
         img.src = url;
     });
 });
+
+// ========================================
+// MOBILE MENU
+// ========================================
+
+function toggleMobileMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+    document.getElementById('navHamburger').classList.toggle('open');
+    document.body.classList.toggle('menu-open');
+}
+
+function closeMobileMenu() {
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('open');
+    document.body.classList.remove('menu-open');
+}
+
+// ========================================
+// SCROLL REVEAL
+// ========================================
+
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
