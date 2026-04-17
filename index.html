@@ -427,141 +427,157 @@
 
 
   <!-- ================================================
-       TAB: TROFEI
+       TAB: TROFEI (redesign v3)
        ================================================ -->
   <div id="trofei" class="tab-content">
-    <div class="background-container-trofei">
-      <div class="background-image-trofei"></div>
-      <div class="background-overlay-trofei"></div>
-    </div>
-    <div class="other-tab">
-      <h1>🏆 ALBO D'ORO 🏆</h1>
-      <p>I nostri trionfi e conquiste nel mondo dell'eSports!</p>
-
-      <div class="trophies-showcase">
-        <!-- Vittorie Multiple -->
-        <div class="trophy-category">
-          <h2>🔥 DOMINATORI SERIALI 🔥</h2>
-          <div class="trophies-grid">
-            <div class="trophy-card championship">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">esyNEXTCUP</div>
-              <div class="trophy-count">x6 VITTORIE</div>
-              <div class="trophy-record">RECORD: 5-0</div>
-              <div class="trophy-badge">LEGGENDA</div>
-            </div>
-            <div class="trophy-card championship">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">MADRINK VPG CUP</div>
-              <div class="trophy-count">x3 VITTORIE</div>
-              <div class="trophy-record">RECORD: 2-0</div>
-              <div class="trophy-badge">DOMINATORI</div>
-            </div>
-            <div class="trophy-card championship">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">CSP CUP</div>
-              <div class="trophy-count">x3 VITTORIE</div>
-              <div class="trophy-record">TRIPLA CORONA</div>
-              <div class="trophy-badge">MAESTRI</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Campionati Vinti -->
-        <div class="trophy-category">
-          <h2>👑 CAMPIONI IN CARICA 👑</h2>
-          <div class="trophies-grid">
-            <div class="trophy-card gold">
-              <div class="trophy-icon">🥇</div>
-              <div class="trophy-name">POSEIDON SERIE E</div>
-              <div class="trophy-count">CAMPIONI</div>
-              <div class="trophy-badge">ORO</div>
-            </div>
-            <div class="trophy-card gold">
-              <div class="trophy-icon">🥇</div>
-              <div class="trophy-name">ELUDO SERIE D</div>
-              <div class="trophy-count">CAMPIONI</div>
-              <div class="trophy-badge">ORO</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Coppe Singole -->
-        <div class="trophy-category">
-          <h2>🏅 CONQUISTE STORICHE 🏅</h2>
-          <div class="trophies-grid">
-            <div class="trophy-card single">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">IFL CUP</div>
-              <div class="trophy-badge">VINCITORI</div>
-            </div>
-            <div class="trophy-card special">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">MEMORIAL</div>
-              <div class="trophy-count">28 Dicembre 2023</div>
-              <div class="trophy-badge">SPECIALE</div>
-            </div>
-            <div class="trophy-card single">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">FRP CUP</div>
-              <div class="trophy-badge">VINCITORI</div>
-            </div>
-            <div class="trophy-card single">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">QSA CUP</div>
-              <div class="trophy-badge">VINCITORI</div>
-            </div>
-            <div class="trophy-card single">
-              <div class="trophy-icon">🏆</div>
-              <div class="trophy-name">RFG CUP</div>
-              <div class="trophy-badge">VINCITORI</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Piazzamenti -->
-        <div class="trophy-category">
-          <h2>🥉 SUL PODIO 🥉</h2>
-          <div class="trophies-grid">
-            <div class="trophy-card bronze">
-              <div class="trophy-icon">🥉</div>
-              <div class="trophy-name">FVPA C1</div>
-              <div class="trophy-count">TERZO POSTO</div>
-              <div class="trophy-badge">BRONZO</div>
-            </div>
-            <div class="trophy-card bronze">
-              <div class="trophy-icon">🥉</div>
-              <div class="trophy-name">FVPA B</div>
-              <div class="trophy-count">TERZO POSTO</div>
-              <div class="trophy-badge">BRONZO</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Statistiche -->
-        <div class="stats-summary">
-          <h2>📊 STATISTICHE TOTALI 📊</h2>
-          <div class="stats-grid">
-            <div class="stat-item">
-              <div class="stat-number">20+</div>
-              <div class="stat-label">TROFEI VINTI</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">6</div>
-              <div class="stat-label">RECORD esyNEXTCUP</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">2</div>
-              <div class="stat-label">CAMPIONATI ORO</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number">∞</div>
-              <div class="stat-label">GLORIA ETERNA</div>
-            </div>
-          </div>
+    <!-- HALL OF FAME HERO -->
+    <section class="hof-hero">
+      <div class="hof-hero-bg"></div>
+      <div class="hof-hero-inner">
+        <div class="hof-eyebrow">HALL OF FAME</div>
+        <h1 class="hof-title">ALBO D'ORO</h1>
+        <p class="hof-sub">Ogni trofeo è una storia. Ogni vittoria, una leggenda.</p>
+        <div class="hof-stats">
+          <div class="hof-stat"><span class="hof-stat-num" data-target="20" data-suffix="+">0</span><span class="hof-stat-lbl">Trofei</span></div>
+          <div class="hof-stat"><span class="hof-stat-num" data-target="6">0</span><span class="hof-stat-lbl">esyNEXTCUP</span></div>
+          <div class="hof-stat"><span class="hof-stat-num" data-target="2">0</span><span class="hof-stat-lbl">Campionati</span></div>
+          <div class="hof-stat"><span class="hof-stat-num">∞</span><span class="hof-stat-lbl">Gloria</span></div>
         </div>
       </div>
-    </div>
+    </section>
+
+    <!-- PODIO DELLE LEGGENDE -->
+    <section class="legends-section">
+      <div class="legends-label">⚡ SERIAL WINNERS ⚡</div>
+      <h2 class="legends-heading">Il Podio delle Leggende</h2>
+      <div class="legends-podium">
+        <div class="legend-card legend-2">
+          <div class="legend-rank">2</div>
+          <div class="legend-trophy">🏆</div>
+          <div class="legend-count"><span>×</span>3</div>
+          <h3 class="legend-name">MADRINK VPG CUP</h3>
+          <div class="legend-meta">Record finale 2-0</div>
+          <div class="legend-tag">DOMINATORI</div>
+        </div>
+        <div class="legend-card legend-1">
+          <div class="legend-crown">👑</div>
+          <div class="legend-rank">1</div>
+          <div class="legend-trophy">🏆</div>
+          <div class="legend-count"><span>×</span>6</div>
+          <h3 class="legend-name">esyNEXTCUP</h3>
+          <div class="legend-meta">Record finale 5-0</div>
+          <div class="legend-tag">LEGGENDA</div>
+        </div>
+        <div class="legend-card legend-3">
+          <div class="legend-rank">3</div>
+          <div class="legend-trophy">🏆</div>
+          <div class="legend-count"><span>×</span>3</div>
+          <h3 class="legend-name">CSP CUP</h3>
+          <div class="legend-meta">Tripla Corona</div>
+          <div class="legend-tag">MAESTRI</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TROPHY CASE (filtrable) -->
+    <section class="case-section">
+      <div class="case-head">
+        <div>
+          <div class="legends-label">⛩ TROPHY ROOM ⛩</div>
+          <h2 class="legends-heading">Tutte le Conquiste</h2>
+        </div>
+        <div class="case-filters" id="caseFilters">
+          <button class="chip active" data-filter="all">Tutti</button>
+          <button class="chip" data-filter="champion">Campionati</button>
+          <button class="chip" data-filter="cup">Coppe</button>
+          <button class="chip" data-filter="podium">Podio</button>
+        </div>
+      </div>
+
+      <div class="case-grid">
+        <!-- Championships -->
+        <div class="case-item" data-cat="champion">
+          <div class="case-medal gold">🥇</div>
+          <div class="case-body">
+            <div class="case-name">POSEIDON Serie E</div>
+            <div class="case-info">Campioni</div>
+          </div>
+          <div class="case-tag tag-gold">ORO</div>
+        </div>
+        <div class="case-item" data-cat="champion">
+          <div class="case-medal gold">🥇</div>
+          <div class="case-body">
+            <div class="case-name">ELUDO Serie D</div>
+            <div class="case-info">Campioni</div>
+          </div>
+          <div class="case-tag tag-gold">ORO</div>
+        </div>
+
+        <!-- Cups -->
+        <div class="case-item" data-cat="cup">
+          <div class="case-medal">🏆</div>
+          <div class="case-body">
+            <div class="case-name">IFL CUP</div>
+            <div class="case-info">Vincitori</div>
+          </div>
+          <div class="case-tag">COPPA</div>
+        </div>
+        <div class="case-item case-highlight" data-cat="cup">
+          <div class="case-medal">⭐</div>
+          <div class="case-body">
+            <div class="case-name">MEMORIAL</div>
+            <div class="case-info">28 Dic 2023 · Edizione speciale</div>
+          </div>
+          <div class="case-tag tag-special">SPECIALE</div>
+        </div>
+        <div class="case-item" data-cat="cup">
+          <div class="case-medal">🏆</div>
+          <div class="case-body">
+            <div class="case-name">FRP CUP</div>
+            <div class="case-info">Vincitori</div>
+          </div>
+          <div class="case-tag">COPPA</div>
+        </div>
+        <div class="case-item" data-cat="cup">
+          <div class="case-medal">🏆</div>
+          <div class="case-body">
+            <div class="case-name">QSA CUP</div>
+            <div class="case-info">Vincitori</div>
+          </div>
+          <div class="case-tag">COPPA</div>
+        </div>
+        <div class="case-item" data-cat="cup">
+          <div class="case-medal">🏆</div>
+          <div class="case-body">
+            <div class="case-name">RFG CUP</div>
+            <div class="case-info">Vincitori</div>
+          </div>
+          <div class="case-tag">COPPA</div>
+        </div>
+
+        <!-- Podium -->
+        <div class="case-item" data-cat="podium">
+          <div class="case-medal bronze">🥉</div>
+          <div class="case-body">
+            <div class="case-name">FVPA C1</div>
+            <div class="case-info">Terzo posto</div>
+          </div>
+          <div class="case-tag tag-bronze">BRONZO</div>
+        </div>
+        <div class="case-item" data-cat="podium">
+          <div class="case-medal bronze">🥉</div>
+          <div class="case-body">
+            <div class="case-name">FVPA B</div>
+            <div class="case-info">Terzo posto</div>
+          </div>
+          <div class="case-tag tag-bronze">BRONZO</div>
+        </div>
+      </div>
+
+      <div class="hof-quote">
+        "Non puntiamo alle stelle — puntiamo più in alto."
+      </div>
+    </section>
   </div><!-- end #trofei -->
 
 

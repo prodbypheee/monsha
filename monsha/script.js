@@ -1042,9 +1042,57 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     });
 })();
 
+// Trophy case filters (Albo d'Oro)
+(function(){
+    const filters = document.getElementById('caseFilters');
+    if (!filters) return;
+    const items = document.querySelectorAll('.case-item');
+    filters.addEventListener('click', (e) => {
+        const btn = e.target.closest('.chip');
+        if (!btn) return;
+        filters.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const f = btn.dataset.filter;
+        items.forEach(it => {
+            const show = (f === 'all') || (it.dataset.cat === f);
+            it.classList.toggle('hidden', !show);
+        });
+    });
+})();
+
+// Hall of Fame hero counters
+(function(){
+    const nums = document.querySelectorAll('.hof-stat-num[data-target]');
+    if (!nums.length) return;
+    const animate = (el) => {
+        const target = parseInt(el.dataset.target, 10);
+        const suffix = el.dataset.suffix || '';
+        const duration = 1500;
+        const start = performance.now();
+        function step(now){
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.floor(target * eased) + suffix;
+            if (t < 1) requestAnimationFrame(step);
+            else el.textContent = target + suffix;
+        }
+        requestAnimationFrame(step);
+    };
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !entry.target.dataset.counted) {
+                entry.target.dataset.counted = '1';
+                animate(entry.target);
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.4 });
+    nums.forEach(n => io.observe(n));
+})();
+
 // FIFA-style 3D tilt on player & trophy cards
 (function(){
-    const cards = document.querySelectorAll('.player-card, .trophy-card');
+    const cards = document.querySelectorAll('.player-card, .trophy-card, .legend-card');
     cards.forEach(card => {
         card.addEventListener('mousemove', (e) => {
             const r = card.getBoundingClientRect();
