@@ -1,70 +1,10 @@
-
 // ========================================
-// INIZIALIZZAZIONE PRINCIPALE - VERSIONE CORRETTA
-// ========================================
-// ========================================
-// MENU MOBILE HAMBURGER
+// INIZIALIZZAZIONE EMAILJS E DOM
 // ========================================
 
-function toggleMobileMenu() {
-    const hamburger = document.querySelector('.hamburger-menu');
-    const dropdown = document.getElementById('mobileDropdown');
-    
-    if (!hamburger || !dropdown) return;
-    
-    hamburger.classList.toggle('active');
-    dropdown.classList.toggle('active');
-    
-    if (dropdown.classList.contains('active')) {
-        document.body.style.overflow = 'hidden';
-    } else {
-        document.body.style.overflow = 'auto';
-    }
-}
-
-function closeMobileMenuOnClickOutside(event) {
-    const hamburger = document.querySelector('.hamburger-menu');
-    const dropdown = document.getElementById('mobileDropdown');
-    
-    if (!hamburger || !dropdown) return;
-    
-    if (dropdown.classList.contains('active') && 
-        !hamburger.contains(event.target) && 
-        !dropdown.contains(event.target)) {
-        hamburger.classList.remove('active');
-        dropdown.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-}
-
-function closeMobileMenuOnResize() {
-    const dropdown = document.getElementById('mobileDropdown');
-    const hamburger = document.querySelector('.hamburger-menu');
-    
-    if (!hamburger || !dropdown) return;
-    
-    if (window.innerWidth > 768 && dropdown.classList.contains('active')) {
-        hamburger.classList.remove('active');
-        dropdown.classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
-}
-
-// Inizializza gli event listener per il menu mobile
-function initializeMobileMenu() {
-    document.addEventListener('click', closeMobileMenuOnClickOutside);
-    window.addEventListener('resize', closeMobileMenuOnResize);
-}
+// Inizializza EmailJS solo dopo che il DOM è caricato
 document.addEventListener('DOMContentLoaded', function() {
     // Inizializza EmailJS
-    initializeMobileMenu();
-    initializeVideoPlayer();
-    loadYouTubeAPI();
-    
-    // Inizializza dopo che l'API è caricata
-    setTimeout(() => {
-        initializeYouTubePlayer();
-    }, 1000);
     try {
         emailjs.init("gYs-un27FZbB_6GZc");
         console.log("EmailJS inizializzato correttamente");
@@ -73,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Se siamo nella tab "home", scrolla dopo 2 secondi
-    if (document.getElementById('home') && document.getElementById('home').classList.contains('active')) {
+    if (document.getElementById('home').classList.contains('active')) {
         setTimeout(() => {
             window.scrollBy({
                 top: window.innerHeight * 0.9,
@@ -84,17 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inizializza gli event listeners per i form
     initializeFormListeners();
-    
-    // Inizializza le sezioni del form (solo se esistono)
-    initializeFormSections();
-    
-    // Preload delle immagini per performance migliori
-    preloadImages();
-    
-    // Debug: verifica bottoni social
-    setTimeout(() => {
-        debugSocialButtons();
-    }, 1000);
 });
 
 // ========================================
@@ -117,21 +46,27 @@ function showTab(tabName) {
     // Nascondi tutte le tab
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
-    
+
     // Mostra la tab selezionata
     const selectedTab = document.getElementById(tabName);
     if (selectedTab) {
         selectedTab.classList.add('active');
     }
-    
-    // Aggiorna navigation
-    const navLinks = document.querySelectorAll('nav a');
-    navLinks.forEach(link => link.classList.remove('active'));
-    
-    // Trova e attiva il link corrispondente
-    if (window.event && window.event.target) {
-        window.event.target.classList.add('active');
-    }
+
+    // Aggiorna nav links desktop
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-link').forEach(link => link.classList.remove('active'));
+
+    // Attiva il link corrispondente al tabName tramite onclick
+    document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
+        const onclick = link.getAttribute('onclick') || '';
+        if (onclick.includes("'" + tabName + "'") || onclick.includes('"' + tabName + '"')) {
+            link.classList.add('active');
+        }
+    });
+
+    // Scrolla in cima alla pagina
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ========================================
@@ -202,6 +137,7 @@ function closeRolePopup() {
     }
     
     // NON resettare le selezioni quando si chiude il popup
+    // Le selezioni dovrebbero essere mantenute dopo la conferma
     console.log('Popup closed. Current selectedRoles:', selectedRoles);
 }
 
@@ -269,6 +205,7 @@ function confirmSelection() {
     updateRoleSelectionWidget();
     closeRolePopup();
     
+    // Verifica che i ruoli siano stati salvati correttamente
     console.log('Roles confirmed and saved:', selectedRoles);
 }
 
@@ -297,23 +234,6 @@ function updateRoleSelectionWidget() {
     }
 }
 
-function cancelRoleSelection() {
-    // Reset selezioni quando si annulla
-    const positions = document.querySelectorAll('.player-position');
-    positions.forEach(pos => pos.classList.remove('selected'));
-    
-    // Ripristina lo stato precedente dei ruoli selezionati
-    selectedRoles.forEach(role => {
-        const position = document.querySelector(`[data-name="${role.name}"]`);
-        if (position) {
-            position.classList.add('selected');
-        }
-    });
-    
-    updateSelectionDisplay();
-    closeRolePopup();
-}
-
 // ========================================
 // GESTIONE COMPETIZIONI
 // ========================================
@@ -336,7 +256,7 @@ function toggleCompetitionsDropdown() {
 }
 
 function toggleCompetitionDivisions(competitionId) {
-    console.log('Toggling:', competitionId);
+    console.log('Toggling:', competitionId); // Debug
     
     const targetDivision = document.getElementById(`${competitionId}-divisions`);
     const targetArrow = document.getElementById(`${competitionId}-arrow`);
@@ -357,9 +277,9 @@ function toggleCompetitionDivisions(competitionId) {
     if (!isAlreadyOpen) {
         targetDivision.classList.add('expanded');
         targetArrow.classList.add('expanded');
-        console.log('Opened:', competitionId);
+        console.log('Opened:', competitionId); // Debug
     } else {
-        console.log('Closed:', competitionId);
+        console.log('Closed:', competitionId); // Debug
     }
 }
 
@@ -692,6 +612,7 @@ function collectFormData() {
     const phone = document.getElementById('phoneInput')?.value || '';
     const additionalInfo = document.getElementById('additionalInfo')?.value || '';
     
+    // Debug: verifica i ruoli selezionati
     console.log('selectedRoles array:', selectedRoles);
     console.log('selectedRoles length:', selectedRoles.length);
     
@@ -720,6 +641,7 @@ function collectFormData() {
         additionalInfo
     };
     
+    // Debug: verifica i dati raccolti
     console.log('Form data collected:', formData);
     
     return formData;
@@ -735,6 +657,7 @@ function validateForm(data) {
     if (!data.platform) errors.push("Seleziona una piattaforma");
     if (!data.playerId) errors.push("Inserisci il tuo ID Player");
     
+    // Validazione ruoli più robusta
     if (!data.selectedRoles || !Array.isArray(data.selectedRoles) || data.selectedRoles.length === 0) {
         errors.push("Seleziona almeno un ruolo");
         console.log('Ruoli non validi:', data.selectedRoles);
@@ -816,6 +739,24 @@ async function submitForm() {
         showMessage('❌ Errore nell\'invio. Riprova tra qualche minuto.', 'error');
         resetSubmitButton();
     }
+}
+
+// Aggiungi una nuova funzione per resettare solo quando necessario
+function cancelRoleSelection() {
+    // Reset selezioni quando si annulla
+    const positions = document.querySelectorAll('.player-position');
+    positions.forEach(pos => pos.classList.remove('selected'));
+    
+    // Ripristina lo stato precedente dei ruoli selezionati
+    selectedRoles.forEach(role => {
+        const position = document.querySelector(`[data-name="${role.name}"]`);
+        if (position) {
+            position.classList.add('selected');
+        }
+    });
+    
+    updateSelectionDisplay();
+    closeRolePopup();
 }
 
 function showMessage(message, type) {
@@ -910,46 +851,31 @@ function initializeFormListeners() {
         });
     }
 }
-
-// ========================================
-// INIZIALIZZAZIONE SEZIONI FORM
-// ========================================
-
-function initializeFormSections() {
+document.addEventListener('DOMContentLoaded', function() {
     const sections = document.querySelectorAll('.section');
     const sectionHeaders = document.querySelectorAll('.section-header');
-
-    // Solo se esistono sezioni form
-    if (sections.length === 0 || sectionHeaders.length === 0) {
-        console.log('Nessuna sezione form trovata, saltando inizializzazione sezioni');
-        return;
-    }
 
     function closeAllSections() {
         sections.forEach(section => {
             section.classList.remove('active');
             const content = section.querySelector('.section-content');
-            if (content) {
-                content.style.maxHeight = '0px';
-            }
+            content.style.maxHeight = '0px';
         });
     }
 
     function openSection(targetSection) {
         targetSection.classList.add('active');
         const content = targetSection.querySelector('.section-content');
-        if (content) {
-            content.style.maxHeight = content.scrollHeight + 'px';
-            
-            // Smooth scroll to section
-            setTimeout(() => {
-                targetSection.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start',
-                    inline: 'nearest'
-                });
-            }, 300);
-        }
+        content.style.maxHeight = content.scrollHeight + 'px';
+        
+        // Smooth scroll to section
+        setTimeout(() => {
+            targetSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+                inline: 'nearest'
+            });
+        }, 300);
     }
 
     sectionHeaders.forEach((header, index) => {
@@ -996,13 +922,8 @@ function initializeFormSections() {
             }, 100);
         }
     });
-}
 
-// ========================================
-// PRELOAD IMMAGINI
-// ========================================
-
-function preloadImages() {
+    // Preload delle immagini per performance migliori
     const imageUrls = [
         './ig/gruppo-portieri.jpeg',
         './ig/gruppo-difensori.jpeg',
@@ -1015,754 +936,34 @@ function preloadImages() {
         const img = new Image();
         img.src = url;
     });
-}
-
-// ========================================
-// DEBUG BOTTONI SOCIAL
-// ========================================
-
-function debugSocialButtons() {
-    const socialButtons = document.querySelectorAll('.social-btn');
-    console.log('Bottoni social trovati:', socialButtons.length);
-    
-    if (socialButtons.length === 0) {
-        console.warn('Nessun bottone social trovato nel DOM');
-        return;
-    }
-    
-    socialButtons.forEach((btn, index) => {
-        const styles = window.getComputedStyle(btn);
-        console.log(`Bottone ${index + 1}:`, {
-            display: styles.display,
-            visibility: styles.visibility,
-            opacity: styles.opacity,
-            position: styles.position,
-            zIndex: styles.zIndex,
-            transform: styles.transform
-        });
-        
-        // Verifica se il bottone è visibile nell'area di visualizzazione
-        const rect = btn.getBoundingClientRect();
-        console.log(`Bottone ${index + 1} posizione:`, {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-            inViewport: rect.top >= 0 && rect.left >= 0 && 
-                       rect.bottom <= window.innerHeight && 
-                       rect.right <= window.innerWidth
-        });
-    });
-    
-    // Verifica se il contenitore dei bottoni social esiste
-    const socialContainer = document.querySelector('.social-buttons');
-    if (socialContainer) {
-        const containerStyles = window.getComputedStyle(socialContainer);
-        console.log('Contenitore social buttons:', {
-            display: containerStyles.display,
-            visibility: containerStyles.visibility,
-            opacity: containerStyles.opacity,
-            overflow: containerStyles.overflow
-        });
-    } else {
-        console.warn('Contenitore .social-buttons non trovato');
-    }
-}
-
-// ========================================
-// UTILITÀ AGGIUNTIVE
-// ========================================
-
-// Funzione per forzare la visibilità dei bottoni social (debug)
-function forceShowSocialButtons() {
-    const socialButtons = document.querySelectorAll('.social-btn');
-    const socialContainer = document.querySelector('.social-buttons');
-    
-    if (socialContainer) {
-        socialContainer.style.opacity = '1';
-        socialContainer.style.visibility = 'visible';
-        socialContainer.style.display = 'flex';
-    }
-    
-    socialButtons.forEach(btn => {
-        btn.style.opacity = '1';
-        btn.style.visibility = 'visible';
-        btn.style.display = 'flex';
-        btn.style.position = 'relative';
-        btn.style.zIndex = '999';
-    });
-    
-    console.log('Forzata visibilità bottoni social');
-}
-
-// Funzione per reset completo del form
-function resetForm() {
-    // Reset variabili globali
-    selectedRoles = [];
-    selectedPlatform = '';
-    selectedCompetitionsData = [];
-    isDropdownOpen = false;
-    previousClubs = [];
-    selectedDays = [];
-    
-    // Reset campi form
-    const platformSelect = document.getElementById('platformSelect');
-    const playerId = document.getElementById('playerId');
-    const phoneInput = document.getElementById('phoneInput');
-    const additionalInfo = document.getElementById('additionalInfo');
-    
-    if (platformSelect) platformSelect.value = '';
-    if (playerId) playerId.value = '';
-    if (phoneInput) phoneInput.value = '';
-    if (additionalInfo) additionalInfo.value = '';
-    
-    // Reset display
-    updateRoleSelectionWidget();
-    updateSelectedCompetitionsDisplay();
-    updateDropdownHeaderText();
-    updateClubsDisplay();
-    updateAvailabilitySummary();
-    
-    console.log('Form resettato completamente');
-}
-
-// Funzione per export dei dati form (utilità debug)
-function exportFormData() {
-    const data = collectFormData();
-    console.log('Dati form correnti:', JSON.stringify(data, null, 2));
-    return data;
-}
-
-// ========================================
-// GESTIONE ERRORI GLOBALI
-// ========================================
-
-window.addEventListener('error', function(e) {
-    console.error('Errore JavaScript globale:', e.error);
-    console.error('File:', e.filename, 'Linea:', e.lineno);
 });
 
 // ========================================
-// FINE FILE
+// MOBILE MENU
 // ========================================
 
-console.log('✅ JavaScript Monaco Shaolin caricato correttamente');
-console.log('🔧 Funzioni debug disponibili: debugSocialButtons(), forceShowSocialButtons(), resetForm(), exportFormData()');
-
-// Esponi funzioni utili per debug nel console
-if (typeof window !== 'undefined') {
-    window.MonacoShaolin = {
-        debugSocialButtons,
-        forceShowSocialButtons,
-        resetForm,
-        exportFormData,
-        showTab,
-        submitForm
-    };
+function toggleMobileMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+    document.getElementById('navHamburger').classList.toggle('open');
+    document.body.classList.toggle('menu-open');
 }
-document.addEventListener('DOMContentLoaded', () => {
-  const activeLink = document.querySelector('.nav-links a.active');
-  const mobileTitle = document.querySelector('.mobile-tab-title');
 
-  if (activeLink && mobileTitle) {
-    mobileTitle.textContent = activeLink.textContent;
-  }
-});
-// ========================================
-// VIDEO PLAYER FUNCTIONALITY
-// ========================================
-
-function initializeVideoPlayer() {
-    const video = document.getElementById('mainVideo');
-    const videoWrapper = document.getElementById('videoWrapper');
-    const videoOverlay = document.getElementById('videoOverlay');
-    const playButton = document.getElementById('playButton');
-    const customControls = document.getElementById('customControls');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const progressBar = document.getElementById('progressBar');
-    const progressHandle = document.getElementById('progressHandle');
-    const timeDisplay = document.getElementById('timeDisplay');
-    const volumeBtn = document.getElementById('volumeBtn');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    
-    if (!video || !videoWrapper) return;
-    
-    let isPlaying = false;
-    let isDragging = false;
-    
-    // Gestione click su play button principale
-    if (playButton) {
-        playButton.addEventListener('click', function(e) {
-            e.stopPropagation();
-            startVideo();
-        });
-    }
-    
-    // Gestione click su overlay
-    if (videoOverlay) {
-        videoOverlay.addEventListener('click', function(e) {
-            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
-                startVideo();
-            }
-        });
-    }
-    
-    function startVideo() {
-        if (video && videoOverlay) {
-            // Nascondi overlay con animazione
-            videoOverlay.classList.add('hidden');
-            
-            // Aggiungi animazione di avvio
-            videoWrapper.style.transform = 'scale(0.98)';
-            videoWrapper.style.transition = 'transform 0.5s ease';
-            
-            setTimeout(() => {
-                videoWrapper.style.transform = 'scale(1)';
-                video.play().then(() => {
-                    isPlaying = true;
-                    if (customControls) {
-                        customControls.classList.add('visible');
-                    }
-                    updatePlayPauseButton();
-                }).catch(error => {
-                    console.error('Errore nella riproduzione del video:', error);
-                });
-            }, 100);
-        }
-    }
-    
-    // Gestione play/pause
-    if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', function() {
-            if (isPlaying) {
-                video.pause();
-                isPlaying = false;
-            } else {
-                video.play();
-                isPlaying = true;
-            }
-            updatePlayPauseButton();
-        });
-    }
-    
-    function updatePlayPauseButton() {
-        if (playPauseBtn) {
-            playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
-        }
-    }
-    
-    // Gestione barra di progresso
-    if (video && progressBar) {
-        video.addEventListener('timeupdate', function() {
-            if (!isDragging) {
-                const progress = (video.currentTime / video.duration) * 100;
-                progressBar.style.width = progress + '%';
-                
-                if (progressHandle) {
-                    progressHandle.style.left = progress + '%';
-                }
-                
-                updateTimeDisplay();
-            }
-        });
-    }
-    
-    // Click sulla barra di progresso
-    if (progressBar && progressBar.parentElement) {
-        progressBar.parentElement.addEventListener('click', function(e) {
-            const rect = this.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const percentage = clickX / rect.width;
-            const newTime = percentage * video.duration;
-            
-            if (!isNaN(newTime)) {
-                video.currentTime = newTime;
-            }
-        });
-    }
-    
-    // Gestione volume
-    if (volumeBtn) {
-        volumeBtn.addEventListener('click', function() {
-            if (video.muted) {
-                video.muted = false;
-                volumeBtn.textContent = '🔊';
-            } else {
-                video.muted = true;
-                volumeBtn.textContent = '🔇';
-            }
-        });
-    }
-    
-    // Gestione fullscreen
-    if (fullscreenBtn) {
-        fullscreenBtn.addEventListener('click', function() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            } else {
-                videoWrapper.requestFullscreen();
-            }
-        });
-    }
-    
-    function updateTimeDisplay() {
-        if (timeDisplay && video) {
-            const current = formatTime(video.currentTime);
-            const duration = formatTime(video.duration);
-            timeDisplay.textContent = `${current} / ${duration}`;
-        }
-    }
-    
-    function formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-    
-    // Gestione eventi video
-    if (video) {
-        video.addEventListener('loadedmetadata', function() {
-            updateTimeDisplay();
-        });
-        
-        video.addEventListener('ended', function() {
-            isPlaying = false;
-            updatePlayPauseButton();
-            
-            // Mostra nuovamente l'overlay dopo un delay
-            setTimeout(() => {
-                if (videoOverlay) {
-                    videoOverlay.classList.remove('hidden');
-                }
-                if (customControls) {
-                    customControls.classList.remove('visible');
-                }
-            }, 1000);
-        });
-        
-        video.addEventListener('pause', function() {
-            isPlaying = false;
-            updatePlayPauseButton();
-        });
-        
-        video.addEventListener('play', function() {
-            isPlaying = true;
-            updatePlayPauseButton();
-        });
-    }
-    
-    // Nascondi controlli dopo inattività
-    let controlsTimeout;
-    
-    if (videoWrapper && customControls) {
-        videoWrapper.addEventListener('mousemove', function() {
-            if (isPlaying) {
-                customControls.style.opacity = '1';
-                clearTimeout(controlsTimeout);
-                controlsTimeout = setTimeout(() => {
-                    if (isPlaying && !videoWrapper.matches(':hover')) {
-                        customControls.style.opacity = '0';
-                    }
-                }, 3000);
-            }
-        });
-        
-        videoWrapper.addEventListener('mouseleave', function() {
-            if (isPlaying) {
-                controlsTimeout = setTimeout(() => {
-                    customControls.style.opacity = '0';
-                }, 1000);
-            }
-        });
-    }
+function closeMobileMenu() {
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.getElementById('navHamburger').classList.remove('open');
+    document.body.classList.remove('menu-open');
 }
 
 // ========================================
-// VIDEO PLAYER FUNCTIONALITY - MOBILE FIX
+// SCROLL REVEAL
 // ========================================
 
-function initializeVideoPlayer() {
-    const video = document.getElementById('mainVideo');
-    const videoWrapper = document.getElementById('videoWrapper');
-    const videoOverlay = document.getElementById('videoOverlay');
-    const playButton = document.getElementById('playButton');
-    const customControls = document.getElementById('customControls');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const progressBar = document.getElementById('progressBar');
-    const progressHandle = document.getElementById('progressHandle');
-    const timeDisplay = document.getElementById('timeDisplay');
-    const volumeBtn = document.getElementById('volumeBtn');
-    const fullscreenBtn = document.getElementById('fullscreenBtn');
-    
-    if (!video || !videoWrapper) return;
-    
-    let isPlaying = false;
-    let controlsTimeout;
-    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Gestione click su play button principale
-    if (playButton) {
-        playButton.addEventListener('click', startVideo);
-        playButton.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            startVideo();
-        });
-    }
-    
-    // Gestione click su overlay
-    if (videoOverlay) {
-        videoOverlay.addEventListener('click', function(e) {
-            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
-                startVideo();
-            }
-        });
-        
-        videoOverlay.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
-                startVideo();
-            }
-        });
-    }
-    
-    function startVideo() {
-        if (video && videoOverlay) {
-            videoOverlay.classList.add('hidden');
-            
-            video.play().then(() => {
-                isPlaying = true;
-                showControls();
-                updatePlayPauseButton();
-                
-                if (isMobile) {
-                    hideControlsAfterDelay();
-                }
-            }).catch(error => {
-                console.error('Errore riproduzione video:', error);
-            });
-        }
-    }
-    
-    function showControls() {
-        if (customControls) {
-            customControls.classList.add('visible');
-            customControls.style.opacity = '1';
-        }
-    }
-    
-    function hideControls() {
-        if (customControls && isPlaying) {
-            customControls.style.opacity = '0';
-        }
-    }
-    
-    function hideControlsAfterDelay() {
-        clearTimeout(controlsTimeout);
-        controlsTimeout = setTimeout(hideControls, 3000);
-    }
-    
-    function showControlsTemporarily() {
-        showControls();
-        if (isMobile && isPlaying) {
-            hideControlsAfterDelay();
-        }
-    }
-    
-    // Touch sul video per mostrare controlli
-    if (videoWrapper) {
-        videoWrapper.addEventListener('click', function(e) {
-            if (isPlaying && !e.target.closest('.custom-controls')) {
-                if (isMobile) {
-                    showControlsTemporarily();
-                }
-            }
-        });
-        
-        videoWrapper.addEventListener('touchstart', function(e) {
-            if (isPlaying && !e.target.closest('.custom-controls')) {
-                e.preventDefault();
-                showControlsTemporarily();
-            }
-        }, { passive: false });
-    }
-    
-    // Play/Pause button
-    if (playPauseBtn) {
-        function togglePlayPause(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (isPlaying) {
-                video.pause();
-            } else {
-                video.play();
-            }
-            
-            if (isMobile) {
-                showControlsTemporarily();
-            }
-        }
-        
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        playPauseBtn.addEventListener('touchend', togglePlayPause);
-    }
-    
-    // Volume button
-    if (volumeBtn) {
-        function toggleMute(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            video.muted = !video.muted;
-            volumeBtn.textContent = video.muted ? '🔇' : '🔊';
-            
-            if (isMobile) {
-                showControlsTemporarily();
-            }
-        }
-        
-        volumeBtn.addEventListener('click', toggleMute);
-        volumeBtn.addEventListener('touchend', toggleMute);
-    }
-    
-    // Fullscreen button
-    if (fullscreenBtn) {
-        function toggleFullscreen(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!document.fullscreenElement) {
-                if (videoWrapper.requestFullscreen) {
-                    videoWrapper.requestFullscreen();
-                } else if (videoWrapper.webkitRequestFullscreen) {
-                    videoWrapper.webkitRequestFullscreen();
-                } else if (videoWrapper.msRequestFullscreen) {
-                    videoWrapper.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-            }
-            
-            if (isMobile) {
-                showControlsTemporarily();
-            }
-        }
-        
-        fullscreenBtn.addEventListener('click', toggleFullscreen);
-        fullscreenBtn.addEventListener('touchend', toggleFullscreen);
-    }
-    
-    // Progress bar
-    if (progressBar && progressBar.parentElement) {
-        function handleProgressClick(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const rect = progressBar.parentElement.getBoundingClientRect();
-            const clickX = (e.clientX || e.touches[0].clientX) - rect.left;
-            const percentage = clickX / rect.width;
-            const newTime = percentage * video.duration;
-            
-            if (!isNaN(newTime)) {
-                video.currentTime = Math.max(0, Math.min(newTime, video.duration));
-            }
-            
-            if (isMobile) {
-                showControlsTemporarily();
-            }
-        }
-        
-        progressBar.parentElement.addEventListener('click', handleProgressClick);
-        progressBar.parentElement.addEventListener('touchend', handleProgressClick);
-    }
-    
-    function updatePlayPauseButton() {
-        if (playPauseBtn) {
-            playPauseBtn.textContent = isPlaying ? '⏸' : '▶';
-        }
-    }
-    
-    function updateTimeDisplay() {
-        if (timeDisplay && video) {
-            const current = formatTime(video.currentTime);
-            const duration = formatTime(video.duration);
-            timeDisplay.textContent = `${current} / ${duration}`;
-        }
-    }
-    
-    function formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-    
-    // Event listeners del video
-    if (video) {
-        video.addEventListener('loadedmetadata', updateTimeDisplay);
-        
-        video.addEventListener('timeupdate', function() {
-            const progress = (video.currentTime / video.duration) * 100;
-            if (progressBar) {
-                progressBar.style.width = progress + '%';
-            }
-            if (progressHandle) {
-                progressHandle.style.left = progress + '%';
-            }
-            updateTimeDisplay();
-        });
-        
-        video.addEventListener('play', function() {
-            isPlaying = true;
-            updatePlayPauseButton();
-            if (isMobile) {
-                hideControlsAfterDelay();
-            }
-        });
-        
-        video.addEventListener('pause', function() {
-            isPlaying = false;
-            updatePlayPauseButton();
-            clearTimeout(controlsTimeout);
-            showControls();
-        });
-        
-        video.addEventListener('ended', function() {
-            isPlaying = false;
-            updatePlayPauseButton();
-            clearTimeout(controlsTimeout);
-            showControls();
-            
-            setTimeout(() => {
-                if (videoOverlay) {
-                    videoOverlay.classList.remove('hidden');
-                }
-            }, 1000);
-        });
-    }
-    
-    // Desktop hover (solo se non è mobile)
-    if (!isMobile && videoWrapper && customControls) {
-        videoWrapper.addEventListener('mouseenter', showControls);
-        videoWrapper.addEventListener('mouseleave', function() {
-            if (isPlaying) {
-                setTimeout(hideControls, 1000);
-            }
-        });
-    }
-}
-function loadYouTubeAPI() {
-    if (window.YT) return;
-    
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-}
-
-let youtubePlayer;
-let isPlayerReady = false;
-
-// Callback richiesta da YouTube API
-function onYouTubeIframeAPIReady() {
-    const iframe = document.getElementById('youtubeVideo');
-    if (!iframe) return;
-    
-    youtubePlayer = new YT.Player('youtubeVideo', {
-        events: {
-            'onReady': onPlayerReady,
-            'onStateChange': onPlayerStateChange
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
         }
     });
-}
+}, { threshold: 0.1 });
 
-function onPlayerReady(event) {
-    isPlayerReady = true;
-    console.log('YouTube player pronto');
-}
-
-function onPlayerStateChange(event) {
-    const videoOverlay = document.getElementById('videoOverlay');
-    
-    if (event.data === YT.PlayerState.PLAYING) {
-        if (videoOverlay) {
-            videoOverlay.classList.add('hidden');
-        }
-    } else if (event.data === YT.PlayerState.ENDED || event.data === YT.PlayerState.PAUSED) {
-        if (videoOverlay && event.data === YT.PlayerState.ENDED) {
-            setTimeout(() => {
-                videoOverlay.classList.remove('hidden');
-            }, 1000);
-        }
-    }
-}
-
-function initializeYouTubePlayer() {
-    const playButton = document.getElementById('playButton');
-    const videoOverlay = document.getElementById('videoOverlay');
-    const videoWrapper = document.getElementById('videoWrapper');
-    
-    if (!playButton || !videoOverlay) return;
-    
-    // Click sul play button
-    playButton.addEventListener('click', function(e) {
-        e.stopPropagation();
-        startYouTubeVideo();
-    });
-    
-    // Click sull'overlay
-    videoOverlay.addEventListener('click', function(e) {
-        if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
-            startYouTubeVideo();
-        }
-    });
-    
-    // Touch events per mobile
-    playButton.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        startYouTubeVideo();
-    });
-    
-    videoOverlay.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        if (e.target === videoOverlay || e.target.closest('.play-button-container')) {
-            startYouTubeVideo();
-        }
-    });
-    
-    function startYouTubeVideo() {
-        if (youtubePlayer && isPlayerReady) {
-            // Animazione di avvio
-            if (videoWrapper) {
-                videoWrapper.style.transform = 'scale(0.98)';
-                videoWrapper.style.transition = 'transform 0.5s ease';
-                
-                setTimeout(() => {
-                    videoWrapper.style.transform = 'scale(1)';
-                }, 100);
-            }
-            
-            // Avvia il video YouTube
-            youtubePlayer.playVideo();
-            
-            // Nascondi overlay
-            if (videoOverlay) {
-                videoOverlay.classList.add('hidden');
-            }
-        } else {
-            console.log('Player non ancora pronto');
-        }
-    }
-}
-
-
-// Assegna la callback globalmente per YouTube API
-window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
