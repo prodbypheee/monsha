@@ -2744,6 +2744,79 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
   background: rgba(205,127,50,.1);
 }
 
+/* Serial winners (compact row under podium) */
+.serial-row{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.serial-card{
+  position:relative;
+  padding: 1.3rem 1rem;
+  text-align:center;
+  background: linear-gradient(135deg, rgba(254,165,0,.06), rgba(0,0,0,.2));
+  border: 1px solid rgba(254,165,0,.2);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  transition: all .4s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.serial-card::before{
+  content:"";
+  position:absolute;
+  top:0; left:-100%;
+  width:60%; height:100%;
+  background: linear-gradient(105deg, transparent, rgba(254,165,0,.15), transparent);
+  transform: skewX(-15deg);
+  transition: left 1s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.serial-card:hover{
+  transform: translateY(-6px);
+  border-color: rgba(254,165,0,.5);
+  box-shadow: 0 15px 40px rgba(254,165,0,.2);
+}
+.serial-card:hover::before{ left:180%; }
+.serial-trophy{
+  font-size: 2rem;
+  margin-bottom: .3rem;
+  filter: drop-shadow(0 3px 10px rgba(254,165,0,.5));
+}
+.serial-count{
+  font-family:'Space Grotesk', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff, #fea500);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: .2rem;
+}
+.serial-name{
+  font-family:'Space Grotesk', sans-serif;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #fff;
+  margin-bottom: .3rem;
+}
+.serial-meta{
+  font-size: .68rem;
+  color: rgba(255,255,255,.5);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+@media (max-width: 640px){
+  .serial-row{ grid-template-columns: 1fr; }
+}
+
+/* Legend count override for short text (FVPA / C / D) */
+.legend-count:not(:has(span)){
+  letter-spacing: -.02em;
+}
+.legend-1 .legend-count{ font-size: 3.5rem; }
+
 /* Trophy Case — filters */
 .case-head{
   display:flex;
