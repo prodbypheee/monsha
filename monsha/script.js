@@ -967,3 +967,94 @@ const revealObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ========================================
+// PREMIUM UPGRADE: scroll progress, back-to-top,
+// stat counters, hero parallax, player card tilt
+// ========================================
+
+// Scroll progress bar + back-to-top
+(function(){
+    const bar = document.getElementById('scrollProgress');
+    const btn = document.getElementById('backToTop');
+    function onScroll(){
+        const h = document.documentElement;
+        const scrolled = h.scrollTop;
+        const max = (h.scrollHeight - h.clientHeight) || 1;
+        const pct = (scrolled / max) * 100;
+        if (bar) bar.style.width = pct + '%';
+        if (btn) btn.classList.toggle('visible', scrolled > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+})();
+
+// Animated stat counters
+(function(){
+    const stats = document.querySelectorAll('.stat-number');
+    if (!stats.length) return;
+    const animate = (el) => {
+        const raw = (el.textContent || '').trim();
+        const match = raw.match(/^(\d+)(\+|)$/);
+        if (!match) return; // leave symbols like ∞
+        const target = parseInt(match[1], 10);
+        const suffix = match[2] || '';
+        const duration = 1400;
+        const start = performance.now();
+        function step(now){
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.floor(target * eased) + suffix;
+            if (t < 1) requestAnimationFrame(step);
+            else el.textContent = target + suffix;
+        }
+        requestAnimationFrame(step);
+    };
+    const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !entry.target.dataset.counted) {
+                entry.target.dataset.counted = '1';
+                animate(entry.target);
+                io.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+    stats.forEach(s => io.observe(s));
+})();
+
+// Subtle hero parallax (mouse move)
+(function(){
+    const hero = document.querySelector('.hero-section');
+    const text = document.querySelector('.hero-text');
+    if (!hero || !text) return;
+    let raf;
+    hero.addEventListener('mousemove', (e) => {
+        const rect = hero.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
+        const y = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => {
+            text.style.transform = `translate3d(${x * -8}px, ${y * -8}px, 0)`;
+        });
+    });
+    hero.addEventListener('mouseleave', () => {
+        if (text) text.style.transform = '';
+    });
+})();
+
+// FIFA-style 3D tilt on player & trophy cards
+(function(){
+    const cards = document.querySelectorAll('.player-card, .trophy-card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width - 0.5;
+            const y = (e.clientY - r.top) / r.height - 0.5;
+            card.style.transform =
+                `perspective(800px) rotateX(${y * -6}deg) rotateY(${x * 8}deg) translateY(-6px) scale(1.02)`;
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+        });
+    });
+})();
