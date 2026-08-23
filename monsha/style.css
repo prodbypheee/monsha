@@ -1646,6 +1646,26 @@ body.menu-open {
 
   .players-grid { grid-template-columns: repeat(2, 1fr); }
 
+  /* NOI header: su schermo stretto il ritaglio "cover" mostrerebbe solo
+     i giocatori centrali. Qui la foto sta a tutta larghezza sotto la
+     navbar e il titolo scende sotto di essa. */
+  .noi-header {
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 0;
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+    background-position: center var(--nav-h);
+    background-color: #080808;
+    padding-bottom: 2rem;
+  }
+  .noi-header-overlay {
+    background: linear-gradient(to bottom, rgba(8,8,8,0.05) 0%, rgba(8,8,8,0.10) 60%, rgba(8,8,8,0.35) 100%);
+  }
+  .noi-header-content {
+    padding-top: calc(var(--nav-h) + (100vw / 2.75) + 1.25rem);
+  }
+
   .popup-content { padding: 1.25rem; }
   .football-field { height: 300px; }
   .player-shirt { width: 30px; height: 30px; font-size: 0.44rem; }
