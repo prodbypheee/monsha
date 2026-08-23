@@ -1429,8 +1429,9 @@ body.menu-open {
    ============================================= */
 .noi-header {
   position: relative;
-  height: 52vh;
-  min-height: 380px;
+  height: auto;
+  aspect-ratio: 2560 / 931;
+  min-height: 300px;
   background-image: url('./immagini/squadra-banner.jpeg');
   background-size: cover;
   background-position: center center;
