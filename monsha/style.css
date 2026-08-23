@@ -1429,11 +1429,11 @@ body.menu-open {
    ============================================= */
 .noi-header {
   position: relative;
-  height: 38vh;
-  min-height: 260px;
-  background-image: url('./immagini/sfondo.jpeg');
+  height: 52vh;
+  min-height: 380px;
+  background-image: url('./immagini/squadra-banner.jpeg');
   background-size: cover;
-  background-position: center 20%;
+  background-position: center center;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1442,7 +1442,7 @@ body.menu-open {
 .noi-header-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(8,8,8,0.45) 0%, rgba(8,8,8,0.7) 60%, #080808 100%);
+  background: linear-gradient(to bottom, rgba(8,8,8,0.12) 0%, rgba(8,8,8,0.20) 65%, rgba(8,8,8,0.55) 92%, #080808 100%);
 }
 .noi-header-content {
   position: relative;
@@ -1457,13 +1457,15 @@ body.menu-open {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9);
 }
 .noi-header-sub {
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.72);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-top: 0.5rem;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.9);
 }
 
 /* =============================================
