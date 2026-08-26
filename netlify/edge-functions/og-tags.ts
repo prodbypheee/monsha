@@ -103,8 +103,18 @@ export default async function handler(request: Request, context: any) {
 
   const html = await risposta.text();
 
+  // I tag di riserva presenti in index.html vanno rimossi, non affiancati:
+  // due og:image nello stesso head fanno vincere il primo, cioe quello
+  // sbagliato, e l'anteprima mostrerebbe sempre l'immagine della home.
+  const pulito = html
+    .replace(
+      /[ \t]*<meta\s+(?:property|name)\s*=\s*"(?:og:[^"]*|twitter:[^"]*|description)"[^>]*>\r?\n?/gi,
+      "",
+    )
+    .replace(/[ \t]*<link\s+rel\s*=\s*"canonical"[^>]*>\r?\n?/gi, "");
+
   // il titolo esistente viene sostituito, i meta nuovi inseriti nel head
-  const conTitolo = html.replace(
+  const conTitolo = pulito.replace(
     /<title>[\s\S]*?<\/title>/i,
     `<title>${escapeHtml(meta.titolo)}</title>`,
   );
