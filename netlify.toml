@@ -38,28 +38,36 @@
   function = "og-tags"
 
 # I percorsi delle tab devono servire la SPA invece di dare 404.
-# Le regole sono in ordine: i file reali esistenti vengono serviti prima.
+#
+# force = true e indispensabile: senza, Netlify serve prima i file reali
+# e /noi veniva soddisfatto da noi.html, la vecchia pagina orfana, invece
+# che da index.html. Con force la riscrittura ha la precedenza sul file.
 [[redirects]]
   from = "/noi"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/unisciti-a-noi"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/uniscitianoi"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/albo-doro"
   to = "/index.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/albodoro"
   to = "/index.html"
   status = 200
+  force = true
