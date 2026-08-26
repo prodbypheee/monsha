@@ -67,7 +67,73 @@ function showTab(tabName) {
 
     // Scrolla in cima alla pagina
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Allinea l'URL alla tab aperta, senza ricaricare la pagina
+    aggiornaUrlTab(tabName);
 }
+
+// ========================================
+// URL PER TAB
+// ========================================
+// Ogni tab ha un proprio indirizzo condivisibile. I metadati per le
+// anteprime social sono iniettati lato server dalla edge function
+// netlify/edge-functions/og-tags.ts: qui si gestisce solo la navigazione.
+
+const PERCORSI_TAB = {
+    home:     '/',
+    noi:      '/noi',
+    unisciti: '/unisciti-a-noi',
+    trofei:   '/albo-doro'
+};
+
+// include gli alias senza trattini, che restano validi
+const TAB_DA_PERCORSO = {
+    '/':               'home',
+    '/noi':            'noi',
+    '/unisciti-a-noi': 'unisciti',
+    '/uniscitianoi':   'unisciti',
+    '/albo-doro':      'trofei',
+    '/albodoro':       'trofei'
+};
+
+function percorsoNormalizzato() {
+    let p = window.location.pathname.toLowerCase().replace(/\/+$/, '');
+    return p === '' ? '/' : p;
+}
+
+function aggiornaUrlTab(tabName) {
+    const percorso = PERCORSI_TAB[tabName];
+    if (!percorso) return;
+    if (percorsoNormalizzato() === percorso) return;
+    // se l'utente e arrivato da un alias, non riscrivo il suo indirizzo
+    if (TAB_DA_PERCORSO[percorsoNormalizzato()] === tabName) return;
+    history.pushState({ tab: tabName }, '', percorso);
+}
+
+// tab da aprire all'avvio: la edge function la comunica gia pronta,
+// altrimenti la si deduce dal percorso
+function tabIniziale() {
+    if (typeof window.__TAB_INIZIALE__ === 'string') return window.__TAB_INIZIALE__;
+    return TAB_DA_PERCORSO[percorsoNormalizzato()] || 'home';
+}
+
+// frecce avanti e indietro del browser
+window.addEventListener('popstate', function (e) {
+    const tab = (e.state && e.state.tab) || TAB_DA_PERCORSO[percorsoNormalizzato()] || 'home';
+    const el = document.getElementById(tab);
+    if (!el) return;
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(link => {
+        const oc = link.getAttribute('onclick') || '';
+        link.classList.toggle('active', oc.includes("'" + tab + "'"));
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const tab = tabIniziale();
+    if (tab !== 'home') showTab(tab);
+});
 
 // ========================================
 // GESTIONE PIATTAFORMA

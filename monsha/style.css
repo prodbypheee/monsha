@@ -1458,7 +1458,10 @@ body.menu-open {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9);
+  /* niente text-shadow qui: piu avanti il titolo usa un gradiente
+     ritagliato sul testo con text-fill-color trasparente, e l'ombra
+     si vedrebbe attraverso il riempimento annerendo le lettere.
+     Il contrasto e affidato al filter drop-shadow della regola sotto. */
 }
 .noi-header-sub {
   font-size: 0.9rem;
@@ -1646,24 +1649,17 @@ body.menu-open {
 
   .players-grid { grid-template-columns: repeat(2, 1fr); }
 
-  /* NOI header: su schermo stretto il ritaglio "cover" mostrerebbe solo
-     i giocatori centrali. Qui la foto sta a tutta larghezza sotto la
-     navbar e il titolo scende sotto di essa. */
+  /* NOI header: la foto di squadra fa da sfondo al titolo, come su
+     desktop. La fascia e piu bassa che su schermo largo per ridurre il
+     ritaglio laterale, che su verticale e inevitabile con "cover". */
   .noi-header {
-    aspect-ratio: auto;
-    height: auto;
-    min-height: 0;
-    background-size: 100% auto;
-    background-repeat: no-repeat;
-    background-position: center var(--nav-h);
-    background-color: #080808;
-    padding-bottom: 2rem;
-  }
-  .noi-header-overlay {
-    background: linear-gradient(to bottom, rgba(8,8,8,0.05) 0%, rgba(8,8,8,0.10) 60%, rgba(8,8,8,0.35) 100%);
-  }
-  .noi-header-content {
-    padding-top: calc(var(--nav-h) + (100vw / 2.75) + 1.25rem);
+    aspect-ratio: auto !important;
+    height: auto !important;
+    /* !important necessario: una seconda regola .noi-header piu avanti nel
+       foglio impone 55vh e, a parita di specificita, vincerebbe lei */
+    min-height: 40vh !important;
+    background-size: cover !important;
+    background-position: center center !important;
   }
 
   .popup-content { padding: 1.25rem; }
@@ -2202,7 +2198,11 @@ body::before{
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 6px 30px rgba(254,165,0,.3));
+  /* la prima ombra da contrasto sulla foto, la seconda e il bagliore
+     originale. drop-shadow segue la forma delle lettere, quindi non
+     annerisce il riempimento come farebbe text-shadow. */
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.95))
+          drop-shadow(0 6px 30px rgba(254,165,0,.3));
   letter-spacing:.08em;
 }
 
@@ -2436,8 +2436,25 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
     transform-style: preserve-3d !important;
     transition: transform .55s cubic-bezier(.4,0,.2,1) !important;
     cursor: pointer;
+    /* CRUCIALE: overflow diverso da visible appiattisce il contesto 3D e
+       preserve-3d viene ignorato. Con hidden la card ruotava mostrando se
+       stessa specchiata invece della faccia posteriore. Gli angoli
+       arrotondati vengono ritagliati dalle due facce, non dalla card. */
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
-  .player-card.flipped{ transform: rotateY(180deg) !important; }
+  /* su touch il tap lascia attivo :hover, e quella regola porta un
+     transform con !important che si sovrappone al ribaltamento: la card
+     restava inclinata e specchiata invece di girarsi. Qui l'hover viene
+     azzerato e il flip vince in ogni combinazione di stati. */
+  .player-card:hover{
+    transform: none !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.6) !important;
+  }
+  .player-card.flipped,
+  .player-card.flipped:hover{ transform: rotateY(180deg) !important; }
 
   /* faccia anteriore */
   .player-image,
@@ -2446,6 +2463,19 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
   .player-card::after{
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
+  }
+  .player-image{
+    border-radius: 18px 18px 0 0 !important;
+    overflow: hidden !important;
+  }
+  /* il fondo e il bordo tornano sulle facce, non piu sulla card */
+  .player-card::before{
+    border-radius: 18px;
+    border: 1px solid rgba(254,165,0,.2);
+    background:
+      linear-gradient(155deg, #2a2010 0%, #181818 30%, #0a0a0a 70%, #2a1a00 100%),
+      radial-gradient(ellipse at 50% 0%, rgba(254,165,0,.25), transparent 60%) !important;
+    z-index: 0 !important;
   }
   .player-card h3{
     font-size: .62rem !important;
@@ -2473,6 +2503,8 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
     padding: .55rem .5rem !important;
     border-top: none !important;
     background: linear-gradient(155deg, #2a2010 0%, #181818 40%, #0a0a0a 100%);
+    border: 1px solid rgba(254,165,0,.25);
+    border-radius: 18px;
     z-index: 5;
   }
   .player-card p::before{ display: none !important; }  /* niente stelle sul retro */
