@@ -2456,6 +2456,10 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
   .player-card.flipped,
   .player-card.flipped:hover{ transform: rotateY(180deg) !important; }
 
+  /* scheda priva di descrizione: niente ribaltamento e niente puntatore,
+     cosi non promette un retro che non esiste */
+  .player-card.senza-retro{ cursor: default; }
+
   /* faccia anteriore */
   .player-image,
   .player-card h3,

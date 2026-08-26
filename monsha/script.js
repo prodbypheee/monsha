@@ -1183,6 +1183,13 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     const isNarrow = () => window.innerWidth <= MOBILE;
 
     document.querySelectorAll('.players-grid .player-card').forEach(card => {
+        // una scheda senza descrizione non ha faccia posteriore: girarla
+        // mostrerebbe un rettangolo vuoto, che sembra un difetto
+        const descrizione = card.querySelector('p');
+        if (!descrizione || !descrizione.textContent.trim()) {
+            card.classList.add('senza-retro');
+            return;
+        }
         card.addEventListener('click', () => {
             if (!isNarrow()) return;
             const giaGirata = card.classList.contains('flipped');
