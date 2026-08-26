@@ -1,0 +1,65 @@
+# Configurazione Netlify.
+#
+# ATTENZIONE: prima di questo file la cartella pubblicata era impostata solo
+# nel pannello Netlify. Da ora vale quanto scritto qui, che ha la precedenza:
+# se cambi la struttura del repository, aggiorna "publish".
+
+[build]
+  publish = "monsha"
+
+# La funzione riscrive i tag Open Graph in base al percorso richiesto.
+# Serve perche i crawler di WhatsApp, Telegram, Facebook e X non eseguono
+# JavaScript: leggono solo l'HTML servito. Senza questa iniezione ogni tab
+# mostrerebbe la stessa anteprima, perche tutte servono lo stesso index.html.
+[[edge_functions]]
+  path = "/"
+  function = "og-tags"
+
+[[edge_functions]]
+  path = "/noi"
+  function = "og-tags"
+
+[[edge_functions]]
+  path = "/unisciti-a-noi"
+  function = "og-tags"
+
+[[edge_functions]]
+  path = "/albo-doro"
+  function = "og-tags"
+
+# Alias senza trattini: stesso contenuto, nessun redirect, cosi un link
+# gia condiviso in una delle due forme continua a funzionare.
+[[edge_functions]]
+  path = "/uniscitianoi"
+  function = "og-tags"
+
+[[edge_functions]]
+  path = "/albodoro"
+  function = "og-tags"
+
+# I percorsi delle tab devono servire la SPA invece di dare 404.
+# Le regole sono in ordine: i file reali esistenti vengono serviti prima.
+[[redirects]]
+  from = "/noi"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/unisciti-a-noi"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/uniscitianoi"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/albo-doro"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/albodoro"
+  to = "/index.html"
+  status = 200
