@@ -1,0 +1,119 @@
+{
+  "_nota": "Dati della rosa usati dalle schede giocatore. Epiteto e tre punti brevi sostituiscono il paragrafo lungo: il testo integrale resta in descrizione_estesa, cosi non si perde nulla.",
+  "giocatori": [
+    {
+      "nick": "tommy-bond-0045", "img": "tho.jpeg", "ruolo": "Portiere", "reparto": "portieri",
+      "epiteto": "Testa fra le nuvole",
+      "punti": ["Mix franco-toscano tra i pali", "Miracoli e caciarate, in egual misura", "«Tommy, sei sveglio?»"],
+      "descrizione_estesa": "Franco-Toscano mix pazzo tra i pali. Testa fra le nuvole, miracoli e caciarate \"Tommy, sei sveglio?\""
+    },
+    {
+      "nick": "oraziocarpediem", "img": "orazio.jpeg", "ruolo": "Portiere", "reparto": "portieri",
+      "epiteto": "Crisi d'identità",
+      "punti": ["Impersona i grandi portieri del passato", "Miracoli impossibili e lanci lunghi", "Improvvisate a centrocampo che fanno impazzire il Cap"],
+      "descrizione_estesa": "Portiere con grosse crisi di identità, impersonifica le anime di grandi portieri del passato, soprattutto quelli Laziali! Con i suoi miracoli impossibili, i lanci lunghi e le improvvisate in mezzo al campo, fa impazzire i tifosi...e il Cap"
+    },
+    {
+      "nick": "danilo90-ita", "img": "Danilo.jpeg", "ruolo": "Difensore centrale", "reparto": "difensori",
+      "epiteto": "Il Generale 🎖️",
+      "punti": ["Roccioso e di esperienza", "Scambia ancora Ball Roll per BonRoll", "Ignoranza brutale: spazzala Dani'"],
+      "descrizione_estesa": "IL GENERALE 🎖️ DC roccioso e di esperienza, quando non è in zona di guerra a combattere scorpioni. Nel 2025 scambia ancora la skill Ball Roll per il BonRoll. Ignoranza brutale. SPAZZALA DANI'"
+    },
+    {
+      "nick": "fra_occhio_08", "img": "Fraocchio.jpeg", "ruolo": "Difensore", "reparto": "difensori",
+      "epiteto": "Il Clone 👥",
+      "punti": ["Difensore aggressivo, nemesi del Capitano", "Sale in attacco e puntualmente incide", "Bomber per caso 🥅"],
+      "descrizione_estesa": "IL CLONE 👥 Difensore aggressivo. La Nemesi del Capitano. Non servono parole per descriverlo. Sale in attacco, e puntualmente segna o fa segnare. BOMBER PER CASO! 🥅"
+    },
+    {
+      "nick": "Darckr0ck_h3", "img": "dark.jpeg", "ruolo": "Terzino sinistro", "reparto": "difensori",
+      "epiteto": "En Mission ♨️",
+      "punti": ["Un uomo, una skill interrotta", "Un baffo ormai iconico 🇵🇪", "Incubo degli attaccanti, se non è all'Olimpico"],
+      "descrizione_estesa": "Sul lato Sinistro della Difesa 🇵🇪 Un uomo una skill interrotta. Un baffo ormai divenuto ICONICO! Incubo per gli attaccanti (quando non è all'Olimpico) EN MISSION ♨️"
+    },
+    {
+      "nick": "FG_bandicoot06", "img": "bandicoot.jpeg", "ruolo": "Jolly difensivo", "reparto": "difensori",
+      "epiteto": "L'incognita 🥸",
+      "punti": ["Ti vince il campionato o te lo fa perdere", "Non si sa mai se gioca", "C'è chi non ha mai visto il suo vero volto"],
+      "descrizione_estesa": "L'incognita 🥸 Il Jolly che può farti vincere le partite e i campionati o farti dannare l'esistenza.. Non si sa mai se gioca. Incubo totale. C'è chi ancora non ha mai visto il suo vero volto. LET HIM COOK 🍝🥘"
+    },
+    {
+      "nick": "aletony10", "img": "tony.jpeg", "ruolo": "Difensore centrale", "reparto": "difensori",
+      "epiteto": "Veterano in Eludo",
+      "punti": ["DC ingombrante, montagna insormontabile", "Corso in soccorso ogni volta che serviva", "Il quasi sempre presente"],
+      "descrizione_estesa": "DC ingombrante. Corso in nostro soccorso sempre, ha fatto il vero mostro, una montagna insormontabile. Il quasi sempre presente. VETERANO IN ELUDO"
+    },
+    {
+      "nick": "Scugnizzo_77", "img": "manu.jpeg", "ruolo": "Centrocampista", "reparto": "centrocampisti",
+      "epiteto": "Lo Scugnizzo 🌋",
+      "punti": ["Visione, passaggi, intercetta tutto", "L'unico napoletano sano — luna permettendo", "Anema e core dei Monaci 💙"],
+      "descrizione_estesa": "LO SCUGNIZZO 🌋💙 Visione, passaggi, intercetta tutto. L'unico Napoletano sano, quando non ha la luna storta. Sempre al nostro fianco, lo scimmiotto, non ha mai deluso! Anema e core dei Monaci"
+    },
+    {
+      "nick": "BLACKMAMBA_IVAN", "img": "ivan.jpeg", "ruolo": "Mediano sinistro", "reparto": "centrocampisti",
+      "epiteto": "Mario Vanni 🖤",
+      "punti": ["Punizioni atomiche e carattere", "Si fa tutta la fascia alla velocità della luce", "Sempre in prima linea, camicia stirata 👔"],
+      "descrizione_estesa": "MARIO VANNI 🖤 Centrocampista sulla Sinistra. Sempre ultra presente, punizioni atomiche e carattere. Si fa tutta la fascia alla velocità della luce! Mario Vanni sempre in prima linea e con la camicia stirata. RITORNEREMO! 👔"
+    },
+    {
+      "nick": "Fireniko6", "img": "nico.jpeg", "ruolo": "Regista", "reparto": "centrocampisti",
+      "epiteto": "Lo Stirato 🎰",
+      "punti": ["Una visione che l'Occhio di Sauron si sposti", "Stile, classe ed eleganza infiniti", "Il gigante buono, punto cardine del centrocampo"],
+      "descrizione_estesa": "LO STIRATO 🎰 Una Visione che OCCHIO di Sauron spostati. Stile infinito, classe ed eleganza, cuore e carattere. Il nostro gigante buono rimane punto cardine del centrocampo. THE KING OF SOCCMEL ❤️💙"
+    },
+    {
+      "nick": "yg_phethe_sdf", "img": "fede.jpeg", "ruolo": "Centrocampista completo", "reparto": "centrocampisti",
+      "epiteto": "Tecnico dentro e fuori",
+      "punti": ["Sei trivele a partita, minimo", "Cambia più capelli che mutande", "Passaggi, skill e 15-0 sfiorati"],
+      "descrizione_estesa": "Centrocampista completo. Tenta 6 trivele a partita. Cambia più capelli che mutande. Spiccano dalle sue caratteristiche elevate doti di passaggio, skill e 15-0 sfiorati. Tecnico dentro e fuori dal campo"
+    },
+    {
+      "nick": "M-Cecio", "img": "cecio.jpeg", "ruolo": "Esterno destro", "reparto": "centrocampisti",
+      "epiteto": "Cecio 🧆",
+      "punti": ["Jolly sulla fascia destra", "Alterna fase offensiva e difensiva", "Cuore d'oro, costanza e presenza"],
+      "descrizione_estesa": "CECIO 🧆 Jolly sulla fascia! Sulla fascia Destra alterna fase offensiva e difensiva. Ottimo aiuto in caso si bisogno. Player dal cuore d'oro e dalla forte costanza e presenza"
+    },
+    {
+      "nick": "RageeVII", "img": "rage.jpeg", "ruolo": "Seconda punta", "reparto": "attaccanti",
+      "epiteto": "Il Capitano 🐺",
+      "punti": ["L'anima della squadra", "Assistman e gol a valanga da seconda punta", "C'è solo un capitano 🗣️"],
+      "descrizione_estesa": "IL CAPITANO 🐺 Ragazzi è l'anima della squadra. In campo: assistman e gol a valanga nonostante sia una seconda punta. Sempre disponibile ad ascoltare tutti. Onorate il cap così come si venera il Dio del Football! ... e andremo lontani \"INSIEME\" ❤️🧡💛🖤 UN CAPITANO! C'È SOLO UN CAPITANO 🗣️🔊"
+    },
+    {
+      "nick": "zuppo23_fillo03", "img": "zuppo.jpeg", "ruolo": "Attaccante", "reparto": "attaccanti",
+      "epiteto": "Il Demone di Baricella 👺",
+      "punti": ["Bomber storico di razza", "Protocollo scivolata-cartellino rosso", "Onore al Vichingo Rumeno ⚔️"],
+      "descrizione_estesa": "MARIAN ZAHARIA 🔪💥 Il nostro Bomber storico di razza! Con il suo protocollo scivolata-cartellino rosso non è mai arrivato al lvl 100. Onore al Vichingo Rumeno ⚔️ IL DEMONE DI BARICELLA 👺🇷🇴🦶🏻"
+    },
+    {
+      "nick": "FRANCESC000SSS", "img": "cigno.jpeg", "ruolo": "Attaccante", "reparto": "attaccanti",
+      "epiteto": "Il Cigno 🦢",
+      "punti": ["Arrivato a metà 2025, subito devastante", "Foga, fame, driven e intelligenza tattica", "Scarpa d'oro FVPA Serie A 🔥"],
+      "descrizione_estesa": "IL CIGNO 🦢💥 Arrivato a metà stagione nel 2025 ha subito voluto far capire di che pasta fosse fatto. Con la sua foga, la sua fame, i suoi driven, la sua intelligenza tattica e la sua ambizione, non c'è stato verso per le difese avversarie. Arriva e si prende la scarpa d'oro di FVPA Serie A! Con lui nasce il trio ARMAGEDDON 🔥"
+    },
+    {
+      "nick": "Mamba_nero30", "img": "mamba.jpeg", "ruolo": "Esterno", "reparto": "icons",
+      "epiteto": "Bambacione 🍔",
+      "punti": ["Rapidissimo, con senso innato della difesa", "Senatore a vita e membro onorario", "Senza di lui il club non sarebbe questo"],
+      "descrizione_estesa": "Fabio Simplicio 🍂 Esterno rapidissimo, buggatissimo e con un innato senso della difesa. Membro onorario e Senatore a vita. Se non fosse per lui il club non sarebbe mai diventato quello che è! Attendiamo un suo ritorno un giorno: \"Ritorno al Futuro\" 🔙 BAMBACIONE 🍔"
+    },
+    {
+      "nick": "Mish__97", "img": "ubaldo.jpeg", "ruolo": "Centrocampista", "reparto": "icons",
+      "epiteto": "Leggenda vivente 🪶",
+      "punti": ["Mille sfaccettature e altrettante capigliature", "Il nostro rematore di gondole veneziano", "Onore alla celebre esultanza Rematora"],
+      "descrizione_estesa": "UBALDO UBALDO 🥸 L'uomo dalle mille sfaccettature e capigliature! Questo anziano COC è la vera leggenda del Club. Membro onorario e Senatore. Il nostro rematore di gondole Veneziano è un portento. Onore alla celebre esultanza REMATORA! LEGGENDA VIVENTE 🪶 📖"
+    },
+    {
+      "nick": "Maestro_Yoda02", "img": "yoda.jpeg", "ruolo": "Centrocampista", "reparto": "icons",
+      "epiteto": "Legolas Verdefoglia 🏹",
+      "punti": ["Visione incredibile e grande finalizzatore", "Nel club dalla fondazione, 2018", "Divisione 1 in 4 player con full CPU"],
+      "descrizione_estesa": "LEGOLAS VERDEFOGLIA 🏹🍃 Leggenda del Club e Senatore. COC dall'incredibile visione e grande finalizzatore. Membro onorario del Club dalla creazione nel lontano 2018. Si ricordano le sue gesta e le sue imprese per la vittoria della Divisione 1 in 4 player con full CPU. \"Legolas!! Cosa vedono i tuoi occhi da elfo?\" 👀"
+    },
+    {
+      "nick": "TheSpartan333", "img": "brazof.jpeg", "ruolo": "Terzino", "reparto": "icons",
+      "epiteto": "Ajeje Brazorf 🧱",
+      "punti": ["Il mago dei German Cross 🪄", "Posizionamento innato e visione astuta", "Sempre presente, se non c'è la Maggica in TV"],
+      "descrizione_estesa": "AJEJE BRAZORF 🧱↪️🇩🇪 Il mago dei German Cross 🪄 Uno dei TS migliori della storia del Club. Terzino dall'innato posizionamento difensivo e dall'astuta visione di gioco. Sempre presente, a patto che non ci sia LA MAGGGICA in TV! 🐺💛❤️ IL MAGISTER 🧑🏻‍🏫✨"
+    }
+  ]
+}
