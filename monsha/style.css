@@ -2419,13 +2419,51 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
 
 /* Mobile */
 @media (max-width: 768px){
-  .players-grid{ grid-template-columns: repeat(2, 1fr) !important; gap:1rem !important; }
-  .player-card h3{ font-size:.78rem !important; }
-  .player-card p{ font-size:.68rem !important; -webkit-line-clamp: 5 !important; }
+  /* card compatte: piu giocatori per schermata, descrizione a richiesta */
+  .players-grid{
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: .7rem !important;
+    padding: 1rem .8rem 1.5rem !important;
+    align-items: start !important;
+  }
+  .player-card{
+    transform: none !important;   /* neutralizza il tilt inline su touch */
+  }
+  .player-card h3{
+    font-size: .62rem !important;
+    letter-spacing: .02em !important;
+    margin-top: -1.5rem !important;
+    padding: .25rem .35rem !important;
+  }
+  .player-card p{ display: none !important; }
+
+  /* card toccata: occupa tutta la riga e mostra la descrizione */
+  .player-card.expanded{ grid-column: 1 / -1 !important; }
+  /* senza questo l'immagine, a rapporto fisso, si allargherebbe con la
+     card e spingerebbe la descrizione fuori schermo */
+  .player-card.expanded .player-image{
+    aspect-ratio: auto !important;
+    height: 210px !important;
+  }
+  .player-card.expanded h3{
+    font-size: .95rem !important;
+    margin-top: -2.2rem !important;
+    padding: .3rem .9rem !important;
+  }
+  .player-card.expanded p{
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    font-size: .78rem !important;
+    line-height: 1.6 !important;
+    padding: .7rem 1rem 1.1rem !important;
+    text-align: center !important;
+  }
+
   #backToTop{ bottom:16px; right:16px; width:42px; height:42px; }
 }
 @media (max-width: 480px){
-  .players-grid{ grid-template-columns: 1fr !important; }
+  .players-grid{ grid-template-columns: repeat(2, 1fr) !important; }
+  .player-card h3{ font-size: .68rem !important; }
 }
 
 /* =============================================================

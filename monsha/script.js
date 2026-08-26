@@ -1091,7 +1091,9 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 })();
 
 // FIFA-style 3D tilt on player & trophy cards
+// Solo con mouse vero: su touch un tap lascerebbe la card inclinata.
 (function(){
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const cards = document.querySelectorAll('.player-card, .trophy-card, .legend-card');
     cards.forEach(card => {
         card.addEventListener('mousemove', (e) => {
@@ -1104,5 +1106,36 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
         card.addEventListener('mouseleave', () => {
             card.style.transform = '';
         });
+    });
+})();
+
+// Mobile: tocca una scheda giocatore per aprirne la descrizione.
+// Sotto i 768px le descrizioni sono nascoste per far stare piu giocatori
+// nella schermata; la scheda toccata si espande a tutta riga.
+(function(){
+    const MOBILE = 768;
+    const isNarrow = () => window.innerWidth <= MOBILE;
+
+    document.querySelectorAll('.players-grid .player-card').forEach(card => {
+        card.addEventListener('click', () => {
+            if (!isNarrow()) return;
+            const giaAperta = card.classList.contains('expanded');
+            card.closest('.players-grid')
+                .querySelectorAll('.player-card.expanded')
+                .forEach(c => c.classList.remove('expanded'));
+            if (!giaAperta) {
+                card.classList.add('expanded');
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    });
+
+    // tornando a schermo largo le descrizioni sono sempre visibili:
+    // nessuna scheda deve restare in stato "espansa"
+    window.addEventListener('resize', () => {
+        if (!isNarrow()) {
+            document.querySelectorAll('.player-card.expanded')
+                .forEach(c => c.classList.remove('expanded'));
+        }
     });
 })();
