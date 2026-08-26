@@ -2439,6 +2439,12 @@ nav, .hero-ctas, .social-buttons, .btn-primary, .btn-secondary,
 
   /* card toccata: occupa tutta la riga e mostra la descrizione */
   .player-card.expanded{ grid-column: 1 / -1 !important; }
+  /* senza questo l'immagine, a rapporto fisso, si allargherebbe con la
+     card e spingerebbe la descrizione fuori schermo */
+  .player-card.expanded .player-image{
+    aspect-ratio: auto !important;
+    height: 210px !important;
+  }
   .player-card.expanded h3{
     font-size: .95rem !important;
     margin-top: -2.2rem !important;
