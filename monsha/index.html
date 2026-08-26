@@ -216,8 +216,11 @@
           </select>
         </div>
 
-        <!-- Input ID Player -->
-        <div class="form-group" id="playerIdGroup" style="display: none;">
+        <!-- Input ID Player. Niente style inline qui: lo stato nascosto e
+             quello visibile sono gestiti dal CSS (#playerIdGroup e
+             #playerIdGroup.show). Uno style inline vincerebbe sulla classe
+             show aggiunta dal JavaScript e il campo non comparirebbe mai. -->
+        <div class="form-group" id="playerIdGroup">
           <label for="playerId">🆔 Inserisci il tuo ID Player:</label>
           <input type="text" id="playerId" class="player-id-input" placeholder="Inserisci il tuo ID player">
           <small class="input-hint" id="playerIdHint"></small>
