@@ -1109,9 +1109,9 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     });
 })();
 
-// Mobile: tocca una scheda giocatore per aprirne la descrizione.
-// Sotto i 768px le descrizioni sono nascoste per far stare piu giocatori
-// nella schermata; la scheda toccata si espande a tutta riga.
+// Mobile: tocca una scheda giocatore per girarla e leggere la descrizione
+// sul retro. Sotto i 768px il fronte mostra solo ritratto e nickname, cosi
+// entrano piu giocatori nella schermata.
 (function(){
     const MOBILE = 768;
     const isNarrow = () => window.innerWidth <= MOBILE;
@@ -1119,23 +1119,21 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
     document.querySelectorAll('.players-grid .player-card').forEach(card => {
         card.addEventListener('click', () => {
             if (!isNarrow()) return;
-            const giaAperta = card.classList.contains('expanded');
+            const giaGirata = card.classList.contains('flipped');
+            // una sola scheda girata per volta, altrimenti si perde il filo
             card.closest('.players-grid')
-                .querySelectorAll('.player-card.expanded')
-                .forEach(c => c.classList.remove('expanded'));
-            if (!giaAperta) {
-                card.classList.add('expanded');
-                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
+                .querySelectorAll('.player-card.flipped')
+                .forEach(c => c.classList.remove('flipped'));
+            if (!giaGirata) card.classList.add('flipped');
         });
     });
 
-    // tornando a schermo largo le descrizioni sono sempre visibili:
-    // nessuna scheda deve restare in stato "espansa"
+    // tornando a schermo largo la descrizione e sempre visibile sotto il
+    // ritratto: nessuna scheda deve restare girata
     window.addEventListener('resize', () => {
         if (!isNarrow()) {
-            document.querySelectorAll('.player-card.expanded')
-                .forEach(c => c.classList.remove('expanded'));
+            document.querySelectorAll('.player-card.flipped')
+                .forEach(c => c.classList.remove('flipped'));
         }
     });
 })();
