@@ -548,22 +548,22 @@
       e.preventDefault();
       const btn = $('arAccInvia'), box = $('arAccEsito');
       const email = $('arAccEmail').value.trim();
-      const password = $('arAccPassword').value;
+      const idGioco = $('arAccId').value.trim();
 
-      if (!email || !password) { esito(box, 'Inserisci email e password.'); return; }
+      if (!email || !idGioco) { esito(box, 'Inserisci email e ID di gioco.'); return; }
 
       btn.disabled = true;
       const testo = btn.textContent;
       btn.textContent = 'Verifico…';
       esito(box, '');
 
-      const r = await api('accedi', { email, password });
+      const r = await api('accedi', { email, idGioco });
 
       btn.disabled = false;
       btn.textContent = testo;
 
       if (r.ok) {
-        $('arAccPassword').value = '';
+        $('arAccId').value = '';
         return entra(r.dati.utente);
       }
       if (r.dati.stato === 'in-attesa') {
@@ -583,24 +583,20 @@
       e.preventDefault();
       const btn = $('arRegInvia'), box = $('arRegEsito');
       const email = $('arRegEmail').value.trim();
-      const password = $('arRegPassword').value;
-      const password2 = $('arRegPassword2').value;
       const idGioco = $('arRegId').value.trim();
 
       // Controlli anche qui, non per sicurezza ma per non far fare
       // un giro a vuoto al server su errori evidenti.
-      if (!email)                  { esito(box, 'Inserisci la tua email.'); return; }
-      if (password.length < 8)     { esito(box, 'La password deve avere almeno 8 caratteri.'); return; }
-      if (password !== password2)  { esito(box, 'Le due password non coincidono.'); return; }
-      if (!piattaforma)            { esito(box, 'Scegli la piattaforma su cui giochi.'); return; }
-      if (idGioco.length < 2)      { esito(box, 'Inserisci il tuo ID di gioco.'); return; }
+      if (!email)             { esito(box, 'Inserisci la tua email.'); return; }
+      if (!piattaforma)       { esito(box, 'Scegli la piattaforma su cui giochi.'); return; }
+      if (idGioco.length < 2) { esito(box, 'Inserisci il tuo ID di gioco.'); return; }
 
       btn.disabled = true;
       const testo = btn.textContent;
       btn.textContent = 'Invio…';
       esito(box, '');
 
-      const r = await api('registrati', { email, password, piattaforma, idGioco });
+      const r = await api('registrati', { email, piattaforma, idGioco });
 
       btn.disabled = false;
       btn.textContent = testo;
@@ -616,7 +612,7 @@
       if (r.dati.utente && r.dati.utente.stato === 'approvato') return entra(r.dati.utente);
 
       avviso('📨', 'Richiesta inviata',
-        'Un amministratore ha ricevuto la tua richiesta. Appena viene approvata potrai entrare con email e password.');
+        'Un amministratore ha ricevuto la tua richiesta. Appena viene approvata potrai entrare con la tua email e il tuo ID di gioco.');
     });
 
     /* ---- dentro ---- */

@@ -1,12 +1,19 @@
 /* =============================================================
    MONACI SHAOLIN — area riservata, lato server
    -------------------------------------------------------------
-   Perche questo file esiste: password e lista degli approvati non
-   possono stare nel browser. Qualunque cosa scritta in app.js e
-   leggibile e modificabile da chiunque apra il codice sorgente,
-   quindi un controllo accessi fatto li non e un controllo: e un
-   suggerimento. Qui invece gira su Netlify, l'utente vede solo
-   la risposta.
+   Perche questo file esiste: la lista degli approvati non puo stare
+   nel browser. Qualunque cosa scritta in app.js e leggibile e
+   modificabile da chiunque apra il codice sorgente, quindi un
+   controllo accessi fatto li non e un controllo: e un suggerimento.
+   Qui invece gira su Netlify, l'utente vede solo la risposta.
+
+   NIENTE PASSWORD, ed e una scelta deliberata. Si entra con email e
+   ID di gioco, la stessa coppia che l'amministratore vede quando
+   approva. Il prezzo va detto: chi conosce mail e ID di un membro
+   approvato entra al posto suo, e gli ID di gioco si vedono in
+   partita. Regge perche qui dentro non ci sono dati sensibili. Se un
+   giorno ce ne fossero, questa e la prima cosa da cambiare — e la
+   strada e il collegamento usa-e-getta via mail, non la password.
 
    Archivio: Netlify Blobs, incluso nel piano gratuito. La chiave
    di ogni utente e l'impronta SHA-256 della sua email, cosi non
@@ -60,33 +67,23 @@ function json(dati, stato = 200, intestazioni = {}) {
 
 const errore = (msg, stato = 400) => json({ errore: msg }, stato);
 
-/* ---------- password ------------------------------------------
-   scrypt e la funzione di derivazione raccomandata fra quelle
-   incluse in Node: costa memoria oltre che tempo, quindi le schede
-   grafiche non la macinano come farebbero con SHA. Il sale e per
-   utente, cosi due password uguali danno impronte diverse. */
+/* ---------- ID di gioco ---------------------------------------
+   L'ID e la meta segreta delle credenziali, quindi va confrontato
+   con indulgenza su cio che non conta: maiuscole e spazi ai bordi.
+   Nessuno si ricorda se il suo tag era "TizioPSN" o "tiziopsn", e
+   farlo sbagliare su quello sarebbe solo una porta chiusa in faccia
+   alla persona giusta. */
 
-function derivaScrypt(password, sale) {
-  return new Promise((ok, ko) => {
-    crypto.scrypt(password, sale, 64, { N: 16384, r: 8, p: 1 }, (err, buf) => {
-      if (err) ko(err); else ok(buf.toString('hex'));
-    });
-  });
-}
+const normId = v => String(v || '').trim().toLowerCase();
 
-async function cifraPassword(password) {
-  const sale = crypto.randomBytes(16).toString('hex');
-  return { sale, hash: await derivaScrypt(password, sale) };
-}
-
-async function passwordCorretta(password, utente) {
-  if (!utente || !utente.hash || !utente.sale) return false;
-  const prova = await derivaScrypt(password, utente.sale);
-  const a = Buffer.from(prova, 'hex');
-  const b = Buffer.from(utente.hash, 'hex');
-  // Confronto a tempo costante: un confronto normale esce al primo
-  // byte diverso e la differenza di durata rivela quanti byte erano
-  // corretti, un carattere alla volta.
+function idCorretto(prova, utente) {
+  // idConfronto non c'e sugli account nati con la versione a
+  // password: per quelli si ricava al volo dall'ID salvato.
+  const atteso = utente.idConfronto || normId(utente.idGioco);
+  const a = Buffer.from(normId(prova));
+  const b = Buffer.from(atteso);
+  // Confronto a tempo costante: uno normale esce al primo carattere
+  // diverso, e la differenza di durata rivela quanti ne erano giusti.
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
@@ -152,7 +149,9 @@ async function salvaUtente(utente) {
   await store().setJSON(chiave(utente.email), utente);
 }
 
-// Vista ripulita: hash e sale non escono mai dalla funzione.
+// Vista ripulita. idGioco resta dentro apposta: l'amministratore
+// decide guardando proprio quello, e a ogni altro utente arriva solo
+// il proprio. idConfronto invece non esce mai: e un dettaglio interno.
 const pubblico = u => ({
   email:       u.email,
   piattaforma: u.piattaforma,
@@ -204,13 +203,10 @@ async function avvisaAdmin(utente, origine) {
 async function registrati(req, segreto, adminEmail, origine) {
   const corpo       = await req.json().catch(() => ({}));
   const email       = normEmail(corpo.email);
-  const password    = String(corpo.password || '');
   const piattaforma = String(corpo.piattaforma || '').trim();
   const idGioco     = String(corpo.idGioco || '').trim();
 
-  if (!emailValida(email))   return errore('Indirizzo email non valido.');
-  if (password.length < 8)   return errore('La password deve avere almeno 8 caratteri.');
-  if (password.length > 200) return errore('Password troppo lunga.');
+  if (!emailValida(email)) return errore('Indirizzo email non valido.');
   if (!PIATTAFORME.includes(piattaforma)) return errore('Scegli la piattaforma.');
   if (idGioco.length < 2 || idGioco.length > 40)
     return errore('Inserisci il tuo ID di gioco.');
@@ -219,10 +215,9 @@ async function registrati(req, segreto, adminEmail, origine) {
     return errore('Questo indirizzo ha gia una richiesta o un account.', 409);
 
   const admin = adminEmail && email === normEmail(adminEmail);
-  const { sale, hash } = await cifraPassword(password);
 
   const utente = {
-    email, piattaforma, idGioco, sale, hash,
+    email, piattaforma, idGioco, idConfronto: normId(idGioco),
     stato:  admin ? 'approvato' : 'in-attesa',
     ruolo:  admin ? 'admin' : 'membro',
     creato: new Date().toISOString(),
@@ -245,29 +240,32 @@ async function registrati(req, segreto, adminEmail, origine) {
 }
 
 async function accedi(req, segreto) {
-  const corpo    = await req.json().catch(() => ({}));
-  const email    = normEmail(corpo.email);
-  const password = String(corpo.password || '');
+  const corpo   = await req.json().catch(() => ({}));
+  const email   = normEmail(corpo.email);
+  const idGioco = String(corpo.idGioco || '').trim();
 
-  if (!emailValida(email) || !password)
-    return errore('Email o password non corretti.', 401);
+  const NEGATO = 'Email o ID di gioco non corretti.';
+
+  if (!emailValida(email) || !idGioco) return errore(NEGATO, 401);
 
   const utente = await leggiUtente(email);
-  if (!utente) return errore('Email o password non corretti.', 401);
+  if (!utente) return errore(NEGATO, 401);
 
   if (utente.bloccoFino && utente.bloccoFino > Date.now()) {
     const min = Math.ceil((utente.bloccoFino - Date.now()) / 60000);
     return errore('Troppi tentativi. Riprova fra ' + min + ' minuti.', 429);
   }
 
-  if (!(await passwordCorretta(password, utente))) {
+  // Senza password questo freno conta il doppio: un ID di gioco e
+  // corto e indovinabile, e senza limite si proverebbe a raffica.
+  if (!idCorretto(idGioco, utente)) {
     utente.tentativi = (utente.tentativi || 0) + 1;
     if (utente.tentativi >= MAX_TENTATIVI) {
       utente.bloccoFino = Date.now() + BLOCCO_MS;
       utente.tentativi = 0;
     }
     await salvaUtente(utente);
-    return errore('Email o password non corretti.', 401);
+    return errore(NEGATO, 401);
   }
 
   if (utente.tentativi || utente.bloccoFino) {
@@ -275,7 +273,7 @@ async function accedi(req, segreto) {
     await salvaUtente(utente);
   }
 
-  // Il controllo dello stato viene dopo la password: altrimenti
+  // Il controllo dello stato viene dopo quello dell'ID: altrimenti
   // chiunque scoprirebbe, senza credenziali, chi ha un account.
   if (utente.stato === 'in-attesa')  return json({ stato: 'in-attesa' }, 403);
   if (utente.stato === 'rifiutato')  return json({ stato: 'rifiutato' }, 403);
