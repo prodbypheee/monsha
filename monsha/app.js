@@ -928,6 +928,8 @@
       let scelti = new Set();
       let attivo = null;
       let chiavePush = '';
+      let dispositivi = 0;    // quante iscrizioni ha il SERVER per me
+      let diagnosi = null;    // solo per l'amministratore
 
       /* ---- conti sulle date ----
          Trattate come giorni di calendario e basta: si costruisce una
@@ -1260,6 +1262,11 @@
         $('pushStato').classList.toggle('on', attiva);
         $('pushAccendi').hidden = attiva;
         $('pushSpegni').hidden = !attiva;
+        /* Il bottone di prova compare quando il SERVER ha almeno
+           un'iscrizione. E la distinzione che conta: il telefono puo
+           credere di essere iscritto mentre al server non e arrivato
+           niente, ed e proprio quel caso che va scoperto subito. */
+        $('pushProva').hidden = dispositivi < 1;
 
         if (!supportate()) {
           $('pushAccendi').hidden = true;
@@ -1324,6 +1331,32 @@
         mostraStatoPush();
       });
 
+      $('pushProva').addEventListener('click', async () => {
+        const btn = $('pushProva'), box = $('pushEsito');
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Mando…';
+        esito(box, '');
+
+        const r = await apiConv('push-prova', {});
+
+        btn.disabled = false;
+        btn.textContent = testo;
+
+        if (!r.ok) { esito(box, r.dati.errore || 'La prova non e partita.'); return; }
+
+        // Zero partite con dispositivi iscritti vuol dire che il servizio
+        // di Apple o Google ha rifiutato: e un'informazione, non un
+        // dettaglio da nascondere dietro un "fatto".
+        esito(box, r.dati.partite
+          ? 'Partita verso ' + r.dati.partite +
+            (r.dati.partite === 1 ? ' dispositivo.' : ' dispositivi.') +
+            ' Se non arriva entro qualche secondo, il problema e nella consegna, non nel sito.'
+          : 'Il server ha ' + r.dati.dispositivi + ' iscrizioni ma non e partita nessuna notifica: ' +
+            'le iscrizioni sono scadute. Spegni e riattiva le notifiche.',
+          !!r.dati.partite);
+      });
+
       $('pushSpegni').addEventListener('click', async () => {
         const sub = await sottoscrizione();
         if (sub) {
@@ -1332,6 +1365,69 @@
         }
         esito($('pushEsito'), 'Spente su questo dispositivo.', true);
         mostraStatoPush();
+      });
+
+      /* ---- diagnosi, solo per l'amministratore ----
+         Risponde alla domanda che altrimenti costa sei ore di attesa:
+         e rotto il server o il mio telefono? */
+
+      function mostraDiagnosi() {
+        const box = $('convDiagnosi');
+        if (!diagnosi) { box.hidden = true; return; }
+        box.hidden = false;
+
+        const voci = $('convDiagnosiVoci');
+        voci.textContent = '';
+
+        const riga = (etichetta, valore, buono) => {
+          const d = document.createElement('div');
+          const dt = document.createElement('dt');
+          dt.textContent = etichetta;
+          const dd = document.createElement('dd');
+          dd.textContent = valore;
+          if (buono === true) dd.className = 'si';
+          if (buono === false) dd.className = 'no';
+          d.append(dt, dd);
+          voci.appendChild(d);
+        };
+
+        const g = diagnosi.orologio;
+        if (!g) {
+          riga('Orologio', 'non ha mai girato — la funzione programmata non parte', false);
+        } else {
+          const quando = new Date(g.quando);
+          const minutiFa = Math.round((Date.now() - quando.getTime()) / 60000);
+          const fresco = minutiFa <= 65;
+          riga('Ultimo giro',
+            quando.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) +
+            ' (' + (minutiFa < 1 ? 'adesso' : minutiFa + ' min fa') + ')',
+            fresco);
+          riga('Ha fatto', g.esito || '—');
+        }
+
+        riga('Chiavi notifiche', diagnosi.chiaviPush ? 'impostate' : 'MANCANTI', diagnosi.chiaviPush);
+        riga('Posta', diagnosi.posta ? 'configurata' : 'NON configurata', diagnosi.posta);
+        riga('Allenamenti in calendario', giorni.length ? giorni.join(', ') : 'nessuno', giorni.length > 0);
+        riga('Tuoi dispositivi iscritti', String(dispositivi), dispositivi > 0);
+      }
+
+      $('riepilogoProva').addEventListener('click', async () => {
+        const btn = $('riepilogoProva'), box = $('riepilogoEsito');
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Mando…';
+        esito(box, '');
+
+        const r = await apiConv('riepilogo-prova', { data: attivo || oggi });
+
+        btn.disabled = false;
+        btn.textContent = testo;
+
+        if (!r.ok) { esito(box, r.dati.errore || 'Non e partito.'); return; }
+        esito(box, r.dati.partite
+          ? 'Partito a ' + r.dati.partite + ' di ' + r.dati.destinatari + ': ' + r.dati.indirizzi.join(', ')
+          : 'EmailJS ha rifiutato tutti gli invii: controlla il template e la chiave privata.',
+          !!r.dati.partite);
       });
 
       /* ---- avvio e chiusura ---- */
@@ -1348,6 +1444,8 @@
         giorni = r.dati.giorni;
         orizzonte = r.dati.orizzonte || 35;
         chiavePush = (r.dati.push && r.dati.push.chiave) || '';
+        dispositivi = (r.dati.push && r.dati.push.attive) || 0;
+        diagnosi = r.dati.diagnosi || null;
 
         $('convCapitano').hidden = !io.convoca;
         if (io.convoca) {
@@ -1371,6 +1469,7 @@
         else svuotaGiornata();
 
         mostraStatoPush();
+        mostraDiagnosi();
       }
 
       function chiudi() {

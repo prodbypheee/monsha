@@ -22,7 +22,7 @@
 
 import { tuttiGliUtenti, chiave, convoc, oggiRoma, oraRoma, dataInLettere }
   from '../lib/comune.mjs';
-import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo }
+import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo, segnaGiro }
   from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
@@ -139,56 +139,76 @@ async function riepiloga(data, utenti, risposte) {
 
 /* ---------- ingresso ------------------------------------------ */
 
-export default async () => {
-  const oggi = oggiRoma();
-  const ora  = oraRoma();
-
+/* Il lavoro vero. Non ritorna niente di importante: ritorna una frase
+   corta che dice cosa ha fatto, e quella frase finisce nel battito.
+   E l'unico modo, da fuori, di distinguere un orologio fermo da un
+   orologio che gira e non ha niente da fare — dal di fuori sono
+   identici, cioe silenzio in entrambi i casi. */
+async function giro(oggi, ora, minuti) {
   /* I minuti non hanno bisogno di fuso: sono gli stessi ovunque. La
      forchetta larga e voluta — una funzione programmata non parte al
      secondo esatto, e un controllo su "minuto === 30" salterebbe il
      giro ogni volta che Netlify e in ritardo di un minuto. */
-  const minuti = new Date().getUTCMinutes();
   const allaMezza = minuti >= 20 && minuti < 50;
 
   // PROVA
   const prova = allaMezza && ora === PROVA.ora && PROVA.minuto === 30;
 
-  if (!prova && (allaMezza || ![14, 17, 20].includes(ora))) return;
+  if (!prova && (allaMezza || ![14, 17, 20].includes(ora)))
+    return 'niente da fare a quest’ora';
 
   const giorni = await leggiGiorni();
-  if (!giorni.includes(oggi)) return;
+  if (!giorni.includes(oggi))
+    return 'oggi non e giorno di allenamento';
 
   const [utenti, risposte] = await Promise.all([
     tuttiGliUtenti(), leggiRisposte(oggi)
   ]);
   const membri = daConvocare(utenti);
-  if (!membri.length) return;
+  if (!membri.length) return 'nessun membro approvato';
 
   // PROVA — segno di spunta suo, altrimenti la prova delle 17:30 e il
   // richiamo delle 17:00 si escluderebbero a vicenda.
   const fascia = prova ? 'prova-' + ora : String(ora);
 
-  if (await giaFatto(oggi, fascia)) {
-    console.log('convocazioni: fascia', fascia, 'gia inviata per', oggi);
-    return;
-  }
+  if (await giaFatto(oggi, fascia))
+    return 'fascia ' + fascia + ' gia inviata oggi';
 
   if (!prova && ora === 20) {
+    if (!postaConfigurata() || !process.env.EMAILJS_TEMPLATE_CONVOCAZIONI)
+      return 'riepilogo saltato: posta non configurata';
     const n = await riepiloga(oggi, utenti, risposte);
-    console.log('convocazioni: riepilogo di', oggi, 'inviato a', n, 'persone');
-    return;
+    return 'riepilogo inviato a ' + n + ' indirizzi';
   }
 
-  if (!pushConfigurato()) {
-    console.log('convocazioni: notifiche saltate, mancano le chiavi VAPID');
-    return;
-  }
+  if (!pushConfigurato())
+    return 'notifiche saltate: mancano le chiavi VAPID';
 
   // PROVA — 'prova' e la terza modalita; senza, restano le due di sempre.
   const modo = prova ? 'prova' : (ora === 17 ? 'richiamo' : 'prima');
 
   const n = await avvisa(oggi, membri, risposte, modo);
-  console.log('convocazioni: fascia', fascia, '(' + modo + ') —', n, 'notifiche partite per', oggi);
+  return n + ' notifiche partite (' + modo + ')';
+}
+
+export default async () => {
+  const oggi   = oggiRoma();
+  const ora    = oraRoma();
+  const minuti = new Date().getUTCMinutes();
+
+  let esito;
+  try {
+    esito = await giro(oggi, ora, minuti);
+  } catch (e) {
+    esito = 'errore: ' + (e && e.message ? e.message : e);
+    console.error('convocazioni-cron:', e);
+  }
+
+  console.log('convocazioni-cron:', oggi, ora + ':' + String(minuti).padStart(2, '0'), '—', esito);
+
+  // Il battito si scrive sempre, anche quando non si e fatto niente e
+  // soprattutto quando qualcosa e andato storto.
+  await segnaGiro({ oggi, ora, minuti, esito });
 };
 
 /* All'ora tonda e alla mezza, in UTC. Il filtro sull'ora italiana e

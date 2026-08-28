@@ -22,17 +22,21 @@
 
 import {
   json, errore, esigiMembro, tuttiGliUtenti, chiave,
-  incaricoDi, puoConvocare, oggiRoma, dataValida
+  incaricoDi, puoConvocare, oggiRoma, dataValida, dataInLettere
 } from '../lib/comune.mjs';
 
 import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
-  prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI
+  prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
+  ultimoGiro, destinatariRiepilogo
 } from '../lib/convocazioni.mjs';
 
 import {
-  chiavePubblica, iscrivi, disiscrivi, sottoscrizioniDi, sottoscrizioneValida
+  chiavePubblica, iscrivi, disiscrivi, sottoscrizioniDi, sottoscrizioneValida,
+  manda, pushConfigurato
 } from '../lib/push.mjs';
+
+import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
 
@@ -43,6 +47,17 @@ async function stato(req, segreto) {
 
   const giorni = await leggiGiorni();
   const mieDevice = await sottoscrizioniDi(chiave(u.email));
+
+  /* La diagnosi la vede solo l'admin. A un membro non serve sapere se
+     l'orologio del server ha girato: gli serve sapere se le sue
+     notifiche sono accese, e quello sta in `push`. */
+  const diagnosi = u.ruolo === 'admin'
+    ? {
+        orologio: await ultimoGiro(),
+        posta:    postaConfigurata() && !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
+        chiaviPush: pushConfigurato()
+      }
+    : null;
 
   return json({
     io: {
@@ -59,7 +74,8 @@ async function stato(req, segreto) {
     push: {
       chiave:   chiavePubblica(),
       attive:   mieDevice.length
-    }
+    },
+    diagnosi
   });
 }
 
@@ -165,6 +181,82 @@ async function pushIscrivi(req, segreto) {
   return json({ ok: true });
 }
 
+/* Una notifica a se stessi, adesso.
+   Esiste perche senza, per sapere se le notifiche funzionano bisogna
+   aspettare le 14:00 di un giorno di allenamento: un giro di prova
+   ogni sei ore, e al buio. Con questo bottone la catena — chiavi,
+   iscrizione, servizio di Apple o Google, service worker — si prova
+   in tre secondi, e il numero che torna dice a quanti dispositivi e
+   partita davvero. */
+async function pushProva(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+
+  if (!pushConfigurato())
+    return errore('Sul server mancano le chiavi VAPID: nessuna notifica puo partire.', 503);
+
+  const mie = await sottoscrizioniDi(chiave(g.utente.email));
+  if (!mie.length)
+    return errore('Nessun dispositivo iscritto: il server non ha ricevuto la tua iscrizione.', 409);
+
+  const partite = await manda(chiave(g.utente.email), {
+    titolo: 'Prova riuscita',
+    testo:  'Se leggi questo, le notifiche arrivano. Non devi fare niente.',
+    data:   oggiRoma(),
+    vai:    new URL(req.url).origin + '/area-riservata'
+  }, 600);
+
+  return json({ ok: true, dispositivi: mie.length, partite });
+}
+
+/* Il riepilogo, adesso, senza aspettare le 20:00. Solo per chi puo
+   convocare: e la stessa mail che riceverebbero i destinatari veri. */
+async function riepilogoProva(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono mandare il riepilogo.', 403);
+
+  const modello = process.env.EMAILJS_TEMPLATE_CONVOCAZIONI;
+  if (!modello || !postaConfigurata())
+    return errore('La posta non e configurata: manca EMAILJS_TEMPLATE_CONVOCAZIONI o le chiavi EmailJS.', 503);
+
+  const corpo = await req.json().catch(() => ({}));
+  const data = dataValida(corpo.data) ? corpo.data : oggiRoma();
+
+  const [utenti, risposte] = await Promise.all([tuttiGliUtenti(), leggiRisposte(data)]);
+  const voci = daConvocare(utenti).map(u => ({
+    id: u.idGioco,
+    stato: (risposte[chiave(u.email)] || {}).stato || null
+  })).sort((a, b) => a.id.localeCompare(b.id, 'it'));
+
+  const presenti = voci.filter(v => v.stato === 'presente').map(v => v.id);
+  const assenti  = voci.filter(v => v.stato === 'assente').map(v => v.id);
+  const muti     = voci.filter(v => !v.stato).map(v => v.id);
+  const elenco   = n => n.length ? n.join(', ') : '—';
+  const quando   = dataInLettere(data);
+  const titolo   = quando.charAt(0).toUpperCase() + quando.slice(1);
+
+  const destinatari = destinatariRiepilogo(utenti);
+  let partite = 0;
+
+  for (const d of destinatari) {
+    const ok = await mandaMail(modello, {
+      to_email: d.email, capitano: d.idGioco,
+      allenamento: titolo, data,
+      n_presenti: presenti.length, n_assenti: assenti.length, n_muti: muti.length,
+      presenti: elenco(presenti), assenti: elenco(assenti), non_risposto: elenco(muti),
+      riassunto: presenti.length + ' presenti · ' + assenti.length +
+                 ' assenti · ' + muti.length + ' senza risposta',
+      panel_url: new URL(req.url).origin + '/area-riservata?giorno=' + data
+    });
+    if (ok) partite++;
+  }
+
+  return json({ ok: true, destinatari: destinatari.length, partite,
+                indirizzi: destinatari.map(d => d.email) });
+}
+
 async function pushEsci(req, segreto) {
   const g = await esigiMembro(req, segreto);
   if (g.errore) return g.errore;
@@ -191,6 +283,8 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);
     if (req.method === 'POST' && azione === 'push-esci')    return await pushEsci(req, segreto);
+    if (req.method === 'POST' && azione === 'push-prova')   return await pushProva(req, segreto);
+    if (req.method === 'POST' && azione === 'riepilogo-prova') return await riepilogoProva(req, segreto);
     return errore('Azione sconosciuta.', 404);
   } catch (e) {
     console.error('convocazioni:', e);
