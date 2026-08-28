@@ -392,12 +392,21 @@
       </form>
 
       <form class="ar-corpo" id="arFormRegistra" hidden novalidate>
-        <h3 class="wiz-tit">Chiedi l'accesso</h3>
-        <p class="wiz-sub">Niente password: bastano la tua email e l'ID con cui giochi. La richiesta arriva a un amministratore, che la approva o la rifiuta.</p>
+        <h3 class="wiz-tit" id="arRegTit">Chiedi l'accesso</h3>
+        <p class="wiz-sub" id="arRegSub">Niente password: bastano la tua email e l'ID con cui giochi. La richiesta arriva a un amministratore, che la approva o la rifiuta.</p>
 
         <label class="wiz-eti" for="arRegEmail">Email</label>
         <input class="wiz-input" type="email" id="arRegEmail" name="email"
                autocomplete="email" placeholder="nome@esempio.it" required>
+
+        <!-- Serve solo a creare il primo account amministratore. Senza,
+             chi apre l'indirizzo riservato non avrebbe modo di crearlo:
+             la registrazione con ADMIN_EMAIL esige la password. -->
+        <div id="arRegChiave" hidden>
+          <label class="wiz-eti" for="arRegPassword" style="margin-top:20px;">Password amministratore</label>
+          <input class="wiz-input" type="password" id="arRegPassword" name="password"
+                 autocomplete="current-password" placeholder="La password del pannello">
+        </div>
 
         <span class="wiz-eti" style="margin-top:26px;">Piattaforma</span>
         <div class="piatt" id="arPiatt" style="margin-top:13px;">

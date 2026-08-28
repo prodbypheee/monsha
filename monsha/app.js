@@ -486,9 +486,13 @@
 
     function vestiDaAdmin() {
       $('arAccChiave').hidden = false;
-      $('arLingRegistra').hidden = true;
       $('arAccTit').textContent = 'Accesso amministratore';
       $('arAccSub').textContent = 'Email, ID di gioco e la password del pannello.';
+      // La registrazione resta raggiungibile: e l'unico modo di creare
+      // il primo account admin, e senza il campo password fallirebbe.
+      $('arRegChiave').hidden = false;
+      $('arRegTit').textContent = 'Crea l’account amministratore';
+      $('arRegSub').textContent = 'Serve la password del pannello. Da fare una volta sola.';
     }
 
     /* ---- dialogo col server ---- */
@@ -622,7 +626,11 @@
       btn.textContent = 'Invio…';
       esito(box, '');
 
-      const r = await api('registrati', { email, piattaforma, idGioco });
+      // Vuota per i membri: il server la esige solo se l'indirizzo e
+      // quello dell'amministratore.
+      const password = $('arRegPassword').value;
+
+      const r = await api('registrati', { email, piattaforma, idGioco, password });
 
       btn.disabled = false;
       btn.textContent = testo;
