@@ -5,12 +5,12 @@
    se oggi e un giorno di allenamento, e solo in tre momenti:
 
      14:00  notifica a tutti i membri: presente o assente?
-     18:00  seconda notifica, ma SOLO a chi non ha ancora risposto —
+     17:00  seconda notifica, ma SOLO a chi non ha ancora risposto —
             richiamare anche chi ha gia detto la sua e il modo piu
             rapido per far spegnere le notifiche a tutta la squadra
      20:00  mail di riepilogo a capitano, amministrazione e admin
 
-   Perche ogni ora invece che tre cron alle 14, 18 e 20: il cron di
+   Perche ogni ora invece che tre cron alle 14, 17 e 20: il cron di
    Netlify ragiona in UTC, e l'Italia sta un'ora avanti d'inverno e
    due d'estate. Un orario fisso in UTC sbaglierebbe di un'ora per
    meta anno. Girando ogni ora e chiedendo "che ore sono a Roma?" il
@@ -62,10 +62,15 @@ async function avvisa(data, utenti, risposte, seconda) {
   // sua andata e ritorno verso Google o Apple, arriverebbero a sfiorare
   // il tempo massimo di una funzione. E chi e in fondo all'elenco non
   // deve ricevere la notifica un minuto dopo gli altri.
+  // Tre ore di validita in entrambi i casi, ed e un numero scelto, non
+  // tondo per caso: la prima notifica scade quando arriva il richiamo
+  // delle 17, il richiamo scade quando parte il riepilogo delle 20. Un
+  // telefono spento tutto il pomeriggio non deve accendersi la sera con
+  // addosso la domanda di un allenamento gia cominciato.
   const esiti = await Promise.all(utenti.map(u => {
     const k = chiave(u.email);
     if (seconda && risposte[k]) return 0;   // ha gia risposto: lasciamolo in pace
-    return manda(k, carico, seconda ? 2 * 3600 : 5 * 3600);
+    return manda(k, carico, 3 * 3600);
   }));
 
   return esiti.reduce((a, b) => a + b, 0);
@@ -130,7 +135,7 @@ export default async () => {
   const oggi = oggiRoma();
   const ora  = oraRoma();
 
-  if (![14, 18, 20].includes(ora)) return;
+  if (![14, 17, 20].includes(ora)) return;
 
   const giorni = await leggiGiorni();
   if (!giorni.includes(oggi)) return;
@@ -157,7 +162,7 @@ export default async () => {
     return;
   }
 
-  const n = await avvisa(oggi, membri, risposte, ora === 18);
+  const n = await avvisa(oggi, membri, risposte, ora === 17);
   console.log('convocazioni: fascia', ora, '—', n, 'notifiche partite per', oggi);
 };
 

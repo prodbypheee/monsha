@@ -115,7 +115,7 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
    questa settimana e le quattro successive. Salva.
 2. Nei giorni segnati, **alle 14:00** parte una notifica a tutti i
    membri approvati, capitano compreso.
-3. **Alle 18:00** parte una seconda notifica, ma solo a chi non ha
+3. **Alle 17:00** parte una seconda notifica, ma solo a chi non ha
    ancora risposto. Richiamare anche chi ha già detto la sua è il modo
    più rapido per far spegnere le notifiche a tutta la squadra.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
@@ -128,7 +128,7 @@ sbaglierebbe di un'ora per metà anno.
 
 Si può rispondere anche senza notifica, dal sito, e si può cambiare
 idea fino a mezzanotte — anzi, fino alle sei del mattino dopo, perché
-una notifica delle 18:00 toccata a mezzanotte e mezza è comunque una
+una notifica delle 17:00 toccata a mezzanotte e mezza è comunque una
 risposta sincera.
 
 ## 5. I due bottoni dentro la notifica
@@ -156,7 +156,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
-| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00, 18:00, 20:00 |
+| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00, 17:00, 20:00 |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |
 | `monsha/index.html` | il markup, dentro `#arDentro` |
