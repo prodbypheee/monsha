@@ -1211,3 +1211,52 @@ button, input, select, textarea { font: inherit; }
   grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
 }
 .panchina .conv-avatar { max-width: 58px; }
+
+/* =============================================================
+   TESTATE DELLE TAB
+   Le altre tab partivano da una sezione nuda: solo titolo su nero.
+   Qui dietro al titolo ci va un'immagine come nella home, sfumata
+   fino a sparire nel fondo pagina. E una fascia di altezza propria,
+   non l'intera sezione: l'area riservata e lunghissima e avrebbe
+   avuto lo sfondo fino in fondo.
+   ============================================================= */
+
+.sez-testata { position: relative; }
+
+/* Sopra ogni altra cosa nella sezione, il contenuto resta davanti. */
+.sez-testata > *:not(.testata-sfondo) { position: relative; z-index: 1; }
+
+.testata-sfondo {
+  position: absolute; top: 0; z-index: 0; pointer-events: none;
+  /* A tutta larghezza anche se la sezione e centrata e limitata:
+     senza questo, su schermo grande la fascia sarebbe un rettangolo
+     staccato dai bordi invece dello sfondo della pagina. Il body ha
+     gia overflow-x: clip, quindi 100vw non crea barre. */
+  left: 50%; transform: translateX(-50%); width: 100vw;
+  height: clamp(300px, 44vw, 520px);
+  background-size: cover; background-position: center 45%;
+  filter: grayscale(.5) contrast(1.12) brightness(.62);
+  /* Sfuma verso il basso invece di finire di netto: cosi si posa sul
+     nero della pagina senza una linea di taglio. */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.8) 40%, transparent 100%);
+          mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.8) 40%, transparent 100%);
+}
+
+/* Un velo sopra l'immagine: il titolo e enorme e chiaro, e su una
+   foto con zone luminose perderebbe stacco. */
+.testata-sfondo::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(11,11,13,.62) 0%, rgba(11,11,13,.34) 45%, rgba(11,11,13,.92) 100%);
+}
+
+#tab-rosa     .testata-sfondo { background-image: url('./immagini/testata-rosa.jpeg'); }
+#tab-albo     .testata-sfondo { background-image: url('./immagini/testata-albo.jpeg'); }
+#tab-unisciti .testata-sfondo { background-image: url('./immagini/testata-unisciti.jpeg'); }
+#tab-area     .testata-sfondo { background-image: url('./immagini/testata-area.jpeg'); }
+
+/* Su telefono la fascia si accorcia: il titolo occupa gia mezza
+   schermata e una foto alta quanto lo schermo spingerebbe il
+   contenuto sotto la piega senza motivo. */
+@media (max-width: 768px) {
+  .testata-sfondo { height: clamp(240px, 62vw, 340px); }
+}
