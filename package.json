@@ -1,0 +1,9 @@
+{
+  "name": "monacishaolin",
+  "private": true,
+  "type": "module",
+  "description": "Sito Monaci Shaolin. Le pagine sono statiche: questo file esiste solo per le dipendenze delle Netlify Functions (area riservata). Niente script build, altrimenti Netlify proverebbe a eseguirlo.",
+  "dependencies": {
+    "@netlify/blobs": "^11.0.2"
+  }
+}

@@ -7,6 +7,12 @@
 [build]
   publish = "monsha"
 
+# Le Netlify Functions dell'area riservata. La rotta /api/area/:azione e
+# dichiarata dentro netlify/functions/area.mjs: non serve un redirect.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 # La funzione riscrive i tag Open Graph in base al percorso richiesto.
 # Serve perche i crawler di WhatsApp, Telegram, Facebook e X non eseguono
 # JavaScript: leggono solo l'HTML servito. Senza questa iniezione ogni tab
@@ -68,6 +74,20 @@
 
 [[redirects]]
   from = "/albodoro"
+  to = "/index.html"
+  status = 200
+  force = true
+
+# L'area riservata e una tab come le altre: il percorso deve servire la SPA.
+# Niente edge function og-tags qui: non e una pagina da condividere.
+[[redirects]]
+  from = "/area-riservata"
+  to = "/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/areariservata"
   to = "/index.html"
   status = 200
   force = true

@@ -71,6 +71,7 @@
       <button type="button" data-va="rosa">Rosa</button>
       <button type="button" data-va="albo">Albo d'Oro</button>
       <button type="button" data-va="unisciti">Unisciti</button>
+      <button type="button" data-va="area">Area riservata</button>
     </nav>
     <button type="button" class="btn btn-acc" data-va="unisciti">Fai il provino</button>
   </div>
@@ -335,6 +336,154 @@
   </section>
 </div>
 
+
+<!-- ============ AREA RISERVATA ============ -->
+<div class="tab" id="tab-area">
+
+  <section class="sez">
+    <div class="sez-testa" data-reveal>
+      <div class="eyebrow">Accesso membri</div>
+      <h2 class="titolone">Area<br>riservata</h2>
+      <p class="sottotesto">Lo spazio interno del tempio. Si entra solo con un account approvato: chi si registra resta in attesa finché un amministratore non dà il via libera.</p>
+    </div>
+
+    <!-- Stato iniziale. Resta finché il server non dice chi sei: senza,
+         comparirebbe per un istante il modulo di accesso anche a chi è
+         già connesso. -->
+    <div class="ar-carico" id="arCarico" data-reveal>
+      <span class="ar-punto"></span> Verifico la sessione…
+    </div>
+
+    <!-- ---------- OSPITE: accesso e registrazione ---------- -->
+    <div class="ar-scheda" id="arOspite" hidden data-reveal>
+      <div class="ar-linguette" role="tablist" aria-label="Accesso">
+        <button type="button" class="ar-linguetta attiva" data-modulo="accedi"
+                role="tab" aria-selected="true">Accedi</button>
+        <button type="button" class="ar-linguetta" data-modulo="registra"
+                role="tab" aria-selected="false">Crea un account</button>
+      </div>
+
+      <form class="ar-corpo" id="arFormAccedi" novalidate>
+        <h3 class="wiz-tit">Bentornato</h3>
+        <p class="wiz-sub">Email e password del tuo account.</p>
+
+        <label class="wiz-eti" for="arAccEmail">Email</label>
+        <input class="wiz-input" type="email" id="arAccEmail" name="email"
+               autocomplete="email" placeholder="nome@esempio.it" required>
+
+        <label class="wiz-eti" for="arAccPassword" style="margin-top:20px;">Password</label>
+        <input class="wiz-input" type="password" id="arAccPassword" name="password"
+               autocomplete="current-password" placeholder="La tua password" required>
+
+        <p class="ar-esito" id="arAccEsito" role="status" aria-live="polite"></p>
+
+        <div class="ar-azioni">
+          <button type="submit" class="btn btn-acc" id="arAccInvia">Entra</button>
+        </div>
+      </form>
+
+      <form class="ar-corpo" id="arFormRegistra" hidden novalidate>
+        <h3 class="wiz-tit">Chiedi l'accesso</h3>
+        <p class="wiz-sub">Compila i campi: la richiesta arriva a un amministratore, che la approva o la rifiuta.</p>
+
+        <label class="wiz-eti" for="arRegEmail">Email</label>
+        <input class="wiz-input" type="email" id="arRegEmail" name="email"
+               autocomplete="email" placeholder="nome@esempio.it" required>
+
+        <label class="wiz-eti" for="arRegPassword" style="margin-top:20px;">Password</label>
+        <input class="wiz-input" type="password" id="arRegPassword" name="password"
+               autocomplete="new-password" placeholder="Almeno 8 caratteri" required minlength="8">
+
+        <label class="wiz-eti" for="arRegPassword2" style="margin-top:20px;">Ripeti la password</label>
+        <input class="wiz-input" type="password" id="arRegPassword2" name="password2"
+               autocomplete="new-password" placeholder="Di nuovo, per sicurezza" required>
+
+        <span class="wiz-eti" style="margin-top:26px;">Piattaforma</span>
+        <div class="piatt" id="arPiatt" style="margin-top:13px;">
+          <button type="button" data-piatt="PlayStation" aria-pressed="false"><b>PlayStation</b><span>PSN ID</span></button>
+          <button type="button" data-piatt="Xbox" aria-pressed="false"><b>Xbox</b><span>Gamertag</span></button>
+          <button type="button" data-piatt="PC" aria-pressed="false"><b>PC</b><span>Steam / EA App</span></button>
+        </div>
+
+        <label class="wiz-eti" for="arRegId" style="margin-top:26px;">ID di gioco</label>
+        <input class="wiz-input" type="text" id="arRegId" name="idGioco"
+               placeholder="Seleziona prima la piattaforma" required>
+        <small class="ar-aiuto" id="arRegIdAiuto"></small>
+
+        <p class="ar-esito" id="arRegEsito" role="status" aria-live="polite"></p>
+
+        <div class="ar-azioni">
+          <button type="submit" class="btn btn-acc" id="arRegInvia">Invia richiesta</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ---------- ESITO DELLA RICHIESTA ---------- -->
+    <div class="ar-scheda ar-avviso" id="arAvviso" hidden>
+      <div class="ar-corpo">
+        <div class="ar-segno" id="arAvvisoSegno" aria-hidden="true">⏳</div>
+        <h3 class="wiz-tit" id="arAvvisoTit">Richiesta inviata</h3>
+        <p class="wiz-sub" id="arAvvisoTesto"></p>
+        <div class="ar-azioni">
+          <button type="button" class="btn" id="arAvvisoIndietro">Torna all'accesso</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- MEMBRO CONNESSO ---------- -->
+    <div id="arDentro" hidden>
+      <div class="ar-scheda">
+        <div class="ar-corpo">
+          <div class="ar-intestazione">
+            <div>
+              <div class="eyebrow">Accesso effettuato</div>
+              <h3 class="wiz-tit" style="margin-top:14px;">Benvenuto nel tempio</h3>
+            </div>
+            <button type="button" class="btn" id="arEsci">Esci</button>
+          </div>
+
+          <p class="wiz-sub" style="margin-top:18px;">Questa è la parte del sito visibile solo ai membri approvati. I contenuti arrivano presto.</p>
+
+          <dl class="ar-profilo">
+            <div><dt>Email</dt><dd id="arProfEmail">—</dd></div>
+            <div><dt>Piattaforma</dt><dd id="arProfPiatt">—</dd></div>
+            <div><dt>ID di gioco</dt><dd id="arProfId">—</dd></div>
+            <div><dt>Ruolo</dt><dd id="arProfRuolo">—</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- ---------- PANNELLO AMMINISTRATORE ---------- -->
+      <div class="ar-scheda" id="arAdmin" hidden style="margin-top:22px;">
+        <div class="ar-corpo">
+          <div class="ar-intestazione">
+            <div>
+              <div class="eyebrow">Pannello amministratore</div>
+              <h3 class="wiz-tit" style="margin-top:14px;">Gestione accessi</h3>
+            </div>
+            <button type="button" class="btn" id="arAggiorna">Aggiorna</button>
+          </div>
+
+          <div class="ar-gruppo">
+            <div class="ar-gruppo-tit">In attesa <span class="ar-conta" id="arContaAttesa">0</span></div>
+            <div class="ar-lista" id="arListaAttesa"></div>
+          </div>
+
+          <div class="ar-gruppo">
+            <div class="ar-gruppo-tit">Approvati <span class="ar-conta" id="arContaApprovati">0</span></div>
+            <div class="ar-lista" id="arListaApprovati"></div>
+          </div>
+
+          <div class="ar-gruppo">
+            <div class="ar-gruppo-tit">Rifiutati <span class="ar-conta" id="arContaRifiutati">0</span></div>
+            <div class="ar-lista" id="arListaRifiutati"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</div>
 </main>
 
 <!-- FOGLIO DETTAGLIO GIOCATORE (telefono) -->

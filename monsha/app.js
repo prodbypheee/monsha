@@ -16,7 +16,8 @@
     home:     '/',
     rosa:     '/noi',
     albo:     '/albo-doro',
-    unisciti: '/unisciti-a-noi'
+    unisciti: '/unisciti-a-noi',
+    area:     '/area-riservata'
   };
   const DA_PERCORSO = {
     '/':               'home',
@@ -24,7 +25,9 @@
     '/albo-doro':      'albo',
     '/albodoro':       'albo',
     '/unisciti-a-noi': 'unisciti',
-    '/uniscitianoi':   'unisciti'
+    '/uniscitianoi':   'unisciti',
+    '/area-riservata': 'area',
+    '/areariservata':  'area'
   };
 
   function percorso() {
@@ -45,6 +48,9 @@
       history.pushState({ tab }, '', PERCORSI[tab]);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // L'area riservata si carica solo quando serve: senza questo segnale
+    // il sito chiamerebbe il server a ogni visita, anche in home.
+    if (tab === 'area') document.dispatchEvent(new CustomEvent('area:aperta'));
     rivela();
   }
 
@@ -443,6 +449,289 @@
 
     disegna();
     vai(1);
+  })();
+
+  /* ---------- AREA RISERVATA -----------------------------------
+     Qui non c'e nessun controllo di sicurezza: e tutto lato server,
+     in netlify/functions/area.mjs. Questo codice si limita a mostrare
+     cio che il server risponde. Chiunque puo falsificare quello che
+     succede in questa pagina, ma non puo falsificare il cookie di
+     sessione, ed e quello a decidere.
+
+     La tab si sveglia da sola: mostra() emette 'area:aperta', cosi
+     la chiamata al server parte solo se qualcuno entra davvero qui,
+     non a ogni caricamento del sito. */
+
+  (function areaRiservata() {
+    const $ = id => document.getElementById(id);
+    if (!$('tab-area')) return;
+
+    const AIUTO_ID = {
+      PlayStation: 'Il tuo PSN ID (PlayStation Network)',
+      Xbox:        'Il tuo Xbox Gamertag',
+      PC:          'Il tuo ID Origin, Steam o Epic Games'
+    };
+
+    let avviata = false;
+    let piattaforma = '';
+
+    /* ---- dialogo col server ---- */
+
+    async function api(azione, corpo) {
+      const opzioni = { credentials: 'same-origin', method: corpo === undefined ? 'GET' : 'POST' };
+      if (corpo !== undefined && corpo !== null) {
+        opzioni.headers = { 'content-type': 'application/json' };
+        opzioni.body = JSON.stringify(corpo);
+      }
+      let risposta;
+      try {
+        risposta = await fetch('/api/area/' + azione, opzioni);
+      } catch {
+        return { ok: false, stato: 0, dati: { errore: 'Connessione non riuscita. Riprova.' } };
+      }
+      let dati = {};
+      try { dati = await risposta.json(); } catch { /* risposta senza corpo */ }
+      return { ok: risposta.ok, stato: risposta.status, dati };
+    }
+
+    /* ---- schermate ---- */
+
+    const SCHERMATE = ['arCarico', 'arOspite', 'arAvviso', 'arDentro'];
+    function schermata(quale) {
+      SCHERMATE.forEach(id => { $(id).hidden = (id !== quale); });
+    }
+
+    function esito(elemento, testo, buono) {
+      elemento.textContent = testo || '';
+      elemento.style.color = buono ? '#7fd6a0' : '#ff9a4d';
+    }
+
+    function avviso(segno, titolo, testo) {
+      $('arAvvisoSegno').textContent = segno;
+      $('arAvvisoTit').textContent = titolo;
+      $('arAvvisoTesto').textContent = testo;
+      schermata('arAvviso');
+    }
+
+    /* ---- linguette accedi / registrati ---- */
+
+    document.querySelectorAll('#arOspite .ar-linguetta').forEach(linguetta => {
+      linguetta.addEventListener('click', () => {
+        const quale = linguetta.dataset.modulo;
+        document.querySelectorAll('#arOspite .ar-linguetta').forEach(l => {
+          const attiva = l === linguetta;
+          l.classList.toggle('attiva', attiva);
+          l.setAttribute('aria-selected', String(attiva));
+        });
+        $('arFormAccedi').hidden   = quale !== 'accedi';
+        $('arFormRegistra').hidden = quale !== 'registra';
+      });
+    });
+
+    $('arAvvisoIndietro').addEventListener('click', () => schermata('arOspite'));
+
+    /* ---- scelta della piattaforma ---- */
+
+    $('arPiatt').addEventListener('click', e => {
+      const bottone = e.target.closest('button[data-piatt]');
+      if (!bottone) return;
+      piattaforma = bottone.dataset.piatt;
+      [...$('arPiatt').children].forEach(b =>
+        b.setAttribute('aria-pressed', String(b.dataset.piatt === piattaforma)));
+      $('arRegIdAiuto').textContent = AIUTO_ID[piattaforma] || '';
+      $('arRegId').placeholder = 'Il tuo ID su ' + piattaforma;
+    });
+
+    /* ---- accesso ---- */
+
+    $('arFormAccedi').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('arAccInvia'), box = $('arAccEsito');
+      const email = $('arAccEmail').value.trim();
+      const password = $('arAccPassword').value;
+
+      if (!email || !password) { esito(box, 'Inserisci email e password.'); return; }
+
+      btn.disabled = true;
+      const testo = btn.textContent;
+      btn.textContent = 'Verifico…';
+      esito(box, '');
+
+      const r = await api('accedi', { email, password });
+
+      btn.disabled = false;
+      btn.textContent = testo;
+
+      if (r.ok) {
+        $('arAccPassword').value = '';
+        return entra(r.dati.utente);
+      }
+      if (r.dati.stato === 'in-attesa') {
+        return avviso('⏳', 'Richiesta ancora in attesa',
+          'Il tuo account esiste ma non e stato ancora approvato. Ti avvisiamo appena un amministratore decide.');
+      }
+      if (r.dati.stato === 'rifiutato') {
+        return avviso('⛔', 'Richiesta rifiutata',
+          'Questo account non e stato abilitato. Se pensi ci sia un errore, scrivici sui social.');
+      }
+      esito(box, r.dati.errore || 'Accesso non riuscito.');
+    });
+
+    /* ---- registrazione ---- */
+
+    $('arFormRegistra').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $('arRegInvia'), box = $('arRegEsito');
+      const email = $('arRegEmail').value.trim();
+      const password = $('arRegPassword').value;
+      const password2 = $('arRegPassword2').value;
+      const idGioco = $('arRegId').value.trim();
+
+      // Controlli anche qui, non per sicurezza ma per non far fare
+      // un giro a vuoto al server su errori evidenti.
+      if (!email)                  { esito(box, 'Inserisci la tua email.'); return; }
+      if (password.length < 8)     { esito(box, 'La password deve avere almeno 8 caratteri.'); return; }
+      if (password !== password2)  { esito(box, 'Le due password non coincidono.'); return; }
+      if (!piattaforma)            { esito(box, 'Scegli la piattaforma su cui giochi.'); return; }
+      if (idGioco.length < 2)      { esito(box, 'Inserisci il tuo ID di gioco.'); return; }
+
+      btn.disabled = true;
+      const testo = btn.textContent;
+      btn.textContent = 'Invio…';
+      esito(box, '');
+
+      const r = await api('registrati', { email, password, piattaforma, idGioco });
+
+      btn.disabled = false;
+      btn.textContent = testo;
+
+      if (!r.ok) { esito(box, r.dati.errore || 'Registrazione non riuscita.'); return; }
+
+      $('arFormRegistra').reset();
+      piattaforma = '';
+      [...$('arPiatt').children].forEach(b => b.setAttribute('aria-pressed', 'false'));
+      $('arRegIdAiuto').textContent = '';
+
+      // L'amministratore e gia dentro: il server gli ha dato la sessione.
+      if (r.dati.utente && r.dati.utente.stato === 'approvato') return entra(r.dati.utente);
+
+      avviso('📨', 'Richiesta inviata',
+        'Un amministratore ha ricevuto la tua richiesta. Appena viene approvata potrai entrare con email e password.');
+    });
+
+    /* ---- dentro ---- */
+
+    function entra(utente) {
+      $('arProfEmail').textContent = utente.email;
+      $('arProfPiatt').textContent = utente.piattaforma;
+      $('arProfId').textContent    = utente.idGioco;
+      $('arProfRuolo').textContent = utente.ruolo === 'admin' ? 'Amministratore' : 'Membro';
+      $('arAdmin').hidden = utente.ruolo !== 'admin';
+      schermata('arDentro');
+      if (utente.ruolo === 'admin') caricaRichieste();
+    }
+
+    $('arEsci').addEventListener('click', async () => {
+      await api('esci', {});
+      $('arFormAccedi').reset();
+      schermata('arOspite');
+    });
+
+    /* ---- pannello amministratore ----
+       Le righe si costruiscono con createElement e textContent: email e
+       ID di gioco li scrive chi si registra, e con innerHTML basterebbe
+       un ID fatto di tag per eseguire codice nel browser dell'admin. */
+
+    function riga(utente, azioni) {
+      const el = document.createElement('div');
+      el.className = 'ar-voce';
+
+      const info = document.createElement('div');
+      info.className = 'ar-voce-info';
+
+      const mail = document.createElement('b');
+      mail.textContent = utente.email;
+
+      const meta = document.createElement('span');
+      const quando = new Date(utente.creato).toLocaleDateString('it-IT',
+        { day: '2-digit', month: 'short', year: 'numeric' });
+      meta.textContent = utente.piattaforma + ' · ' + utente.idGioco + ' · ' + quando;
+
+      info.append(mail, meta);
+
+      const gruppo = document.createElement('div');
+      gruppo.className = 'ar-voce-azioni';
+      azioni.forEach(([etichetta, esitoAzione, stile]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ar-mini' + (stile ? ' ' + stile : '');
+        b.textContent = etichetta;
+        b.addEventListener('click', () => decidi(utente.email, esitoAzione, b));
+        gruppo.appendChild(b);
+      });
+
+      el.append(info, gruppo);
+      return el;
+    }
+
+    function riempi(contenitore, utenti, azioni, vuoto) {
+      contenitore.textContent = '';
+      if (!utenti.length) {
+        const p = document.createElement('p');
+        p.className = 'ar-vuoto';
+        p.textContent = vuoto;
+        contenitore.appendChild(p);
+        return;
+      }
+      utenti.forEach(u => contenitore.appendChild(riga(u, azioni)));
+    }
+
+    async function caricaRichieste() {
+      const btn = $('arAggiorna');
+      btn.disabled = true;
+      const r = await api('richieste');
+      btn.disabled = false;
+      if (!r.ok) return;
+
+      const { attesa, approvati, rifiutati } = r.dati;
+      $('arContaAttesa').textContent     = attesa.length;
+      $('arContaApprovati').textContent  = approvati.length;
+      $('arContaRifiutati').textContent  = rifiutati.length;
+
+      riempi($('arListaAttesa'), attesa,
+        [['Approva', 'approva', 'si'], ['Rifiuta', 'rifiuta', 'no']],
+        'Nessuna richiesta in attesa.');
+
+      riempi($('arListaApprovati'), approvati,
+        [['Revoca', 'rifiuta', 'no']],
+        'Nessun membro approvato.');
+
+      riempi($('arListaRifiutati'), rifiutati,
+        [['Riammetti', 'approva', 'si'], ['Elimina', 'elimina', 'no']],
+        'Nessuna richiesta rifiutata.');
+    }
+
+    async function decidi(email, esitoAzione, bottone) {
+      if (esitoAzione === 'elimina' &&
+          !confirm('Eliminare definitivamente l\'account di ' + email + '?')) return;
+      bottone.disabled = true;
+      const r = await api('decidi', { email, esito: esitoAzione });
+      bottone.disabled = false;
+      if (!r.ok) { alert(r.dati.errore || 'Operazione non riuscita.'); return; }
+      caricaRichieste();
+    }
+
+    $('arAggiorna').addEventListener('click', caricaRichieste);
+
+    /* ---- avvio pigro ---- */
+
+    document.addEventListener('area:aperta', async () => {
+      if (avviata) return;
+      avviata = true;
+      const r = await api('sessione');
+      if (r.ok && r.dati.utente) entra(r.dati.utente);
+      else schermata('arOspite');
+    });
   })();
 
   /* ---------- AVVIO -------------------------------------------- */
