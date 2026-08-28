@@ -590,3 +590,128 @@ button, input, select, textarea { font: inherit; }
   .rosa { grid-template-columns: 1fr 1fr; gap: 8px; }
   .scheda-nick { font-size: 12px; }
 }
+
+/* =============================================================
+   AREA RISERVATA
+   Riusa i mattoni del modulo candidatura (.wiz-input, .piatt,
+   .btn) perche e la stessa lingua visiva: contorni, niente
+   riempimenti, accento arancione solo come linea.
+   ============================================================= */
+
+.ar-carico {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 44px; max-width: 780px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--bg-2); padding: 26px clamp(20px, 4vw, 44px);
+  font-size: 14px; color: var(--txt-4);
+}
+.ar-punto {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--acc); flex-shrink: 0;
+  animation: msPulsa 1.3s ease-in-out infinite;
+}
+@keyframes msPulsa { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+.ar-scheda {
+  margin-top: 44px; max-width: 780px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--bg-2); overflow: hidden;
+}
+.ar-corpo { padding: clamp(26px, 4vw, 44px); }
+
+/* ---------- linguette accedi / registrati ---------- */
+
+.ar-linguette { display: flex; border-bottom: 1px solid var(--line); }
+.ar-linguetta {
+  flex: 1; padding: 17px 14px; background: none; border: 0;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  color: var(--txt-4); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  transition: color .3s, border-color .3s, background .3s;
+}
+.ar-linguetta:hover { color: var(--txt); background: rgba(236,233,228,.04); }
+.ar-linguetta.attiva { color: var(--acc); border-bottom-color: var(--acc); }
+
+/* ---------- moduli ---------- */
+
+.ar-aiuto { display: block; margin-top: 9px; font-size: 12px; color: var(--txt-5); }
+
+.ar-esito {
+  margin: 22px 0 0; min-height: 21px;
+  font-size: 13.5px; line-height: 1.5;
+}
+.ar-azioni { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.ar-azioni .btn { min-height: 48px; }
+
+/* ---------- schermata di esito ---------- */
+
+.ar-avviso .ar-corpo { text-align: center; }
+.ar-avviso .ar-azioni { justify-content: center; }
+.ar-segno { font-size: 40px; line-height: 1; margin-bottom: 18px; }
+
+/* ---------- profilo del membro ---------- */
+
+.ar-intestazione {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap;
+}
+
+.ar-profilo {
+  margin: 30px 0 0; padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.ar-profilo > div {
+  display: grid; grid-template-columns: 150px 1fr; gap: 14px;
+  padding: 15px 0; border-bottom: 1px solid var(--line);
+}
+.ar-profilo dt {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--txt-4);
+}
+.ar-profilo dd { margin: 0; font-size: 14.5px; color: var(--txt); word-break: break-word; }
+
+/* ---------- pannello amministratore ---------- */
+
+.ar-gruppo { margin-top: 34px; }
+.ar-gruppo-tit {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--txt-4);
+  padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.ar-conta {
+  min-width: 22px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--acc-line); background: var(--acc-soft);
+  color: var(--acc); font-size: 11px; letter-spacing: .04em; text-align: center;
+}
+
+.ar-voce {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  padding: 16px 0; border-bottom: 1px solid var(--line);
+}
+.ar-voce-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.ar-voce-info b { font-size: 14.5px; font-weight: 600; word-break: break-all; }
+.ar-voce-info span { font-size: 12px; color: var(--txt-4); }
+.ar-voce-azioni { display: flex; gap: 8px; flex-shrink: 0; }
+
+.ar-mini {
+  padding: 9px 16px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line-2); background: none; color: var(--txt-3);
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  transition: border-color .3s, color .3s, background .3s;
+}
+.ar-mini:hover { border-color: rgba(236,233,228,.45); color: var(--txt); }
+.ar-mini:disabled { opacity: .45; cursor: default; }
+.ar-mini.si:hover { border-color: #7fd6a0; color: #7fd6a0; background: rgba(127,214,160,.1); }
+.ar-mini.no:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-soft); }
+
+.ar-vuoto { margin: 18px 0 0; font-size: 13.5px; color: var(--txt-5); }
+
+@media (max-width: 768px) {
+  .ar-profilo > div { grid-template-columns: 1fr; gap: 5px; }
+  .ar-voce { align-items: stretch; }
+  .ar-voce-azioni { width: 100%; }
+  .ar-voce-azioni .ar-mini { flex: 1; }
+  .ar-intestazione .btn { width: 100%; }
+}
