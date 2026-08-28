@@ -369,6 +369,26 @@
 
     $('invia').addEventListener('click', async () => {
       const btn = $('invia'), esito = $('esito');
+
+      // Rete di sicurezza: nascondere il pulsante non basta a impedire
+      // l'invio. Qui si verifica di essere davvero all'ultimo passo e che
+      // i dati obbligatori ci siano, qualunque cosa mostri l'interfaccia.
+      if (passo !== TOT) {
+        esito.textContent = 'Completa prima tutti i passi.';
+        esito.style.color = '#ff9a4d';
+        return;
+      }
+      const mancanti = [];
+      if (!dati.piatt) mancanti.push('la piattaforma');
+      if (!dati.id.trim()) mancanti.push("l'ID player");
+      if (!dati.ruoli.length) mancanti.push('almeno un ruolo');
+      if (mancanti.length) {
+        esito.textContent = 'Manca ' + mancanti.join(', ') + '.';
+        esito.style.color = '#ff9a4d';
+        vai(mancanti[0] === 'almeno un ruolo' ? 2 : 1);
+        return;
+      }
+
       if (!window.emailjs) { esito.textContent = 'Invio non disponibile. Scrivici sui social.'; esito.style.color = '#ff9a4d'; return; }
       btn.disabled = true;
       const testo = btn.textContent;
