@@ -29,6 +29,14 @@ import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
 
 const SITO = process.env.URL || 'https://monacishaolin.it';
 
+/* TEMPORANEA — fascia di prova. Arriva a tutti, anche a chi ha gia
+   segnato presente o assente: serve a vedere se la notifica arriva,
+   non a chiedere di nuovo una cosa gia detta. I bottoni funzionano
+   come sempre, quindi una risposta data da qui vale davvero.
+   Quando la prova e finita si cancella questa costante: il resto del
+   file la usa in due punti soli, entrambi segnati con PROVA. */
+const PROVA = { ora: 17, minuto: 30 };
+
 /* Segno di spunta contro il doppio invio. Netlify puo rieseguire una
    funzione programmata se la prima volta e andata storta a meta, e
    due notifiche identiche a distanza di un minuto sono il modo piu
@@ -135,7 +143,17 @@ export default async () => {
   const oggi = oggiRoma();
   const ora  = oraRoma();
 
-  if (![14, 17, 20].includes(ora)) return;
+  /* I minuti non hanno bisogno di fuso: sono gli stessi ovunque. La
+     forchetta larga e voluta — una funzione programmata non parte al
+     secondo esatto, e un controllo su "minuto === 30" salterebbe il
+     giro ogni volta che Netlify e in ritardo di un minuto. */
+  const minuti = new Date().getUTCMinutes();
+  const allaMezza = minuti >= 20 && minuti < 50;
+
+  // PROVA
+  const prova = allaMezza && ora === PROVA.ora && PROVA.minuto === 30;
+
+  if (!prova && (allaMezza || ![14, 17, 20].includes(ora))) return;
 
   const giorni = await leggiGiorni();
   if (!giorni.includes(oggi)) return;
@@ -146,12 +164,16 @@ export default async () => {
   const membri = daConvocare(utenti);
   if (!membri.length) return;
 
-  if (await giaFatto(oggi, String(ora))) {
-    console.log('convocazioni: fascia', ora, 'gia inviata per', oggi);
+  // PROVA — segno di spunta suo, altrimenti la prova delle 17:30 e il
+  // richiamo delle 17:00 si escluderebbero a vicenda.
+  const fascia = prova ? 'prova-' + ora : String(ora);
+
+  if (await giaFatto(oggi, fascia)) {
+    console.log('convocazioni: fascia', fascia, 'gia inviata per', oggi);
     return;
   }
 
-  if (ora === 20) {
+  if (!prova && ora === 20) {
     const n = await riepiloga(oggi, utenti, risposte);
     console.log('convocazioni: riepilogo di', oggi, 'inviato a', n, 'persone');
     return;
@@ -162,9 +184,15 @@ export default async () => {
     return;
   }
 
-  const n = await avvisa(oggi, membri, risposte, ora === 17);
-  console.log('convocazioni: fascia', ora, '—', n, 'notifiche partite per', oggi);
+  // PROVA — 'prova' e la terza modalita; senza, restano le due di sempre.
+  const modo = prova ? 'prova' : (ora === 17 ? 'richiamo' : 'prima');
+
+  const n = await avvisa(oggi, membri, risposte, modo);
+  console.log('convocazioni: fascia', fascia, '(' + modo + ') —', n, 'notifiche partite per', oggi);
 };
 
-/* Ogni ora tonda, in UTC. Il filtro sull'ora italiana e sopra. */
-export const config = { schedule: '0 * * * *' };
+/* All'ora tonda e alla mezza, in UTC. Il filtro sull'ora italiana e
+   sopra: i minuti invece sono gli stessi in ogni fuso, quindi la mezza
+   e la mezza dappertutto. La mezz'ora serve alla fascia di PROVA delle
+   17:30; tolta quella, si puo tornare a '0 * * * *'. */
+export const config = { schedule: '0,30 * * * *' };

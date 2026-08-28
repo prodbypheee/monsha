@@ -121,6 +121,17 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
    amministrazione e amministratore.
 
+> **C'è anche una fascia di prova temporanea alle 17:30.** A differenza
+> delle altre arriva a *tutti*, anche a chi ha già segnato presente o
+> assente: serve a verificare che le notifiche partano, non a
+> raccogliere presenze. I bottoni funzionano comunque, quindi una
+> risposta data da lì vale davvero.
+>
+> Si toglie da `netlify/functions/convocazioni-cron.mjs`: cancella la
+> costante `PROVA` e i tre punti segnati col commento `// PROVA`, poi
+> rimetti `schedule: '0 * * * *'` in fondo al file — la mezz'ora serve
+> solo a questo.
+
 Gli orari sono ora italiana e restano giusti anche col cambio dell'ora
 legale: la funzione programmata gira ogni ora tonda e controlla che ore
 sono a Roma, invece di fidarsi di un orario fisso in UTC che
