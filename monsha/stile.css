@@ -997,34 +997,15 @@ button, input, select, textarea { font: inherit; }
 .conv-voce { display: inline-flex; align-items: baseline; gap: 6px; margin-right: 16px; }
 .conv-voce .conv-pallino { align-self: center; }
 
-/* ---------- diagnosi (solo amministratore) ----------
-   Volutamente sobria: e un pannello di servizio, non una parte del
-   sito. Serve a rispondere in tre secondi alla domanda "e rotto il
-   server o il mio telefono?", che altrimenti costa sei ore di attesa. */
-.diagnosi {
+/* ---------- prove dell'amministratore ----------
+   Riquadro di servizio in fondo alla scheda notifiche: due bottoni che
+   raggiungono persone vere, quindi separati dal resto da una linea e
+   con un titolo che dice a chi appartengono. */
+.prove {
   margin-top: 30px; padding-top: 22px;
   border-top: 1px solid var(--line);
 }
-.diagnosi-tit {
+.prove-tit {
   font-size: 10.5px; font-weight: 600; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--txt-4); margin-bottom: 14px;
+  text-transform: uppercase; color: var(--acc); margin-bottom: 12px;
 }
-.diagnosi dl { margin: 0; }
-.diagnosi dl > div {
-  display: grid; grid-template-columns: 130px 1fr; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid var(--line);
-}
-.diagnosi dt { font-size: 12px; color: var(--txt-4); }
-.diagnosi dd { margin: 0; font-size: 12.5px; color: var(--txt-2); word-break: break-word; }
-.diagnosi dd.si { color: #7fd6a0; }
-.diagnosi dd.no { color: var(--acc); }
-
-@media (max-width: 420px) {
-  .diagnosi dl > div { grid-template-columns: 1fr; gap: 3px; }
-}
-
-.diagnosi-testa {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 14px; margin-bottom: 14px;
-}
-.diagnosi-testa .diagnosi-tit { margin-bottom: 0; }

@@ -21,18 +21,18 @@
    ============================================================= */
 
 import {
-  json, errore, esigiMembro, tuttiGliUtenti, chiave,
-  incaricoDi, puoConvocare, oggiRoma, dataValida, dataInLettere
+  json, errore, esigiMembro, esigiAdmin, tuttiGliUtenti, chiave,
+  incaricoDi, puoConvocare, oggiRoma, dataValida
 } from '../lib/comune.mjs';
 
 import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
-  ultimoGiro, destinatariRiepilogo
+  destinatariRiepilogo
 } from '../lib/convocazioni.mjs';
 
 import {
-  chiavePubblica, iscrivi, disiscrivi, sottoscrizioniDi, sottoscrizioneValida,
+  chiavePubblica, iscrivi, disiscrivi, sottoscrizioneValida,
   manda, pushConfigurato
 } from '../lib/push.mjs';
 
@@ -47,30 +47,6 @@ async function stato(req, segreto) {
   const u = g.utente;
 
   const giorni = await leggiGiorni();
-  const mieDevice = await sottoscrizioniDi(chiave(u.email));
-
-  /* La diagnosi la vede solo l'admin. A un membro non serve sapere se
-     l'orologio del server ha girato: gli serve sapere se le sue
-     notifiche sono accese, e quello sta in `push`. */
-  /* La posta esce variabile per variabile e non come un si/no.
-     "Non configurata" e una diagnosi inutile quando le variabili sono
-     cinque: dice che qualcosa manca senza dire cosa, e tocca provarle
-     tutte. Esce se sono impostate, mai il loro contenuto: una chiave
-     privata non deve uscire dal server nemmeno verso l'amministratore. */
-  const diagnosi = u.ruolo === 'admin'
-    ? {
-        orologio: await ultimoGiro(),
-        chiaviPush: pushConfigurato(),
-        posta: {
-          pronta:      postaConfigurata() && !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
-          EMAILJS_SERVICE_ID:            !!process.env.EMAILJS_SERVICE_ID,
-          EMAILJS_PUBLIC_KEY:            !!process.env.EMAILJS_PUBLIC_KEY,
-          EMAILJS_PRIVATE_KEY:           !!process.env.EMAILJS_PRIVATE_KEY,
-          EMAILJS_TEMPLATE_CONVOCAZIONI: !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
-          EMAILJS_TEMPLATE_ID:           !!process.env.EMAILJS_TEMPLATE_ID
-        }
-      }
-    : null;
 
   return json({
     io: {
@@ -84,11 +60,7 @@ async function stato(req, segreto) {
     oggi:      oggiRoma(),
     prossimo:  prossimoGiorno(giorni),
     orizzonte: ORIZZONTE_GIORNI,
-    push: {
-      chiave:   chiavePubblica(),
-      attive:   mieDevice.length
-    },
-    diagnosi
+    push: { chiave: chiavePubblica() }
   });
 }
 
@@ -194,41 +166,57 @@ async function pushIscrivi(req, segreto) {
   return json({ ok: true });
 }
 
-/* Una notifica a se stessi, adesso.
-   Esiste perche senza, per sapere se le notifiche funzionano bisogna
-   aspettare le 14:00 di un giorno di allenamento: un giro di prova
-   ogni sei ore, e al buio. Con questo bottone la catena — chiavi,
-   iscrizione, servizio di Apple o Google, service worker — si prova
-   in tre secondi, e il numero che torna dice a quanti dispositivi e
-   partita davvero. */
+/* Una notifica di prova a TUTTA la squadra, adesso.
+
+   Solo l'amministratore: e un bottone che fa vibrare venti telefoni,
+   e non e una cosa da lasciare a chiunque entri. La notifica dice a
+   chiare lettere che e una prova, cosi chi la riceve non corre a
+   cercare un allenamento che non c'e.
+
+   Senza questo bottone, per sapere se le notifiche funzionano
+   bisognerebbe aspettare le 14:00 di un giorno di allenamento: un
+   tentativo ogni ventiquattr'ore, e al buio. Qui la catena intera —
+   chiavi, iscrizioni, servizio di Apple o Google, service worker — si
+   prova in tre secondi, e il numero che torna dice quanti telefoni
+   l'hanno ricevuta davvero. */
 async function pushProva(req, segreto) {
-  const g = await esigiMembro(req, segreto);
+  const g = await esigiAdmin(req, segreto);
   if (g.errore) return g.errore;
 
   if (!pushConfigurato())
     return errore('Sul server mancano le chiavi VAPID: nessuna notifica puo partire.', 503);
 
-  const mie = await sottoscrizioniDi(chiave(g.utente.email));
-  if (!mie.length)
-    return errore('Nessun dispositivo iscritto: il server non ha ricevuto la tua iscrizione.', 409);
+  const membri = daConvocare(await tuttiGliUtenti());
+  if (!membri.length) return errore('Nessun membro approvato.', 409);
 
-  const partite = await manda(chiave(g.utente.email), {
-    titolo: 'Prova riuscita',
-    testo:  'Se leggi questo, le notifiche arrivano. Non devi fare niente.',
+  const carico = {
+    titolo: 'Prova notifiche',
+    testo:  'Messaggio di prova dei Monaci Shaolin. Nessun allenamento: non devi fare niente.',
     data:   oggiRoma(),
     vai:    new URL(req.url).origin + '/area-riservata'
-  }, 600);
+  };
 
-  return json({ ok: true, dispositivi: mie.length, partite });
+  // Dieci minuti di validita: una prova che arriva domattina non prova
+  // piu niente e confonde chi la legge.
+  const esiti = await Promise.all(
+    membri.map(u => manda(chiave(u.email), carico, 600)));
+
+  return json({
+    ok: true,
+    membri:  membri.length,
+    partite: esiti.reduce((a, b) => a + b, 0)
+  });
 }
 
-/* Il riepilogo, adesso, senza aspettare le 20:00. Solo per chi puo
-   convocare: e la stessa mail che riceverebbero i destinatari veri. */
+/* Il riepilogo, adesso, senza aspettare le 20:00. E la stessa identica
+   mail che parte da sola la sera, mandata agli stessi indirizzi.
+
+   Solo l'amministratore: spedisce a persone vere e consuma il piano
+   gratuito di EmailJS, quindi non e un bottone da lasciare a chiunque
+   sappia fissare un allenamento. */
 async function riepilogoProva(req, segreto) {
-  const g = await esigiMembro(req, segreto);
+  const g = await esigiAdmin(req, segreto);
   if (g.errore) return g.errore;
-  if (!puoConvocare(g.utente))
-    return errore('Solo il capitano o l’amministrazione possono mandare il riepilogo.', 403);
 
   const modello = process.env.EMAILJS_TEMPLATE_CONVOCAZIONI;
   if (!modello || !postaConfigurata())

@@ -147,28 +147,3 @@ export function destinatariRiepilogo(utenti) {
     idGioco: (perEmail.get(email) || {}).idGioco || ''
   }));
 }
-
-/* ---------- il battito dell'orologio --------------------------
-   La funzione programmata lascia un segno a OGNI giro, anche — anzi
-   soprattutto — quando non fa niente. Senza, un orologio fermo e un
-   orologio che gira a vuoto sono indistinguibili da fuori: in
-   entrambi i casi non arriva nessuna notifica e nessuna mail, e non
-   compare nessun errore da nessuna parte.
-
-   Con il segno la domanda "e colpa del cron o del resto?" si risolve
-   guardando un'ora: se l'ultimo giro e di mezz'ora fa l'orologio va,
-   e il guasto sta piu avanti. */
-
-const BATTITO = 'ultimo-giro';
-
-export async function segnaGiro(dati) {
-  try {
-    await convoc().setJSON(BATTITO, { quando: new Date().toISOString(), ...dati });
-  } catch {
-    // Un battito non scritto non deve far fallire l'invio vero.
-  }
-}
-
-export async function ultimoGiro() {
-  return await convoc().get(BATTITO, { type: 'json' }).catch(() => null);
-}
