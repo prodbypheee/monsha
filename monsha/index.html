@@ -526,19 +526,26 @@
       <!-- Scheda di bentornato: la foto arriva da rosa.json accostando
            l'ID di gioco al nick della rosa. Se non c'e corrispondenza
            resta l'iniziale, e sotto compare una riga che spiega perche. -->
+      <!-- Compatta di proposito: faccia e nome su una riga, sotto solo
+           l'incarico e l'uscita. Tutto il resto — ruolo in campo,
+           piattaforma, ID, email — sta nella tab Profilo, e qui
+           rubava lo spazio ai bottoni dell'allenamento. -->
       <div class="ben" id="arBentornato">
-        <div class="ben-ritratto">
-          <i id="benFoto" aria-hidden="true"></i>
-          <span class="ben-iniziale" id="benIniziale" aria-hidden="true"></span>
+        <div class="ben-riga">
+          <div class="ben-ritratto">
+            <i id="benFoto" aria-hidden="true"></i>
+            <span class="ben-iniziale" id="benIniziale" aria-hidden="true"></span>
+          </div>
+          <div class="ben-testo">
+            <div class="eyebrow" id="benSaluto">Bentornato</div>
+            <h3 class="ben-nick" id="benNick">—</h3>
+          </div>
         </div>
-        <div class="ben-testo">
-          <div class="eyebrow" id="benSaluto">Bentornato</div>
-          <h3 class="ben-nick" id="benNick">—</h3>
-          <div class="ben-ep" id="benEp"></div>
+        <div class="ben-sotto">
           <div class="ben-targhe" id="benTarghe"></div>
-          <p class="ben-nota" id="benNota" hidden></p>
+          <button type="button" class="ben-esci" id="arEsci">Esci</button>
         </div>
-        <button type="button" class="btn ben-esci" id="arEsci">Esci</button>
+        <p class="ben-nota" id="benNota" hidden></p>
       </div>
 
       <!-- Le tab interne dell'area. Ne compaiono altre col tempo:

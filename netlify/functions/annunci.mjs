@@ -17,6 +17,7 @@ import {
 
 import { daConvocare } from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
+import { leggiRosa } from '../lib/mail-riepilogo.mjs';
 
 import {
   LUNGHEZZA_MAX, testoValido, leggiAnnunci, scriviAnnuncio,
@@ -78,8 +79,22 @@ async function avvisaTutti(autore, voce, sito) {
     .filter(u => u.email !== autore.email);
   if (!membri.length) return 0;
 
+  /* La faccia di chi ha scritto dentro la notifica: nel sito le
+     persone si riconoscono dal ritratto prima che dal nick, e non c'e
+     ragione perche sulla schermata bloccata sia diverso. Si legge
+     dalla rosa pubblicata, la stessa che vede il browser; se non si
+     riesce a leggere resta l'icona del club e la notifica parte
+     lo stesso. */
+  let ritratto = null;
+  try {
+    const rosa = await leggiRosa(sito);
+    const g = rosa[String(voce.autore || '').trim().toLowerCase()];
+    if (g) ritratto = sito + '/immagini/' + encodeURIComponent(g.img);
+  } catch { /* si prosegue con l'icona del club */ }
+
   const carico = {
     titolo: voce.autore,
+    ritratto,
     // Il corpo della notifica non lo taglio: se e lungo lo tronca il
     // sistema, che sa quanto ci sta su quello schermo meglio di me.
     testo:  voce.testo,

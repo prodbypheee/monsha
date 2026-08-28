@@ -206,17 +206,11 @@ async function salvaLaFormazione(req, segreto) {
     .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
     .map(u => u.idGioco);
 
-  /* Il reparto si legge dalla rosa pubblicata sul sito, la stessa
-     che vede il browser. Se la rosa non si riesce a leggere non si
-     blocca il salvataggio: si perde il controllo sul reparto, che e
-     una regola di calcio, non una difesa. */
-  let repartoDi = null;
-  try {
-    const rosa = await leggiRosa(new URL(req.url).origin);
-    repartoDi = id => (rosa[id] || {}).reparto || null;
-  } catch { /* si prosegue senza */ }
-
-  const esito = verificaSchieramento(corpo.schieramento, presenti, repartoDi);
+  /* Niente controllo sul reparto: il capitano puo schierare chi
+     vuole dove vuole. Restano le regole sui dati — presente, non
+     doppio, casella esistente — che sono le uniche che il server ha
+     titolo di far rispettare. */
+  const esito = verificaSchieramento(corpo.schieramento, presenti);
   if (esito.errore) return errore(esito.errore, 409);
 
   await salvaFormazione(data, esito.schieramento, g.utente.idGioco);
