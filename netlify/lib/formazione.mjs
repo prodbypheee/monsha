@@ -47,7 +47,6 @@ export const CASELLE = [
    in nessuna casella, quindi chi e catalogato cosi non e schierabile
    da nessuna parte. Il giorno che servisse, basta aggiungerlo ai
    reparti ammessi delle caselle che lo devono accettare. */
-export const REPARTI_AMMESSI = ['portieri', 'difensori', 'centrocampisti', 'attaccanti'];
 
 const ID_CASELLE = CASELLE.map(c => c.id);
 const normId = v => String(v || '').trim().toLowerCase();
@@ -80,7 +79,7 @@ export async function salvaFormazione(data, schieramento, autore) {
    comunque: meglio poter schierare qualcuno di cui non sappiamo il
    ruolo che non poterlo schierare affatto. */
 
-export function verificaSchieramento(grezzo, presenti, repartoDi) {
+export function verificaSchieramento(grezzo, presenti) {
   if (!grezzo || typeof grezzo !== 'object' || Array.isArray(grezzo))
     return { errore: 'Formazione non valida.' };
 
@@ -102,11 +101,15 @@ export function verificaSchieramento(grezzo, presenti, repartoDi) {
       return { errore: 'Lo stesso giocatore compare in due caselle.' };
     gia.add(chiave);
 
-    const reparto = repartoDi ? repartoDi(chiave) : null;
-    const attesa = CASELLE.find(c => c.id === casella).reparto;
-    // Reparto ignoto: si accetta. Reparto noto e sbagliato: no.
-    if (reparto && reparto !== attesa)
-      return { errore: 'In quella casella ci va un giocatore del reparto ' + attesa + '.' };
+    /* Il reparto NON e piu un divieto. Il sito propone per primi
+       quelli del ruolo giusto, ma il capitano deve poter mettere un
+       centrocampista in difesa o il portiere in attacco: succede, e
+       chi allena sa perche. Un server che glielo impedisse sarebbe un
+       server che pretende di capire di calcio piu di lui.
+
+       Restano invece le regole sui dati, che nessuno deve poter
+       aggirare: in campo solo chi ha segnato presente, nessuno in due
+       caselle, e nessuna casella inventata. */
 
     // Si salva l'ID come lo conosce l'archivio, non come e stato
     // scritto: cosi il confronto con la rosa resta stabile.

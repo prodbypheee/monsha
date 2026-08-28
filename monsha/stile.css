@@ -835,26 +835,30 @@ button, input, select, textarea { font: inherit; }
    occupano molti di piu, perche vanno colpiti di corsa.
    ============================================================= */
 
-/* ---------- scheda di bentornato ---------- */
+/* ---------- scheda di bentornato ----------
+   Piccola apposta. Sta fra il titolo della pagina e i due bottoni
+   dell'allenamento, e ogni pixel che si prende e un pixel che quelli
+   perdono: faccia e nome su una riga, sotto l'incarico e l'uscita, e
+   basta. Ruolo in campo, piattaforma, ID ed email stanno nella tab
+   Profilo, dove uno li va a cercare quando gli servono. */
 
 .ben {
-  display: flex; align-items: center; gap: clamp(16px, 3vw, 26px);
-  flex-wrap: wrap;
-  margin-top: 44px; max-width: 780px;
+  margin-top: 22px; max-width: 780px;
   border: 1px solid var(--line); border-radius: var(--r-md);
   background:
-    radial-gradient(120% 140% at 0% 0%, var(--acc-soft), transparent 58%),
+    radial-gradient(120% 160% at 0% 0%, var(--acc-soft), transparent 58%),
     var(--bg-2);
-  padding: clamp(20px, 3.4vw, 30px);
+  padding: 16px clamp(16px, 3vw, 22px);
 }
+
+.ben-riga { display: flex; align-items: center; gap: 14px; }
 
 .ben-ritratto {
   position: relative; flex-shrink: 0;
-  width: clamp(78px, 20vw, 104px); height: clamp(78px, 20vw, 104px);
+  width: 54px; height: 54px;
   border-radius: 50%; overflow: hidden;
   border: 1px solid var(--acc-line);
   background: var(--bg-3);
-  box-shadow: 0 0 0 4px rgba(255,122,41,.06);
 }
 .ben-ritratto i {
   position: absolute; inset: 0; display: block;
@@ -866,28 +870,51 @@ button, input, select, textarea { font: inherit; }
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   font-family: 'Instrument Serif', Georgia, serif;
-  font-size: clamp(30px, 8vw, 40px); color: var(--acc);
+  font-size: 22px; color: var(--acc);
 }
 .ben-ritratto.con-foto .ben-iniziale { display: none; }
 
-.ben-testo { flex: 1 1 240px; min-width: 0; }
+.ben-testo { min-width: 0; }
 .ben-nick {
-  margin: 12px 0 0; font-size: clamp(21px, 5vw, 27px);
+  margin: 6px 0 0; font-size: clamp(17px, 4.2vw, 20px);
   font-weight: 600; letter-spacing: -.01em; word-break: break-word;
 }
-.ben-ep {
-  margin-top: 6px; font-family: 'Instrument Serif', Georgia, serif;
-  font-style: italic; font-size: clamp(15px, 3.6vw, 18px); color: var(--acc);
+
+.ben-sotto {
+  /* Griglia e non flex: la colonna "auto" prende esattamente la
+     larghezza del bottone, e le targhe si arrangiano nel resto.
+     Col flex il bottone si allargava a tutta la riga — 306px contro i
+     60 del testo — e "Esci" sembrava il comando principale della
+     schermata invece di una via d'uscita. */
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: 12px;
+  margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line);
 }
-.ben-targhe { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.ben-targhe { display: flex; flex-wrap: wrap; gap: 7px; min-width: 0; }
 .targa {
-  padding: 5px 11px; border-radius: 999px;
+  /* Strette quanto basta: chi ha due incarichi ha due targhe, e con
+     l'uscita accanto devono starci tutte su una riga sola. */
+  padding: 5px 9px; border-radius: 999px;
   border: 1px solid var(--line-2); color: var(--txt-3);
-  font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
 }
 .targa.acc { border-color: var(--acc-line); background: var(--acc-soft); color: var(--acc); }
-.ben-nota { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--txt-4); }
-.ben-esci { flex-shrink: 0; }
+
+/* Un bottone piccolo: si esce di rado, non deve pesare come i due
+   bottoni che si premono ogni giorno. */
+.ben-esci {
+  /* Un bottone piccolo: si esce di rado, non deve pesare come i due
+     bottoni che si premono ogni giorno. */
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 15px; min-height: 34px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: none; color: var(--txt-4);
+  font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  white-space: nowrap;
+  transition: border-color .3s, color .3s;
+}
+.ben-esci:hover { border-color: var(--line-2); color: var(--txt); }
+
+.ben-nota { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--txt-4); }
 
 /* ---------- tab interne dell'area ---------- */
 
@@ -1352,3 +1379,45 @@ button, input, select, textarea { font: inherit; }
   transition: border-color .3s, color .3s;
 }
 .ann-cancella:hover { border-color: var(--acc); color: var(--acc); }
+
+/* ---------- trascinare i giocatori ----------
+   touch-action: none solo su cio che si trascina: senza, al primo
+   movimento del dito il browser scorre la pagina e il gesto muore
+   sul nascere. Limitarlo ai cerchi e alle tessere lascia intatto lo
+   scorrimento sul resto della pagina. */
+.casella.tocca, .conv-tessera.prendibile { touch-action: none; }
+.conv-tessera.prendibile { cursor: grab; }
+.conv-tessera.prendibile:active { cursor: grabbing; }
+
+/* Il fantasma che segue il dito. Fuori da ogni contenitore, sopra
+   tutto, e non deve mai intercettare il puntatore: se lo facesse,
+   elementFromPoint troverebbe sempre e solo lui. */
+.trascinato {
+  position: fixed; z-index: 90; pointer-events: none;
+  width: 58px; height: 58px; margin: -29px 0 0 -29px;
+  border-radius: 50%; border: 2px solid var(--acc);
+  background: var(--bg-3) center 20% / cover no-repeat;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55);
+  display: grid; place-items: center;
+  font-family: 'Instrument Serif', Georgia, serif; font-size: 22px; color: var(--acc);
+  transform: scale(1.06);
+}
+
+/* Mentre si trascina non si seleziona testo per sbaglio. */
+body.sta-trascinando { user-select: none; -webkit-user-select: none; }
+
+/* La casella sotto il dito si accende: si sa dove si sta per mollare. */
+.casella.sotto-mira .casella-cerchio {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 4px var(--acc-soft);
+}
+
+/* Separatore fra i consigliati per quella casella e tutti gli altri:
+   la scelta ovvia sta sopra, quella insolita resta possibile sotto. */
+.scelta-altri {
+  grid-column: 1 / -1;
+  margin: 6px 0 2px; padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 10px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--txt-5);
+}

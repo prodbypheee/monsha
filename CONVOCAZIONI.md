@@ -179,16 +179,22 @@ Due regole, e sono di natura diversa:
 - **In campo va solo chi ha segnato presente** quel giorno. Questa la
   fa rispettare il server: riguarda i dati, e un sito manomesso non
   deve poter schierare un assente.
-- **Ogni casella vuole il suo reparto**: in difesa i difensori, a
-  centrocampo i centrocampisti (esterni e trequartista compresi), in
-  attacco gli attaccanti. Questa è una regola di calcio: il sito
-  propone soltanto chi può starci, così non c'è nemmeno modo di
-  sbagliare, e il server la ricontrolla per coerenza.
+- **Ogni casella suggerisce un reparto, ma non lo impone.** Il sito
+  propone per primi quelli del ruolo giusto e mette gli altri sotto
+  una riga che lo dice; **trascinando si mette chiunque ovunque**. Un
+  centrocampista in difesa o il portiere in punta sono cose che
+  succedono, e chi allena sa perché: un server che glielo impedisse
+  pretenderebbe di capire di calcio più di lui.
 
-Gli **Icons restano fuori**: non appartengono a nessun reparto
-schierabile, quindi non compaiono in nessuna lista. Il giorno che
-servissero, basta aggiungerli ai reparti ammessi in
-`netlify/lib/formazione.mjs`.
+**Si trascina**: dalla panchina a una casella per farlo entrare, da una
+casella a un'altra per scambiare due giocatori, da una casella alla
+panchina per farlo uscire. Funziona col dito e col mouse — il drag&drop
+del browser sul telefono non esiste, quindi è costruito sui Pointer
+Events. Il tocco singolo continua ad aprire la lista, che resta il modo
+di schierare da tastiera.
+
+Gli **Icons** non compaiono fra i consigliati di nessuna casella, ma se
+hanno segnato presente si possono schierare come tutti gli altri.
 
 Chi ha segnato presente ma non è nella rosa del sito non ha un reparto,
 e in quel caso lo si può mettere ovunque: non poterlo schierare

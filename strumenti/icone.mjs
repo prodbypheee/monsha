@@ -120,12 +120,17 @@ function png(lato, trasparente, quanto = 1) {
 
 /* ---------- scrittura ----------------------------------------- */
 
+/* Solo il segno per la barra di stato di Android, che deve essere
+   monocromatico e trasparente e quindi non si puo ricavare da
+   un'illustrazione.
+
+   Le icone vere dell'app — icona-192, icona-512, icona-180 e la
+   maskable — NON si generano piu da qui: sono ritagli di
+   immagini/icona-sorgente.png, il disegno vero. Se questo script le
+   riscrivesse, il primo che lo lancia se le ritroverebbe sostituite
+   dal torii disegnato a rettangoli. */
 const DA_FARE = [
-  ['icona-192.png',      192, false, 1],     // manifest, notifica
-  ['icona-512.png',      512, false, 1],     // manifest, schermata di avvio
-  ['icona-180.png',      180, false, 1],     // schermata Home di iPhone
-  ['icona-maskable.png', 512, false, 0.72],  // Android, ritagliata a cerchio
-  ['icona-badge.png',     96, true,  1]      // barra di stato di Android
+  ['icona-badge.png', 96, true, 1]
 ];
 
 for (const [nome, lato, trasparente, quanto] of DA_FARE) {

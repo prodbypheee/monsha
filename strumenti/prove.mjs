@@ -237,66 +237,68 @@ const PRESENTI = ['Pippo', 'Dino', 'Mimmo', 'Bomber', 'Icona', 'Sconosciuto'];
 
 prova('uno schieramento giusto passa', () => {
   const r = verificaSchieramento(
-    { por: 'Pippo', dcc: 'Dino', cdcs: 'Mimmo', atts: 'Bomber' }, PRESENTI, repartoDi);
+    { por: 'Pippo', dcc: 'Dino', cdcs: 'Mimmo', atts: 'Bomber' }, PRESENTI);
   assert.equal(r.errore, undefined);
   assert.deepEqual(r.schieramento, { por: 'Pippo', dcc: 'Dino', cdcs: 'Mimmo', atts: 'Bomber' });
 });
 
 prova('chi non ha segnato presente non entra', () => {
-  assert.match(verificaSchieramento({ por: 'Estraneo' }, PRESENTI, repartoDi).errore, /presente/);
+  assert.match(verificaSchieramento({ por: 'Estraneo' }, PRESENTI).errore, /presente/);
 });
 
 prova('lo stesso giocatore non puo stare in due caselle', () => {
-  assert.match(verificaSchieramento({ dcs: 'Dino', dcd: 'Dino' }, PRESENTI, repartoDi).errore,
+  assert.match(verificaSchieramento({ dcs: 'Dino', dcd: 'Dino' }, PRESENTI).errore,
     /due caselle/);
 });
 
-prova('un attaccante non puo fare il difensore', () => {
-  assert.match(verificaSchieramento({ dcc: 'Bomber' }, PRESENTI, repartoDi).errore,
-    /reparto difensori/);
+prova('un attaccante PUO fare il difensore: il reparto non vieta', () => {
+  // Il capitano deve poter spostare chi vuole dove vuole: e una scelta
+  // di calcio, e il server non ha titolo per impedirla.
+  assert.equal(verificaSchieramento({ dcc: 'Bomber' }, PRESENTI).errore, undefined);
 });
 
-prova('un difensore non puo fare il portiere', () => {
-  assert.match(verificaSchieramento({ por: 'Dino' }, PRESENTI, repartoDi).errore,
-    /reparto portieri/);
+prova('un portiere puo fare la punta', () => {
+  assert.equal(verificaSchieramento({ attd: 'Pippo' }, PRESENTI).errore, undefined);
 });
 
-prova('esterni e trequartista vogliono centrocampisti', () => {
-  ['es', 'ed', 'coc', 'cdcs', 'cdcd'].forEach(c => {
-    assert.equal(verificaSchieramento({ [c]: 'Mimmo' }, PRESENTI, repartoDi).errore, undefined);
-    assert.match(verificaSchieramento({ [c]: 'Bomber' }, PRESENTI, repartoDi).errore, /centrocampisti/);
+prova('ogni casella accetta chiunque sia presente', () => {
+  CASELLE.forEach(c => {
+    ['Pippo', 'Dino', 'Mimmo', 'Bomber'].forEach(chi =>
+      assert.equal(verificaSchieramento({ [c.id]: chi }, PRESENTI).errore, undefined,
+        chi + ' rifiutato in ' + c.id));
   });
 });
 
-prova('gli Icons restano fuori da ogni casella', () => {
-  CASELLE.forEach(c =>
-    assert.match(verificaSchieramento({ [c.id]: 'Icona' }, PRESENTI, repartoDi).errore, /reparto/));
+prova('anche un Icon presente si puo schierare', () => {
+  // Gli Icons non compaiono fra i consigliati nel sito, ma se hanno
+  // segnato presente il capitano puo comunque metterli in campo.
+  assert.equal(verificaSchieramento({ atts: 'Icona' }, PRESENTI).errore, undefined);
 });
 
 prova('chi non e in rosa si puo mettere ovunque', () => {
   // Senza reparto non si puo decidere: meglio schierabile che escluso.
-  assert.equal(verificaSchieramento({ por: 'Sconosciuto' }, PRESENTI, repartoDi).errore, undefined);
-  assert.equal(verificaSchieramento({ attd: 'Sconosciuto' }, PRESENTI, repartoDi).errore, undefined);
+  assert.equal(verificaSchieramento({ por: 'Sconosciuto' }, PRESENTI).errore, undefined);
+  assert.equal(verificaSchieramento({ attd: 'Sconosciuto' }, PRESENTI).errore, undefined);
 });
 
 prova('una casella inventata viene rifiutata', () => {
-  assert.match(verificaSchieramento({ libero: 'Dino' }, PRESENTI, repartoDi).errore,
+  assert.match(verificaSchieramento({ libero: 'Dino' }, PRESENTI).errore,
     /Casella sconosciuta/);
 });
 
 prova('le caselle vuote restano vuote', () => {
-  const r = verificaSchieramento({ por: 'Pippo', dcs: null, dcd: '' }, PRESENTI, repartoDi);
+  const r = verificaSchieramento({ por: 'Pippo', dcs: null, dcd: '' }, PRESENTI);
   assert.deepEqual(r.schieramento, { por: 'Pippo' });
 });
 
 prova('maiuscole e spazi non contano nel confronto', () => {
   // Si salva l'ID come lo conosce l'archivio, non come e stato scritto.
-  assert.equal(verificaSchieramento({ por: '  pIppO ' }, PRESENTI, repartoDi).schieramento.por, 'Pippo');
+  assert.equal(verificaSchieramento({ por: '  pIppO ' }, PRESENTI).schieramento.por, 'Pippo');
 });
 
 prova('roba che non e un oggetto viene rifiutata', () => {
   [null, 'ciao', 42, ['Pippo']].forEach(v =>
-    assert.match(verificaSchieramento(v, PRESENTI, repartoDi).errore, /non valida/));
+    assert.match(verificaSchieramento(v, PRESENTI).errore, /non valida/));
 });
 
 prova('il 3-4-1-2 ha undici caselle e nessuna doppia', () => {

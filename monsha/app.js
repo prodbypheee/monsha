@@ -742,29 +742,28 @@
         targhe.appendChild(s);
       };
 
+      /* Sotto il nome resta solo l'incarico: ruolo in campo,
+         piattaforma e ID sono nella tab Profilo, e qui rubavano lo
+         spazio ai due bottoni dell'allenamento. */
+      const inc = utente.incarico || 'giocatore';
+      if (inc !== 'giocatore') targa(ETICHETTA[inc], true);
+      if (utente.ruolo === 'admin') targa('Amministratore', true);
+
       rosaPronta.then(() => {
         const g = trovaGiocatore(utente.idGioco);
 
         if (g) {
           $('benFoto').style.backgroundImage = "url('./immagini/" + g.img + "')";
           ritratto.classList.add('con-foto');
-          $('benEp').textContent = g.epiteto;
-          targa(g.ruolo);
           $('benNota').hidden = true;
         } else {
           ritratto.classList.remove('con-foto');
           $('benFoto').style.backgroundImage = '';
-          $('benEp').textContent = '';
           $('benNota').hidden = false;
           $('benNota').textContent =
             'Il tuo ID di gioco non compare fra quelli della rosa sul sito, ' +
             'quindi non ho una foto da metterti qui. Se dovrebbe esserci, dillo a un amministratore.';
         }
-
-        const inc = utente.incarico || 'giocatore';
-        if (inc !== 'giocatore') targa(ETICHETTA[inc], true);
-        if (utente.ruolo === 'admin') targa('Amministratore', true);
-        targa(utente.piattaforma);
       });
     }
 
@@ -1704,8 +1703,13 @@
               el.addEventListener('click', () => apriScelta(c));
             }
             el.className = 'casella' + (chi ? ' piena' : '') + (modificabile ? ' tocca' : '');
+            el.dataset.casella = c.id;
             el.style.left = c.x + '%';
             el.style.top  = c.y + '%';
+            /* Si prende e si trascina: su un'altra casella per
+               scambiare i due, sulla panchina per farlo uscire. */
+            if (modificabile && chi)
+              el.addEventListener('pointerdown', e => iniziaPresa(e, c.id, chi));
             el.setAttribute('aria-label',
               c.eti + (chi ? ': ' + chi : ': vuoto') + (modificabile ? ' — tocca per cambiare' : ''));
 
@@ -1770,7 +1774,10 @@
           const g = trovaGiocatore(id);
 
           const t = document.createElement('div');
-          t.className = 'conv-tessera';
+          t.className = 'conv-tessera' + (modificabile ? ' prendibile' : '');
+          // Dalla panchina si trascina direttamente in campo.
+          if (modificabile)
+            t.addEventListener('pointerdown', e => iniziaPresa(e, 'panchina', id));
 
           const avatar = document.createElement('div');
           avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
@@ -1806,18 +1813,166 @@
          reparto: lo si accetta ovunque, perche non poterlo schierare
          sarebbe peggio che schierarlo nel posto sbagliato. */
 
-      function candidati(c) {
-        const occupati = new Set(
+      function occupatiTranne(c) {
+        return new Set(
           Object.entries(schieramento)
             .filter(([k]) => k !== c.id)
             .map(([, v]) => String(v).toLowerCase()));
+      }
 
-        return presenti.filter(id => {
-          if (occupati.has(String(id).toLowerCase())) return false;
+      /* Chi puo stare in una casella: TUTTI i presenti non gia
+         schierati altrove. Il reparto non vieta piu niente — decide
+         solo l'ordine. Prima quelli del ruolo giusto, poi gli altri
+         sotto una riga che lo dice: il capitano trova subito la scelta
+         ovvia e non gli e impedita quella strana.
+
+         Chi non e nella rosa del sito non ha un reparto e finisce fra
+         i consigliati di ogni casella: di lui non sappiamo niente,
+         quindi non c'e ragione di metterlo in coda da nessuna parte. */
+      function candidati(c) {
+        const occupati = occupatiTranne(c);
+        const liberi = presenti.filter(id => !occupati.has(String(id).toLowerCase()));
+
+        const suo = id => {
           const g = trovaGiocatore(id);
-          if (!g) return true;                       // fuori rosa: ammesso ovunque
-          return g.reparto === c.reparto;
-        });
+          return !g || g.reparto === c.reparto;
+        };
+
+        return { consigliati: liberi.filter(suo), altri: liberi.filter(id => !suo(id)) };
+      }
+
+
+      /* ---- trascinare ----
+         Il drag&drop nativo del browser sul telefono non esiste: e
+         fatto per il mouse e su touch semplicemente non parte. Qui si
+         usano i Pointer Events, che parlano la stessa lingua per dito
+         e mouse, e ci si costruisce sopra il minimo indispensabile:
+         un fantasma che segue il dito, e all'arrivo si guarda cosa c'e
+         sotto con elementFromPoint.
+
+         Il gesto comincia solo dopo qualche pixel di movimento: senza
+         quella soglia un tocco fermo verrebbe scambiato per un
+         trascinamento, e la scelta a tocco — che resta, ed e come si
+         fa da tastiera — non funzionerebbe piu. */
+
+      const SOGLIA = 8;   // pixel prima di considerarlo un trascinamento
+
+      let presa = null;   // { da, id, x0, y0, fantasma, partito }
+
+      function fantasmaDi(id) {
+        const g = trovaGiocatore(id);
+        const f = document.createElement('div');
+        f.className = 'trascinato';
+        if (g) f.style.backgroundImage = "url('./immagini/" + g.img + "')";
+        else f.textContent = (id || '?').charAt(0).toUpperCase();
+        document.body.appendChild(f);
+        return f;
+      }
+
+      function muoviFantasma(e) {
+        presa.fantasma.style.left = e.clientX + 'px';
+        presa.fantasma.style.top  = e.clientY + 'px';
+
+        // Evidenzia la casella sotto il dito, cosi si sa dove si molla.
+        const sotto = bersaglio(e, presa.fantasma);
+        document.querySelectorAll('.casella.sotto-mira')
+          .forEach(n => n.classList.remove('sotto-mira'));
+        if (sotto && sotto.dataset) sotto.classList.add('sotto-mira');
+      }
+
+      /* Cosa c'e sotto il dito. Il fantasma va nascosto un istante,
+         altrimenti elementFromPoint trova sempre e solo lui. */
+      function bersaglio(e, fantasma) {
+        fantasma.style.display = 'none';
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        fantasma.style.display = '';
+        if (!el) return null;
+        return el.closest('.casella') || el.closest('#formPanchina');
+      }
+
+      function iniziaPresa(e, da, id) {
+        if (!modificabile || !id) return;
+        // Solo il tasto sinistro del mouse; col dito non c'e questione.
+        if (e.button !== undefined && e.button !== 0) return;
+        presa = { da, id, x0: e.clientX, y0: e.clientY, fantasma: null, partito: false };
+        e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId);
+        presa.bersagliato = e.target;
+      }
+
+      document.addEventListener('pointermove', e => {
+        if (!presa) return;
+
+        if (!presa.partito) {
+          const quanto = Math.hypot(e.clientX - presa.x0, e.clientY - presa.y0);
+          if (quanto < SOGLIA) return;
+          presa.partito = true;
+          presa.fantasma = fantasmaDi(presa.id);
+          document.body.classList.add('sta-trascinando');
+        }
+
+        // Da qui in poi il dito sta trascinando, non scorrendo.
+        e.preventDefault();
+        muoviFantasma(e);
+      }, { passive: false });
+
+      document.addEventListener('pointerup', e => {
+        if (!presa) return;
+        const g = presa;
+        presa = null;
+
+        if (!g.partito) return;   // era un tocco: se ne occupa il click
+
+        const sotto = bersaglio(e, g.fantasma);
+        g.fantasma.remove();
+        document.body.classList.remove('sta-trascinando');
+        document.querySelectorAll('.casella.sotto-mira')
+          .forEach(n => n.classList.remove('sotto-mira'));
+
+        molla(g, sotto);
+      });
+
+      document.addEventListener('pointercancel', () => {
+        if (presa && presa.fantasma) presa.fantasma.remove();
+        document.body.classList.remove('sta-trascinando');
+        document.querySelectorAll('.casella.sotto-mira')
+          .forEach(n => n.classList.remove('sotto-mira'));
+        presa = null;
+      });
+
+      /* Dove e finito il giocatore trascinato.
+
+         panchina -> casella   entra in campo, e chi c'era torna fuori
+         casella  -> casella   si scambiano di posto
+         casella  -> panchina  esce dal campo
+         altrove               non succede niente */
+      function molla(g, sotto) {
+        if (!sotto) return;
+
+        const inPanchina = sotto.id === 'formPanchina' || sotto.closest('#formPanchina');
+        const casella = sotto.classList && sotto.classList.contains('casella') ? sotto : null;
+
+        if (inPanchina) {
+          if (g.da === 'panchina') return;          // era gia fuori
+          delete schieramento[g.da];
+        } else if (casella) {
+          const dove = casella.dataset.casella;
+          if (!dove) return;
+
+          if (g.da === 'panchina') {
+            schieramento[dove] = g.id;
+          } else {
+            if (g.da === dove) return;
+            // Scambio: chi stava li va dove stava l'altro.
+            const altro = schieramento[dove];
+            schieramento[dove] = g.id;
+            if (altro) schieramento[g.da] = altro; else delete schieramento[g.da];
+          }
+        } else {
+          return;
+        }
+
+        disegnaCampo();
+        esito($('formEsito'), 'Modifica non ancora salvata.', false);
       }
 
       /* ---- il foglio di scelta ---- */
@@ -1827,27 +1982,38 @@
         $('sceltaRuolo').textContent = c.eti;
         $('sceltaTit').textContent = 'Chi ci metti?';
         $('sceltaAiuto').textContent =
-          'In questa casella ci va ' + (REPARTO_ETICHETTA[c.reparto] || 'un giocatore') +
-          ' fra chi ha segnato presente.';
+          'Qui di solito ci va ' + (REPARTO_ETICHETTA[c.reparto] || 'un giocatore') +
+          ', ma puoi metterci chiunque sia presente.';
 
         const elenco = $('sceltaElenco');
         elenco.textContent = '';
 
         rosaPronta.then(() => {
-          const lista = candidati(c);
+          const { consigliati, altri } = candidati(c);
 
-          if (!lista.length) {
+          if (!consigliati.length && !altri.length) {
             const p = document.createElement('p');
             p.className = 'scelta-vuoto';
             p.textContent = presenti.length
-              ? 'Nessuno dei presenti puo giocare in questa casella. Gli altri reparti hanno le loro.'
+              ? 'Sono già tutti in campo: in panchina non è rimasto nessuno.'
               : 'Per questa giornata non ha ancora segnato presente nessuno.';
             elenco.appendChild(p);
           }
 
           // Prima la voce per svuotare, se c'e gia qualcuno.
           if (schieramento[c.id]) elenco.appendChild(tessera(null, c));
-          lista.forEach(id => elenco.appendChild(tessera(id, c)));
+          consigliati.forEach(id => elenco.appendChild(tessera(id, c)));
+
+          /* Gli altri reparti restano disponibili, sotto una riga che
+             dice cosa sono: la scelta ovvia si trova per prima, quella
+             insolita non e vietata. */
+          if (altri.length) {
+            const riga = document.createElement('div');
+            riga.className = 'scelta-altri';
+            riga.textContent = 'Da altri reparti';
+            elenco.appendChild(riga);
+            altri.forEach(id => elenco.appendChild(tessera(id, c)));
+          }
 
           $('sceltaFoglio').classList.add('aperto');
           $('sceltaBg').classList.add('aperto');

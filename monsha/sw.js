@@ -35,7 +35,10 @@ self.addEventListener('push', evento => {
   const titolo = d.titolo || 'Monaci Shaolin';
   const opzioni = {
     body:  d.testo || '',
-    icon:  ICONA,
+    /* Quando la notizia ha un autore, la sua faccia al posto
+       dell'icona del club: si riconosce chi ha scritto prima ancora
+       di leggere il nome. Se manca, si torna al torii. */
+    icon:  d.ritratto || ICONA,
     badge: SEGNO,
     // Stesso tag per la stessa giornata: la seconda notifica sostituisce
     // la prima invece di accatastarsi, e renotify la fa comunque
@@ -43,11 +46,18 @@ self.addEventListener('push', evento => {
     tag:   'convocazione-' + (d.data || 'oggi'),
     renotify: true,
     requireInteraction: true,
+    /* Su Android la notifica aperta mostra anche un'immagine grande:
+       la stessa faccia. iOS la ignora e non fa danni. */
+    image: d.ritratto || undefined,
     data: { data: d.data || '', vai: d.vai || '/area-riservata' },
-    actions: [
-      { action: 'presente', title: 'Presente' },
-      { action: 'assente',  title: 'Assente'  }
-    ]
+    /* I due bottoni solo dove hanno un senso, cioe quando la notifica
+       riguarda una giornata di allenamento. Su un annuncio della
+       bacheca "Presente / Assente" non vorrebbe dire niente, e
+       toccarli non avrebbe nessun effetto. */
+    actions: d.data
+      ? [{ action: 'presente', title: 'Presente' },
+         { action: 'assente',  title: 'Assente'  }]
+      : []
   };
 
   evento.waitUntil(self.registration.showNotification(titolo, opzioni));
