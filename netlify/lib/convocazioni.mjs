@@ -96,7 +96,7 @@ export async function salvaRisposta(data, utente, stato) {
 
 /* Fino a quando si accetta una risposta. Il giorno stesso e i giorni
    futuri, ovviamente; ma anche il giorno prima fino alle sei del
-   mattino, perche una notifica delle 18:00 toccata a mezzanotte e
+   mattino, perche una notifica delle 17:00 toccata a mezzanotte e
    mezza e comunque una risposta sincera, e rifiutarla senza spiegare
    perche sarebbe solo scortese. */
 export function rispostaAmmessa(data) {
