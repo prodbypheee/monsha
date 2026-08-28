@@ -1075,6 +1075,8 @@
 
       /* ---- una giornata ---- */
 
+      /* Cambio di giornata: qui si azzera tutto e si aspetta, perche
+         di quel giorno non sappiamo ancora niente. */
       async function mostraGiorno(data) {
         attivo = data;
         segnaChip();
@@ -1083,7 +1085,16 @@
         $('convScelta').hidden = false;
         esito($('convEsito'), '');
         segnaScelta(null, true);
+        await caricaGiornata(data, true);
+      }
 
+      /* Rilettura della stessa giornata. `toccaBottoni` esiste per un
+         motivo preciso: dopo che hai premuto Presente, i due bottoni
+         dicono gia la verita e non vanno rimessi a zero. Prima li
+         spegneva e li disabilitava mentre il server rispondeva, e chi
+         premeva in quel mezzo secondo trovava un bottone morto — da
+         cui l'impressione di doverlo premere due volte. */
+      async function caricaGiornata(data, toccaBottoni) {
         const r = await apiConv('giorno?data=' + encodeURIComponent(data));
         // Nel frattempo si puo aver toccato un altro giorno: la
         // risposta vecchia non deve sovrascrivere quella nuova.
@@ -1092,10 +1103,12 @@
           return;
         }
 
-        const mia = (r.dati.elenco.find(v => v.io) || {}).stato || null;
-        segnaScelta(mia, !r.dati.apribile);
-        if (!r.dati.apribile)
-          esito($('convEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
+        if (toccaBottoni) {
+          const mia = (r.dati.elenco.find(v => v.io) || {}).stato || null;
+          segnaScelta(mia, !r.dati.apribile);
+          if (!r.dati.apribile)
+            esito($('convEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
+        }
 
         disegnaConta(r.dati.conta);
         disegnaElenco(r.dati.elenco);
@@ -1221,11 +1234,13 @@
           segnaScelta(null, false);
           return;
         }
-        // La conferma si scrive DOPO il ricarico: mostraGiorno azzera il
-        // messaggio, e scrivendola prima si vedrebbe sparire da sola.
-        await mostraGiorno(quale);
-        if (attivo === quale)
-          esito($('convEsito'), scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
+
+        esito($('convEsito'), scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
+
+        // Elenco e conteggi si aggiornano quando arrivano, senza
+        // aspettarli e senza toccare i due bottoni: la risposta e gia
+        // registrata, e rimetterli a zero sarebbe una bugia.
+        caricaGiornata(quale, false);
       });
 
       /* ---- notifiche del telefono ----
@@ -1457,7 +1472,10 @@
       /* Tornando sul sito dopo aver risposto dalla notifica, la pagina
          ha in mano dati vecchi: si ricarica la giornata da sola. */
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && io && attivo) mostraGiorno(attivo);
+        // Si rilegge, ma senza spegnere i bottoni nell'attesa: chi
+        // torna sul sito dopo aver risposto dalla notifica deve
+        // vedere la sua risposta, non un lampeggio.
+        if (!document.hidden && io && attivo) caricaGiornata(attivo, true);
       });
 
       return { avvia, chiudi };
@@ -1573,6 +1591,70 @@
             el.append(cerchio, nome);
             box.appendChild(el);
           });
+
+          disegnaPanchina();
+        });
+      }
+
+      /* La panchina: chi ha segnato presente e non e ancora finito in
+         nessuna casella. Non e l'elenco degli assenti — quelli stanno
+         nella tab convocazioni — ma la scorta che il capitano ha
+         ancora in mano mentre schiera. */
+      function disegnaPanchina() {
+        const box = $('formPanchinaElenco');
+        const riquadro = $('formPanchina');
+        box.textContent = '';
+
+        const inCampo = new Set(
+          Object.values(schieramento).map(v => String(v).toLowerCase()));
+        const fuori = presenti.filter(id => !inCampo.has(String(id).toLowerCase()));
+
+        $('formPanchinaConta').textContent = fuori.length;
+
+        if (!fuori.length) {
+          riquadro.hidden = !presenti.length;
+          if (presenti.length) {
+            const p = document.createElement('p');
+            p.className = 'ar-vuoto';
+            p.textContent = 'Nessuno: sono tutti in campo.';
+            box.appendChild(p);
+          }
+          return;
+        }
+
+        riquadro.hidden = false;
+
+        fuori.forEach(id => {
+          const g = trovaGiocatore(id);
+
+          const t = document.createElement('div');
+          t.className = 'conv-tessera';
+
+          const avatar = document.createElement('div');
+          avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
+          if (g) {
+            const foto = document.createElement('i');
+            foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+            avatar.appendChild(foto);
+          }
+          const iniziale = document.createElement('span');
+          iniziale.textContent = id.charAt(0).toUpperCase();
+          avatar.appendChild(iniziale);
+
+          const nome = document.createElement('span');
+          nome.className = 'conv-nome';
+          nome.textContent = id;
+
+          t.append(avatar, nome);
+
+          if (g) {
+            const r = document.createElement('span');
+            r.className = 'conv-ruolo';
+            r.textContent = g.ruolo;
+            t.appendChild(r);
+          }
+
+          box.appendChild(t);
         });
       }
 
