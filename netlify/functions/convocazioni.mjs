@@ -51,11 +51,23 @@ async function stato(req, segreto) {
   /* La diagnosi la vede solo l'admin. A un membro non serve sapere se
      l'orologio del server ha girato: gli serve sapere se le sue
      notifiche sono accese, e quello sta in `push`. */
+  /* La posta esce variabile per variabile e non come un si/no.
+     "Non configurata" e una diagnosi inutile quando le variabili sono
+     cinque: dice che qualcosa manca senza dire cosa, e tocca provarle
+     tutte. Esce se sono impostate, mai il loro contenuto: una chiave
+     privata non deve uscire dal server nemmeno verso l'amministratore. */
   const diagnosi = u.ruolo === 'admin'
     ? {
         orologio: await ultimoGiro(),
-        posta:    postaConfigurata() && !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
-        chiaviPush: pushConfigurato()
+        chiaviPush: pushConfigurato(),
+        posta: {
+          pronta:      postaConfigurata() && !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
+          EMAILJS_SERVICE_ID:            !!process.env.EMAILJS_SERVICE_ID,
+          EMAILJS_PUBLIC_KEY:            !!process.env.EMAILJS_PUBLIC_KEY,
+          EMAILJS_PRIVATE_KEY:           !!process.env.EMAILJS_PRIVATE_KEY,
+          EMAILJS_TEMPLATE_CONVOCAZIONI: !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI,
+          EMAILJS_TEMPLATE_ID:           !!process.env.EMAILJS_TEMPLATE_ID
+        }
       }
     : null;
 

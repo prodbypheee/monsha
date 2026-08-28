@@ -1406,7 +1406,22 @@
         }
 
         riga('Chiavi notifiche', diagnosi.chiaviPush ? 'impostate' : 'MANCANTI', diagnosi.chiaviPush);
-        riga('Posta', diagnosi.posta ? 'configurata' : 'NON configurata', diagnosi.posta);
+
+        /* Variabile per variabile, col nome esatto da cercare su
+           Netlify. "Posta non configurata" e una diagnosi inutile
+           quando le variabili sono cinque: si sa che manca qualcosa e
+           non si sa cosa. */
+        const p = diagnosi.posta || {};
+        if (p.pronta) {
+          riga('Posta', 'configurata', true);
+        } else {
+          riga('Posta', 'NON configurata — manca quanto segue:', false);
+          ['EMAILJS_SERVICE_ID', 'EMAILJS_PUBLIC_KEY', 'EMAILJS_PRIVATE_KEY',
+           'EMAILJS_TEMPLATE_CONVOCAZIONI', 'EMAILJS_TEMPLATE_ID'].forEach(nome => {
+            riga(nome, p[nome] ? 'c’è' : 'MANCA', !!p[nome]);
+          });
+        }
+
         riga('Allenamenti in calendario', giorni.length ? giorni.join(', ') : 'nessuno', giorni.length > 0);
         riga('Tuoi dispositivi iscritti', String(dispositivi), dispositivi > 0);
       }
