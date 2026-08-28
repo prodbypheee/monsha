@@ -164,6 +164,41 @@ idea fino a mezzanotte — anzi, fino alle sei del mattino dopo, perché
 una notifica delle 17:00 toccata a mezzanotte e mezza è comunque una
 risposta sincera.
 
+## 4-bis. La formazione
+
+Una tab a parte dentro l'area riservata, con un campo visto dall'alto e
+il **3-4-1-2**: portiere, tre centrali, due esterni e due centrali di
+centrocampo, un trequartista, due punte.
+
+**La compila chi può convocare** — capitano, amministrazione,
+amministratore. Tutti gli altri la vedono e basta: le caselle non si
+toccano e i bottoni non ci sono proprio.
+
+Due regole, e sono di natura diversa:
+
+- **In campo va solo chi ha segnato presente** quel giorno. Questa la
+  fa rispettare il server: riguarda i dati, e un sito manomesso non
+  deve poter schierare un assente.
+- **Ogni casella vuole il suo reparto**: in difesa i difensori, a
+  centrocampo i centrocampisti (esterni e trequartista compresi), in
+  attacco gli attaccanti. Questa è una regola di calcio: il sito
+  propone soltanto chi può starci, così non c'è nemmeno modo di
+  sbagliare, e il server la ricontrolla per coerenza.
+
+Gli **Icons restano fuori**: non appartengono a nessun reparto
+schierabile, quindi non compaiono in nessuna lista. Il giorno che
+servissero, basta aggiungerli ai reparti ammessi in
+`netlify/lib/formazione.mjs`.
+
+Chi ha segnato presente ma non è nella rosa del sito non ha un reparto,
+e in quel caso lo si può mettere ovunque: non poterlo schierare
+sarebbe peggio che schierarlo nel posto sbagliato.
+
+Il campo è disegnato in SVG, non è un'immagine: resta nitido a ogni
+dimensione, non pesa niente e prende i colori del tema. Le posizioni
+delle undici caselle stanno in un elenco solo, `CASELLE`, usato sia dal
+disegno sia dai controlli del server — così non possono disallinearsi.
+
 ## 5. I due bottoni dentro la notifica
 
 **Su Android funzionano davvero**: si tocca "Presente" e la risposta
@@ -186,6 +221,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 |---|---|
 | `netlify/lib/comune.mjs` | sessione, cookie, utenti, date italiane — condiviso |
 | `netlify/lib/convocazioni.mjs` | giorni e risposte nell'archivio |
+| `netlify/lib/formazione.mjs` | il 3-4-1-2, le undici caselle e le loro regole |
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
@@ -205,6 +241,7 @@ nel piano gratuito:
 ```
 giorni                        i giorni scelti dal capitano
 risposte/<data>/<chiave>      una voce per persona e per giornata
+formazione/<data>             gli undici schierati quel giorno
 push/<chiave>                 i dispositivi iscritti alle notifiche
 inviate/<data>/<ora>          segno di spunta contro il doppio invio
 ```

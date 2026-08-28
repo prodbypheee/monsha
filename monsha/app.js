@@ -722,7 +722,7 @@
 
     /* ---- tab interne ---- */
 
-    const PANNELLI = ['convocazioni', 'profilo', 'gestione'];
+    const PANNELLI = ['convocazioni', 'formazione', 'profilo', 'gestione'];
 
     function pannello(quale) {
       PANNELLI.forEach(p => {
@@ -910,16 +910,40 @@
        viaggio non deve poter spostare un allenamento di un giorno,
        e la data di "oggi" arriva comunque dal server. */
 
+    /* ---- conti sulle date, in comune fra convocazioni e formazione ----
+       Le date sono stringhe AAAA-MM-GG e i conti si fanno su un
+       calendario UTC, mai con l'orologio del telefono: un telefono col
+       fuso sbagliato o in viaggio non deve poter spostare un
+       allenamento di un giorno. Stanno qui fuori e non dentro un
+       modulo perche servono a due tab, e la stessa formula scritta due
+       volte prima o poi diverge. */
+
+    const GIORNI_NOME = ['domenica', 'lunedì', 'martedì', 'mercoledì',
+                         'giovedì', 'venerdì', 'sabato'];
+    const GIORNI_CORTI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+                  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+
+    function piu(data, n) {
+      const [a, m, g] = data.split('-').map(Number);
+      const d = new Date(Date.UTC(a, m - 1, g));
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+    function settimana(data) {
+      const [a, m, g] = data.split('-').map(Number);
+      return new Date(Date.UTC(a, m - 1, g)).getUTCDay();
+    }
+    const maiuscola = t => t.charAt(0).toUpperCase() + t.slice(1);
+    const inLettere = d =>
+      GIORNI_NOME[settimana(d)] + ' ' + Number(d.slice(8)) + ' ' + MESI[Number(d.slice(5, 7)) - 1];
+    const cortissima = d => GIORNI_CORTI[settimana(d)] + ' ' + Number(d.slice(8));
+
     const convocazioni = (function () {
 
       const INIZIALI = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
       const SETTIMANE = ['Questa settimana', 'La prossima', 'Fra due settimane',
                          'Fra tre settimane', 'Fra quattro settimane'];
-      const GIORNI_NOME = ['domenica', 'lunedì', 'martedì', 'mercoledì',
-                           'giovedì', 'venerdì', 'sabato'];
-      const GIORNI_CORTI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
-      const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-                    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
 
       let io = null;
       let oggi = '';
@@ -928,26 +952,6 @@
       let scelti = new Set();
       let attivo = null;
       let chiavePush = '';
-
-      /* ---- conti sulle date ----
-         Trattate come giorni di calendario e basta: si costruisce una
-         data UTC dai tre numeri, si somma, si riprende la stringa. Nessun
-         fuso di mezzo, quindi nessun 31 marzo che diventa 30. */
-
-      function piu(data, n) {
-        const [a, m, g] = data.split('-').map(Number);
-        const d = new Date(Date.UTC(a, m - 1, g));
-        d.setUTCDate(d.getUTCDate() + n);
-        return d.toISOString().slice(0, 10);
-      }
-      function settimana(data) {
-        const [a, m, g] = data.split('-').map(Number);
-        return new Date(Date.UTC(a, m - 1, g)).getUTCDay();
-      }
-      const maiuscola = t => t.charAt(0).toUpperCase() + t.slice(1);
-      const inLettere = d =>
-        GIORNI_NOME[settimana(d)] + ' ' + Number(d.slice(8)) + ' ' + MESI[Number(d.slice(5, 7)) - 1];
-      const cortissima = d => GIORNI_CORTI[settimana(d)] + ' ' + Number(d.slice(8));
 
       function vicinanza(d) {
         if (d === oggi) return 'Oggi';
@@ -1030,6 +1034,10 @@
         disegnaGiorni();
         if (giorni.length) mostraGiorno(giorni.includes(attivo) ? attivo : giorni[0]);
         else svuotaGiornata();
+
+        // Il calendario e cambiato: anche il campo deve seguirlo,
+        // altrimenti resta appeso a una giornata che non c'e piu.
+        formazione.aggiorna(giorni, oggi, io);
       });
 
       /* ---- la striscia dei prossimi allenamenti ---- */
@@ -1431,9 +1439,14 @@
         // I due bottoni di prova raggiungono persone vere: li vede
         // solo l'amministratore.
         $('convProve').hidden = io.ruolo !== 'admin';
+
+        // I giorni li passiamo alla formazione invece di farglieli
+        // richiedere: e la stessa risposta del server, appena letta.
+        formazione.aggiorna(giorni, oggi, io);
       }
 
       function chiudi() {
+        formazione.chiudi();
         io = null; giorni = []; scelti = new Set(); attivo = null;
         $('convCapitano').hidden = true;
         $('convGiorni').textContent = '';
@@ -1448,6 +1461,358 @@
       });
 
       return { avvia, chiudi };
+    })();
+
+
+    /* ================= FORMAZIONE =================
+       Undici caselle su un campo, una formazione per giornata.
+
+       Chi puo convocare schiera, tutti gli altri guardano: la stessa
+       divisione della tab convocazioni, e per la stessa ragione — la
+       squadra la mette in campo chi la allena.
+
+       Due regole, e sono di natura diversa:
+
+         in campo va solo chi ha segnato PRESENTE quel giorno
+             questa la fa rispettare il server, perche riguarda i dati;
+
+         nelle caselle di difesa vanno difensori, a centrocampo
+         centrocampisti ed esterni, in attacco attaccanti
+             questa e una regola di calcio: il sito propone soltanto
+             chi puo starci, cosi non c'e nemmeno modo di sbagliare.
+
+       Gli Icons restano fuori: non appartengono a nessun reparto
+       schierabile, quindi non compaiono in nessuna lista. */
+
+    const formazione = (function () {
+
+      let io = null;
+      let giorni = [];
+      let oggi = '';
+      let attivo = null;
+
+      let caselle = [];
+      let schieramento = {};
+      let presenti = [];
+      let modificabile = false;
+      let apertaSu = null;      // la casella che il foglio sta compilando
+
+      const REPARTO_ETICHETTA = {
+        portieri: 'un portiere',
+        difensori: 'un difensore',
+        centrocampisti: 'un centrocampista o un esterno',
+        attaccanti: 'un attaccante'
+      };
+
+      /* ---- la striscia dei giorni ---- */
+
+      function disegnaGiorni() {
+        const box = $('formGiorni');
+        box.textContent = '';
+        giorni.slice(0, 10).forEach(d => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'conv-chip';
+          b.setAttribute('aria-pressed', String(d === attivo));
+          b.textContent = d === oggi ? 'oggi' : (d === piu(oggi, 1) ? 'domani' : cortissima(d));
+          b.addEventListener('click', () => mostra(d));
+          box.appendChild(b);
+        });
+      }
+
+      function segnaChip() {
+        [...$('formGiorni').children].forEach((b, i) =>
+          b.setAttribute('aria-pressed', String(giorni[i] === attivo)));
+      }
+
+      /* ---- il campo ---- */
+
+      function disegnaCampo() {
+        const box = $('formCaselle');
+        box.textContent = '';
+
+        rosaPronta.then(() => {
+          box.textContent = '';
+
+          caselle.forEach(c => {
+            const chi = schieramento[c.id] || null;
+            const g = chi ? trovaGiocatore(chi) : null;
+
+            const el = document.createElement(modificabile ? 'button' : 'div');
+            if (modificabile) {
+              el.type = 'button';
+              el.addEventListener('click', () => apriScelta(c));
+            }
+            el.className = 'casella' + (chi ? ' piena' : '') + (modificabile ? ' tocca' : '');
+            el.style.left = c.x + '%';
+            el.style.top  = c.y + '%';
+            el.setAttribute('aria-label',
+              c.eti + (chi ? ': ' + chi : ': vuoto') + (modificabile ? ' — tocca per cambiare' : ''));
+
+            const cerchio = document.createElement('span');
+            cerchio.className = 'casella-cerchio';
+
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              cerchio.appendChild(foto);
+            }
+            const sigla = document.createElement('span');
+            sigla.className = 'casella-sigla';
+            sigla.textContent = chi && !g ? (chi.charAt(0).toUpperCase()) : c.eti;
+            cerchio.appendChild(sigla);
+
+            const nome = document.createElement('span');
+            nome.className = 'casella-nome';
+            if (chi) {
+              const ruolo = document.createElement('b');
+              ruolo.textContent = c.eti;
+              nome.append(ruolo, document.createTextNode(chi));
+            }
+
+            el.append(cerchio, nome);
+            box.appendChild(el);
+          });
+        });
+      }
+
+      /* ---- chi puo stare in una casella ----
+         Presente quel giorno, non gia schierato altrove, e del
+         reparto giusto. Chi non e nella rosa del sito non ha un
+         reparto: lo si accetta ovunque, perche non poterlo schierare
+         sarebbe peggio che schierarlo nel posto sbagliato. */
+
+      function candidati(c) {
+        const occupati = new Set(
+          Object.entries(schieramento)
+            .filter(([k]) => k !== c.id)
+            .map(([, v]) => String(v).toLowerCase()));
+
+        return presenti.filter(id => {
+          if (occupati.has(String(id).toLowerCase())) return false;
+          const g = trovaGiocatore(id);
+          if (!g) return true;                       // fuori rosa: ammesso ovunque
+          return g.reparto === c.reparto;
+        });
+      }
+
+      /* ---- il foglio di scelta ---- */
+
+      function apriScelta(c) {
+        apertaSu = c;
+        $('sceltaRuolo').textContent = c.eti;
+        $('sceltaTit').textContent = 'Chi ci metti?';
+        $('sceltaAiuto').textContent =
+          'In questa casella ci va ' + (REPARTO_ETICHETTA[c.reparto] || 'un giocatore') +
+          ' fra chi ha segnato presente.';
+
+        const elenco = $('sceltaElenco');
+        elenco.textContent = '';
+
+        rosaPronta.then(() => {
+          const lista = candidati(c);
+
+          if (!lista.length) {
+            const p = document.createElement('p');
+            p.className = 'scelta-vuoto';
+            p.textContent = presenti.length
+              ? 'Nessuno dei presenti puo giocare in questa casella. Gli altri reparti hanno le loro.'
+              : 'Per questa giornata non ha ancora segnato presente nessuno.';
+            elenco.appendChild(p);
+          }
+
+          // Prima la voce per svuotare, se c'e gia qualcuno.
+          if (schieramento[c.id]) elenco.appendChild(tessera(null, c));
+          lista.forEach(id => elenco.appendChild(tessera(id, c)));
+
+          $('sceltaFoglio').classList.add('aperto');
+          $('sceltaBg').classList.add('aperto');
+          document.body.style.overflow = 'hidden';
+        });
+      }
+
+      function tessera(id, c) {
+        const g = id ? trovaGiocatore(id) : null;
+
+        const t = document.createElement('button');
+        t.type = 'button';
+        t.className = 'conv-tessera' + (id ? '' : ' zero');
+        t.style.background = 'none';
+        t.style.border = '0';
+        t.style.cursor = 'pointer';
+        t.style.padding = '0';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
+        if (g) {
+          const foto = document.createElement('i');
+          foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+          avatar.appendChild(foto);
+        }
+        const iniziale = document.createElement('span');
+        iniziale.textContent = id ? id.charAt(0).toUpperCase() : '✕';
+        avatar.appendChild(iniziale);
+
+        const nome = document.createElement('span');
+        nome.className = 'conv-nome';
+        nome.textContent = id || 'Lascia vuota';
+
+        t.append(avatar, nome);
+
+        if (g) {
+          const r = document.createElement('span');
+          r.className = 'conv-ruolo';
+          r.textContent = g.ruolo;
+          t.appendChild(r);
+        }
+
+        t.addEventListener('click', () => {
+          if (id) schieramento[c.id] = id;
+          else delete schieramento[c.id];
+          chiudiScelta();
+          disegnaCampo();
+          esito($('formEsito'), 'Modifica non ancora salvata.', false);
+        });
+
+        return t;
+      }
+
+      function chiudiScelta() {
+        apertaSu = null;
+        $('sceltaFoglio').classList.remove('aperto');
+        $('sceltaBg').classList.remove('aperto');
+        document.body.style.overflow = '';
+      }
+
+      $('sceltaChiudi').addEventListener('click', chiudiScelta);
+      $('sceltaBg').addEventListener('click', chiudiScelta);
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && apertaSu) chiudiScelta();
+      });
+
+      /* ---- salvataggio ---- */
+
+      $('formSalva').addEventListener('click', async () => {
+        if (!attivo) return;
+        const btn = $('formSalva'), box = $('formEsito');
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Salvo…';
+
+        const r = await apiConv('formazione', { data: attivo, schieramento });
+
+        btn.disabled = false;
+        btn.textContent = testo;
+
+        if (!r.ok) { esito(box, r.dati.errore || 'Non sono riuscito a salvare.'); return; }
+
+        schieramento = r.dati.schieramento || {};
+        const quanti = Object.keys(schieramento).length;
+        esito(box, quanti === 11
+          ? 'Formazione salvata: undici in campo.'
+          : 'Formazione salvata: ' + quanti + ' su 11.', true);
+
+        // La firma si aggiorna qui invece di richiedere di nuovo la
+        // giornata al server: l'abbiamo appena salvata noi, sappiamo
+        // chi e stato e quando.
+        mostraFirma(new Date().toISOString(), io && io.idGioco);
+
+        disegnaCampo();
+      });
+
+      $('formSvuota').addEventListener('click', () => {
+        if (!Object.keys(schieramento).length) return;
+        if (!confirm('Tolgo tutti dal campo? La formazione resta vuota finche non salvi.')) return;
+        schieramento = {};
+        disegnaCampo();
+        esito($('formEsito'), 'Campo svuotato. Salva per confermare.', false);
+      });
+
+      /* Chi ha schierato e quando: serve a sapere se quella in campo
+         e ancora la formazione di ieri o e stata rivista stamattina. */
+      function mostraFirma(quando, chi) {
+        const firma = $('formFirma');
+        if (!quando) { firma.hidden = true; return; }
+        firma.hidden = false;
+        firma.textContent = 'Ultima modifica: ' +
+          new Date(quando).toLocaleString('it-IT',
+            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+          (chi ? ' — ' + chi : '');
+      }
+
+      /* ---- caricamento di una giornata ---- */
+
+      async function mostra(data) {
+        attivo = data;
+        segnaChip();
+        $('formQuando').textContent = maiuscola(inLettere(data));
+        $('formEtichetta').textContent = data === oggi ? 'Formazione di oggi' : 'Formazione';
+        esito($('formEsito'), '');
+
+        const r = await apiConv('formazione?data=' + encodeURIComponent(data));
+        if (!r.ok || attivo !== data) {
+          if (!r.ok) esito($('formEsito'), r.dati.errore || 'Non riesco a leggere la formazione.');
+          return;
+        }
+
+        caselle = r.dati.caselle || [];
+        schieramento = r.dati.schieramento || {};
+        presenti = r.dati.presenti || [];
+        modificabile = !!r.dati.modificabile;
+
+        $('formModulo').textContent = r.dati.modulo;
+        $('formAzioni').hidden = !modificabile;
+
+        $('formNota').textContent = modificabile
+          ? (presenti.length
+              ? 'Tocca una casella e scegli fra i ' + presenti.length + ' presenti. Ogni reparto ha le sue.'
+              : 'Per questa giornata non ha ancora segnato presente nessuno: non c’è nessuno da schierare.')
+          : 'La formazione la decide il capitano. Qui la vedi come sarà.';
+
+        mostraFirma(r.dati.aggiornato, r.dati.da);
+        disegnaCampo();
+      }
+
+      function svuota() {
+        attivo = null;
+        caselle = [];
+        schieramento = {};
+        presenti = [];
+        $('formQuando').textContent = 'Nessun allenamento in calendario';
+        $('formGiorni').textContent = '';
+        $('formCaselle').textContent = '';
+        $('formAzioni').hidden = true;
+        $('formFirma').hidden = true;
+        esito($('formEsito'), 'Quando il capitano fissa un allenamento, qui compare il campo.');
+      }
+
+      /* ---- ingresso ----
+         I giorni arrivano dalla tab convocazioni, che li ha gia
+         chiesti al server: due tab della stessa area non devono fare
+         due volte la stessa domanda. */
+
+      function aggiorna(elenco, dataOggi, utente) {
+        giorni = elenco || [];
+        oggi = dataOggi;
+        io = utente;
+
+        if (!giorni.length) { svuota(); return; }
+
+        const daLink = new URLSearchParams(location.search).get('giorno');
+        const scelto = (daLink && giorni.includes(daLink)) ? daLink
+                     : (giorni.includes(attivo) ? attivo : giorni[0]);
+
+        disegnaGiorni();
+        mostra(scelto);
+      }
+
+      function chiudi() {
+        chiudiScelta();
+        svuota();
+        io = null; giorni = [];
+      }
+
+      return { aggiorna, chiudi };
     })();
 
     /* ---- avvio pigro ---- */
