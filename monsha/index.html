@@ -32,7 +32,12 @@
   <link rel="apple-touch-icon" href="./immagini/icona-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Monaci">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- "black" e non "black-translucent": col secondo iOS disegna la
+       pagina ANCHE sotto la barra di stato, e la fascia arancione con
+       la riga delle tab finiva nascosta dietro l'orologio e la
+       batteria. Con "black" la barra resta nera opaca — che su un sito
+       gia nero non si vede nemmeno — e la pagina comincia sotto. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
