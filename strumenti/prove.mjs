@@ -15,7 +15,7 @@ import {
   creaGettone, leggiGettone, cookieSessione, leggiCookie,
   incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
-import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare }
+import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo }
   from '../netlify/lib/convocazioni.mjs';
 
 let fatte = 0, rotte = 0;
@@ -181,6 +181,50 @@ prova('il riepilogo va a capitano, amministrazione e admin', () => {
   ];
   const chi = riceveIlRiepilogo(gente).map(u => u.email);
   assert.deepEqual(chi.sort(), ['a@x.it', 'ad@x.it', 'c@x.it']);
+});
+
+console.log('\nDestinatari del riepilogo');
+
+const SQUADRA = [
+  { stato: 'approvato', ruolo: 'membro', incarico: 'giocatore', email: 'g@x.it', idGioco: 'Gio' },
+  { stato: 'approvato', ruolo: 'membro', incarico: 'capitano',  email: 'Capo@X.it', idGioco: 'Capo' },
+  { stato: 'approvato', ruolo: 'admin',  incarico: 'giocatore', email: 'ad@x.it', idGioco: 'Admin' }
+];
+
+prova('senza variabile si torna agli incarichi', () => {
+  delete process.env.EMAIL_RIEPILOGO;
+  const d = destinatariRiepilogo(SQUADRA).map(v => v.email).sort();
+  assert.deepEqual(d, ['Capo@X.it', 'ad@x.it']);
+});
+
+prova('la variabile ha la precedenza', () => {
+  process.env.EMAIL_RIEPILOGO = 'uno@esempio.it, due@esempio.it';
+  const d = destinatariRiepilogo(SQUADRA).map(v => v.email);
+  assert.deepEqual(d, ['uno@esempio.it', 'due@esempio.it']);
+});
+
+prova('virgole, spazi e a capo separano allo stesso modo', () => {
+  process.env.EMAIL_RIEPILOGO = ' uno@esempio.it,\n due@esempio.it ;tre@esempio.it ';
+  assert.equal(destinatariRiepilogo(SQUADRA).length, 3);
+});
+
+prova('doppioni e indirizzi storti si buttano', () => {
+  process.env.EMAIL_RIEPILOGO = 'uno@esempio.it, UNO@esempio.it, non-una-mail, @niente';
+  const d = destinatariRiepilogo(SQUADRA).map(v => v.email);
+  assert.deepEqual(d, ['uno@esempio.it']);
+});
+
+prova('a un indirizzo che e anche un account viene attaccato il suo ID', () => {
+  process.env.EMAIL_RIEPILOGO = 'capo@x.it, estraneo@esempio.it';
+  const d = destinatariRiepilogo(SQUADRA);
+  assert.equal(d[0].idGioco, 'Capo');    // riconosciuto anche se scritto in minuscolo
+  assert.equal(d[1].idGioco, '');
+});
+
+prova('una variabile piena di spazi non azzera i destinatari', () => {
+  process.env.EMAIL_RIEPILOGO = '   ';
+  assert.equal(destinatariRiepilogo(SQUADRA).length, 2);   // torna agli incarichi
+  delete process.env.EMAIL_RIEPILOGO;
 });
 
 console.log('\n' + fatte + ' passate, ' + rotte + ' rotte\n');

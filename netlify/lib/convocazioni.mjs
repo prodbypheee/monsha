@@ -115,3 +115,35 @@ export const daConvocare = utenti =>
 export const riceveIlRiepilogo = utenti =>
   utenti.filter(u => u.stato === 'approvato' &&
     (u.ruolo === 'admin' || incaricoDi(u) !== 'giocatore'));
+
+/* ---------- a chi va il riepilogo delle 20:00 -----------------
+   Gli indirizzi stanno nella variabile EMAIL_RIEPILOGO su Netlify,
+   separati da virgola o a capo, e NON nel codice: questo repository
+   e pubblico, e tre indirizzi scritti qui dentro finirebbero
+   indicizzati e nella cronologia git per sempre, dove i raccoglitori
+   di spam li trovano. Una variabile d'ambiente si cambia in dieci
+   secondi e non lascia tracce.
+
+   Se la variabile manca si torna agli account con un incarico:
+   meglio mandarlo a chi sta gia dentro che non mandarlo affatto.
+
+   Quando l'indirizzo appartiene a un membro, il suo ID di gioco
+   viaggia nella mail come {{capitano}}; per gli altri resta vuoto. */
+
+export function destinatariRiepilogo(utenti) {
+  const grezzi = String(process.env.EMAIL_RIEPILOGO || '')
+    .split(/[\s,;]+/)
+    .map(v => v.trim().toLowerCase())
+    .filter(v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v) && v.length <= 254);
+
+  const indirizzi = [...new Set(grezzi)];
+
+  if (!indirizzi.length)
+    return riceveIlRiepilogo(utenti).map(u => ({ email: u.email, idGioco: u.idGioco }));
+
+  const perEmail = new Map(utenti.map(u => [String(u.email).toLowerCase(), u]));
+  return indirizzi.map(email => ({
+    email,
+    idGioco: (perEmail.get(email) || {}).idGioco || ''
+  }));
+}

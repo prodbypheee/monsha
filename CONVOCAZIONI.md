@@ -38,9 +38,8 @@ avvisarti se qualcosa va storto: va bene `mailto:tuoindirizzo@…`.
 
 Su [EmailJS](https://dashboard.emailjs.com) serve un **secondo
 template**, oltre a quello delle richieste di accesso. Nel campo
-destinatario metti `{{to_email}}`: la mail va al capitano e a chi ha
-l'incarico di amministrazione, quindi il destinatario cambia di volta
-in volta e non può essere fisso.
+destinatario metti `{{to_email}}`: i destinatari sono più d'uno e
+cambiano, quindi non può essere un indirizzo fisso.
 
 Variabili disponibili nel template:
 
@@ -62,9 +61,29 @@ Poi aggiungi su Netlify:
 | Nome | Valore |
 |---|---|
 | `EMAILJS_TEMPLATE_CONVOCAZIONI` | l'ID del template appena creato |
+| `EMAIL_RIEPILOGO` | gli indirizzi che ricevono il riepilogo, separati da virgola |
 
 Le altre quattro variabili di EmailJS sono già impostate: sono le
 stesse dell'avviso per le nuove richieste di accesso.
+
+### Perché gli indirizzi stanno in una variabile e non nel codice
+
+Questo repository è **pubblico**. Un indirizzo scritto in un file
+finisce indicizzato dai motori di ricerca e resta nella cronologia git
+per sempre — non lo si toglie più nemmeno cancellandolo, se non
+riscrivendo tutta la storia del repository. I raccoglitori di spam
+leggono esattamente questo. In una variabile d'ambiente invece gli
+indirizzi non escono dal pannello Netlify, e si cambiano in dieci
+secondi senza fare un commit.
+
+Se `EMAIL_RIEPILOGO` non c'è, il riepilogo torna ad andare agli account
+con incarico di capitano o amministrazione e all'amministratore: meglio
+mandarlo a chi sta già dentro che non mandarlo affatto.
+
+Gli indirizzi si separano con virgole, spazi o a capo; i doppioni e le
+righe che non sono indirizzi vengono ignorati. Quando un indirizzo
+corrisponde anche a un account del sito, nella mail `{{capitano}}`
+riporta il suo ID di gioco; per gli altri resta vuoto.
 
 Il piano gratuito di EmailJS regge circa 200 mail al mese in tutto.
 Con tre allenamenti a settimana e due o tre destinatari siamo intorno
@@ -171,6 +190,9 @@ nessuno se ne accorga.
   compare "notifiche saltate, mancano le chiavi VAPID", vedi sopra.
 - **Il riepilogo non arriva** → manca `EMAILJS_TEMPLATE_CONVOCAZIONI`,
   oppure il template non ha `{{to_email}}` nel campo destinatario.
+- **Il riepilogo arriva alle persone sbagliate** → controlla
+  `EMAIL_RIEPILOGO`. Nei log della funzione `convocazioni-cron` c'è
+  scritto a quante persone è partito.
 - **Su iPhone non arriva niente** → il sito non è nella schermata Home,
   o il permesso è stato negato.
 - **Un membro non si vede in faccia nella sua scheda** → il suo ID di

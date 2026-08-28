@@ -22,7 +22,7 @@
 
 import { tuttiGliUtenti, chiave, convoc, oggiRoma, oraRoma, dataInLettere }
   from '../lib/comune.mjs';
-import { leggiGiorni, leggiRisposte, daConvocare, riceveIlRiepilogo }
+import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo }
   from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
@@ -95,7 +95,12 @@ async function riepiloga(data, utenti, risposte) {
   const elenco = n => n.length ? n.join(', ') : '—';
   const quando = dataInLettere(data);
 
-  const destinatari = riceveIlRiepilogo(utenti);
+  const destinatari = destinatariRiepilogo(utenti);
+  if (!destinatari.length) {
+    console.log('convocazioni: riepilogo saltato, nessun destinatario');
+    return 0;
+  }
+
   let partite = 0;
 
   for (const d of destinatari) {
