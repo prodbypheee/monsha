@@ -434,6 +434,17 @@ button, input, select, textarea { font: inherit; }
 .chip.ruolo span { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .6; }
 .chip.tolgo { background: rgba(255,122,41,.12); border-color: rgba(255,122,41,.3); color: #ffb27a; }
 
+/* competizioni raggruppate per lega: quattordici divisioni di fila non
+   direbbero a quale campionato appartengono */
+#comp { display: block; }
+.comp-gruppo + .comp-gruppo { margin-top: 18px; }
+.comp-lega {
+  display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--txt-4);
+}
+.comp-voci { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+.chip.comp-chip { border-radius: 10px; }
+
 .club-riga { display: flex; gap: 9px; margin-top: 13px; }
 .club-riga .wiz-input { margin-top: 0; }
 .club-add {

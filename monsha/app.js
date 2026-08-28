@@ -249,7 +249,19 @@
       ['TS','Terzino sinistro'], ['MED','Mediano'], ['COC','Centrocampista'],
       ['ED','Esterno destro'], ['ES','Esterno sinistro'], ['ATT','Attaccante']
     ];
-    const COMP = ['FVPA', 'Eludo', 'esyNEXTCUP', 'Poseidon', 'VPG', 'CSP', 'Coppe minori', 'Nessuna'];
+    // Competizioni reali in cui si puo aver militato, con le rispettive
+    // divisioni: sono quelle del form precedente alla rifacitura grafica,
+    // dove la scelta avveniva in un menu a tendina annidato.
+    const COMP_GRUPPI = [
+      ['FVPA',            ['Serie A', 'Serie B', 'Serie C']],
+      ['FVPA San Marino', ['Serie A', 'Serie B']],
+      ['Eludo',           ['Serie A', 'Serie B', 'Serie C', 'Serie D']],
+      ['VPG',             ['Serie A', 'Serie B', 'Serie C', 'Serie D1', 'Serie D2']]
+    ];
+    // valore salvato e inviato: "FVPA — Serie A", cosi resta leggibile
+    // nella mail senza dover ricostruire il gruppo di appartenenza
+    const COMP = COMP_GRUPPI.reduce((acc, g) =>
+      acc.concat(g[1].map(d => g[0] + ' — ' + d)), []);
     const GIORNI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Weekend'];
 
     const dati = { piatt: '', id: '', ruoli: [], comp: [], club: [], giorni: [], tel: '', note: '' };
@@ -258,9 +270,11 @@
 
     const $ = id => document.getElementById(id);
 
-    function chip(testo, attivo, extra) {
+    // etichetta: se passata, e cio che si legge sul pulsante; il valore
+    // salvato resta quello completo in data-v
+    function chip(testo, attivo, extra, etichetta) {
       return '<button type="button" class="chip' + (extra || '') + '" data-v="' + esc(testo) +
-             '" aria-pressed="' + attivo + '">' + esc(testo) + '</button>';
+             '" aria-pressed="' + attivo + '">' + esc(etichetta || testo) + '</button>';
     }
 
     function disegna() {
@@ -268,7 +282,16 @@
         '<button type="button" class="chip ruolo" data-v="' + r[0] + '" aria-pressed="' +
         dati.ruoli.includes(r[0]) + '"><b>' + r[0] + '</b><span>' + esc(r[1]) + '</span></button>').join('');
       $('nRuoli').textContent = dati.ruoli.length;
-      $('comp').innerHTML = COMP.map(c => chip(c, dati.comp.includes(c))).join('');
+      // raggruppate per lega, come nel menu del form precedente: con
+      // quattordici voci di fila non si capirebbe a quale lega appartengono
+      $('comp').innerHTML = COMP_GRUPPI.map(g =>
+        '<div class="comp-gruppo"><span class="comp-lega">' + esc(g[0]) + '</span>' +
+        '<div class="comp-voci">' +
+        g[1].map(d => {
+          const valore = g[0] + ' — ' + d;
+          return chip(valore, dati.comp.includes(valore), ' comp-chip', d);
+        }).join('') +
+        '</div></div>').join('');
       $('giorni').innerHTML = GIORNI.map(g => chip(g, dati.giorni.includes(g), ' quadra')).join('');
       disegnaClub();
       $('idAiuto').textContent = AIUTO[dati.piatt] || '';
