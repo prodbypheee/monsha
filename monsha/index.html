@@ -397,7 +397,11 @@
     <div class="sez-testa" data-reveal>
       <div class="eyebrow">Accesso membri</div>
       <h2 class="titolone">Area<br>riservata</h2>
-      <p class="sottotesto">Lo spazio interno del tempio. Si entra solo con un account approvato: chi si registra resta in attesa finché un amministratore non dà il via libera.</p>
+      <!-- Sparisce a chi e gia dentro: spiega come si entra, e chi e
+           entrato non ha piu bisogno di leggerlo. Sono novanta pixel
+           in cima allo schermo, e servono a far arrivare i bottoni
+           dell'allenamento sopra la piega. -->
+      <p class="sottotesto" id="arIntro">Lo spazio interno del tempio. Si entra solo con un account approvato: chi si registra resta in attesa finché un amministratore non dà il via libera.</p>
     </div>
 
     <!-- Stato iniziale. Resta finché il server non dice chi sei: senza,
@@ -496,6 +500,28 @@
 
     <!-- ---------- MEMBRO CONNESSO ---------- -->
     <div id="arDentro" hidden>
+
+      <!-- PRIMA COSA CHE SI VEDE, quando oggi c'e allenamento: i due
+           bottoni, subito, senza scorrere. Chi apre il sito da una
+           notifica ha una cosa sola da fare e deve poterla fare in un
+           tocco; il bentornato e tutto il resto vengono dopo.
+           Compare solo nei giorni di allenamento: negli altri sarebbe
+           un riquadro vuoto in cima a ogni visita. -->
+      <div class="oggi" id="arOggi" hidden>
+        <div class="oggi-testa">
+          <div class="eyebrow" id="oggiEtichetta">Oggi si allena</div>
+          <div class="oggi-quando" id="oggiQuando">—</div>
+        </div>
+        <div class="conv-scelta" id="oggiScelta">
+          <button type="button" class="conv-btn si" data-risposta="presente" aria-pressed="false">
+            <b>Presente</b><span>ci sono</span>
+          </button>
+          <button type="button" class="conv-btn no" data-risposta="assente" aria-pressed="false">
+            <b>Assente</b><span>non ci sono</span>
+          </button>
+        </div>
+        <p class="ar-esito" id="oggiEsito" role="status" aria-live="polite"></p>
+      </div>
 
       <!-- Scheda di bentornato: la foto arriva da rosa.json accostando
            l'ID di gioco al nick della rosa. Se non c'e corrispondenza

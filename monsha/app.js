@@ -802,6 +802,9 @@
       $('arProfIncarico').textContent = ETICHETTA[utente.incarico || 'giocatore'];
 
       $('arVoceGestione').hidden = utente.ruolo !== 'admin';
+      // L'introduzione spiega come si entra: a chi e gia dentro toglie
+      // solo spazio in cima, e quello spazio serve ai due bottoni.
+      $('arIntro').hidden = true;
       vestiBentornato(utente);
       schermata('arDentro');
       pannello('convocazioni');
@@ -812,6 +815,8 @@
     $('arEsci').addEventListener('click', async () => {
       await api('esci', {});
       ioSono = null;
+      // Chi esce torna a essere uno di fuori: l'introduzione riappare.
+      $('arIntro').hidden = false;
       convocazioni.chiudi();
       $('arFormAccedi').reset();
       schermata('arOspite');
@@ -1000,6 +1005,10 @@
       let scelti = new Set();
       let attivo = null;
       let chiavePush = '';
+      /* Quel che ho appena risposto, per giornata. Serve solo finche
+         il server non conferma la stessa cosa: e la rete di sicurezza
+         contro una rilettura che arriva indietro. */
+      const mieRisposte = {};
 
       function vicinanza(d) {
         if (d === oggi) return 'Oggi';
@@ -1151,15 +1160,37 @@
           return;
         }
 
+        /* Rete di sicurezza: quel che ho appena scelto vale piu di
+           quel che il server mi rimanda, finche i due non concordano.
+           Serviva perche l'archivio poteva restituire il valore
+           precedente per un istante, e si vedeva il bottone ASSENTE
+           acceso e la propria faccia ancora con la spunta verde nella
+           lista sotto. Appena il server concorda, l'eccezione cade. */
+        const miaSalvata = mieRisposte[data];
+        const suaVersione = (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        if (miaSalvata && suaVersione === miaSalvata) delete mieRisposte[data];
+
+        const elenco = miaSalvata
+          ? r.dati.elenco.map(v => (v.io ? { ...v, stato: miaSalvata } : v))
+          : r.dati.elenco;
+
         if (toccaBottoni) {
-          const mia = (r.dati.elenco.find(v => v.io) || {}).stato || null;
-          segnaScelta(mia, !r.dati.apribile);
+          const mia = (elenco.find(v => v.io) || {}).stato || null;
+          // Anche la scheda in cima, se e la stessa giornata.
+          segnaOvunque(data, mia, !r.dati.apribile);
           if (!r.dati.apribile)
             esito($('convEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
         }
 
-        disegnaConta(r.dati.conta);
-        disegnaElenco(r.dati.elenco);
+        // I conteggi si ricavano dall'elenco appena corretto, non da
+        // quelli del server: altrimenti direbbero un numero e le facce
+        // sotto ne mostrerebbero un altro.
+        disegnaConta({
+          presenti: elenco.filter(v => v.stato === 'presente').length,
+          assenti:  elenco.filter(v => v.stato === 'assente').length,
+          muti:     elenco.filter(v => !v.stato).length
+        });
+        disegnaElenco(elenco);
       }
 
       /* Il conteggio si scrive a mano invece di stare fisso nel markup
@@ -1201,11 +1232,20 @@
         });
       }
 
-      function segnaScelta(stato, bloccata) {
-        $('convScelta').querySelectorAll('.conv-btn').forEach(b => {
+      /* I due bottoni esistono in due copie: quelli della scheda in
+         cima, che riguardano sempre oggi, e quelli della giornata che
+         si sta guardando. Quando sono la stessa giornata devono dire
+         la stessa cosa, altrimenti uno dei due mente. */
+      function segnaScelta(stato, bloccata, dove) {
+        (dove || $('convScelta')).querySelectorAll('.conv-btn').forEach(b => {
           b.setAttribute('aria-pressed', String(b.dataset.risposta === stato));
           b.disabled = !!bloccata;
         });
+      }
+
+      function segnaOvunque(data, stato, bloccata) {
+        if (attivo === data) segnaScelta(stato, bloccata, $('convScelta'));
+        if (data === oggi && !$('arOggi').hidden) segnaScelta(stato, bloccata, $('oggiScelta'));
       }
 
       /* La griglia delle facce. Le foto vengono dalla rosa pubblica;
@@ -1264,31 +1304,43 @@
         });
       }
 
-      $('convScelta').addEventListener('click', async e => {
-        const b = e.target.closest('.conv-btn');
-        if (!b || !attivo || b.disabled) return;
-
-        const scelta = b.dataset.risposta;
+      /* Una sola strada per rispondere, chiamata dai bottoni della
+         scheda di oggi e da quelli della giornata: due copie della
+         stessa procedura sarebbero due posti dove correggere un
+         difetto, e uno dei due resterebbe indietro. */
+      async function rispondi(data, scelta, cassetta) {
         // Si colora subito e si corregge dopo se il server dice di no:
         // su un telefono in corsa l'attesa di mezzo secondo sembra un
         // bottone che non ha funzionato, e si finisce per toccarlo due volte.
-        segnaScelta(scelta, false);
-        esito($('convEsito'), '');
+        segnaOvunque(data, scelta, false);
+        esito(cassetta, '');
 
-        const quale = attivo;
-        const r = await apiConv('rispondi', { data: quale, stato: scelta });
+        const r = await apiConv('rispondi', { data, stato: scelta });
         if (!r.ok) {
-          esito($('convEsito'), r.dati.errore || 'Non sono riuscito a registrare la risposta.');
-          segnaScelta(null, false);
+          esito(cassetta, r.dati.errore || 'Non sono riuscito a registrare la risposta.');
+          segnaOvunque(data, null, false);
           return;
         }
 
-        esito($('convEsito'), scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
+        mieRisposte[data] = scelta;
+        esito(cassetta, scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
 
         // Elenco e conteggi si aggiornano quando arrivano, senza
         // aspettarli e senza toccare i due bottoni: la risposta e gia
         // registrata, e rimetterli a zero sarebbe una bugia.
-        caricaGiornata(quale, false);
+        if (attivo) caricaGiornata(attivo, false);
+      }
+
+      $('convScelta').addEventListener('click', e => {
+        const b = e.target.closest('.conv-btn');
+        if (!b || !attivo || b.disabled) return;
+        rispondi(attivo, b.dataset.risposta, $('convEsito'));
+      });
+
+      $('oggiScelta').addEventListener('click', e => {
+        const b = e.target.closest('.conv-btn');
+        if (!b || !oggi || b.disabled) return;
+        rispondi(oggi, b.dataset.risposta, $('oggiEsito'));
       });
 
       /* ---- notifiche del telefono ----
@@ -1461,6 +1513,16 @@
           !!r.dati.partite);
       });
 
+      /* Riempie solo i due bottoni in cima, senza toccare la giornata
+         aperta sotto: serve quando le due non coincidono. */
+      async function caricaSoloOggi() {
+        const r = await apiConv('giorno?data=' + encodeURIComponent(oggi));
+        if (!r.ok) return;
+        const mia = mieRisposte[oggi] ||
+                    (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        segnaScelta(mia, !r.dati.apribile, $('oggiScelta'));
+      }
+
       /* ---- avvio e chiusura ---- */
 
       async function avvia(utente) {
@@ -1494,8 +1556,24 @@
         const daLink = new URLSearchParams(location.search).get('giorno');
         const scelto = (daLink && giorni.includes(daLink)) ? daLink : r.dati.prossimo;
 
+        /* La scheda in cima: c'e solo se oggi si allena, ed e la prima
+           cosa che si vede. Chi apre da una notifica ha un gesto solo
+           da fare e non deve andarselo a cercare piu in basso. */
+        const oggiSiAllena = giorni.includes(oggi);
+        $('arOggi').hidden = !oggiSiAllena;
+        if (oggiSiAllena) {
+          $('oggiQuando').textContent = maiuscola(inLettere(oggi));
+          esito($('oggiEsito'), '');
+          segnaScelta(null, true, $('oggiScelta'));
+        }
+
         if (scelto) mostraGiorno(scelto);
         else svuotaGiornata();
+
+        /* Se la giornata aperta sotto non e oggi — capita arrivando da
+           un link a un altro giorno — la scheda in cima non verrebbe
+           riempita da mostraGiorno, e va chiesta a parte. */
+        if (oggiSiAllena && scelto !== oggi) caricaSoloOggi();
 
         mostraStatoPush();
 
@@ -1510,6 +1588,7 @@
 
       function chiudi() {
         formazione.chiudi();
+        $('arOggi').hidden = true;
         io = null; giorni = []; scelti = new Set(); attivo = null;
         $('convCapitano').hidden = true;
         $('convGiorni').textContent = '';
