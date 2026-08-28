@@ -29,13 +29,22 @@ import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
 
 const SITO = process.env.URL || 'https://monacishaolin.it';
 
-/* TEMPORANEA — fascia di prova. Arriva a tutti, anche a chi ha gia
-   segnato presente o assente: serve a vedere se la notifica arriva,
-   non a chiedere di nuovo una cosa gia detta. I bottoni funzionano
-   come sempre, quindi una risposta data da qui vale davvero.
+/* TEMPORANEA — fascia di prova, ora italiana.
+
+   Arriva a tutti i membri approvati, anche a chi ha gia segnato
+   presente o assente, e soprattutto ANCHE SE OGGI NON E GIORNO DI
+   ALLENAMENTO: e la differenza che conta. Serve a provare che
+   l'orologio giri e che la notifica arrivi; se dipendesse anche dal
+   calendario, un silenzio non direbbe piu se e colpa del cron o di un
+   calendario vuoto, cioe proprio la domanda a cui deve rispondere.
+
+   L'orario si sposta cambiando questa riga e basta: l'orologio gira
+   ogni dieci minuti, quindi va bene qualunque multiplo di dieci (le
+   21:15 partirebbero comunque alle 21:10, arrotondando in giu).
+
    Quando la prova e finita si cancella questa costante: il resto del
-   file la usa in due punti soli, entrambi segnati con PROVA. */
-const PROVA = { ora: 17, minuto: 30 };
+   file la usa nei punti segnati con PROVA. */
+const PROVA = { ora: 21, minuto: 0 };
 
 /* Segno di spunta contro il doppio invio. Netlify puo rieseguire una
    funzione programmata se la prima volta e andata storta a meta, e
@@ -145,16 +154,34 @@ async function riepiloga(data, utenti, risposte) {
    orologio che gira e non ha niente da fare — dal di fuori sono
    identici, cioe silenzio in entrambi i casi. */
 async function giro(oggi, ora, minuti) {
-  /* I minuti non hanno bisogno di fuso: sono gli stessi ovunque. La
-     forchetta larga e voluta — una funzione programmata non parte al
-     secondo esatto, e un controllo su "minuto === 30" salterebbe il
-     giro ogni volta che Netlify e in ritardo di un minuto. */
-  const allaMezza = minuti >= 20 && minuti < 50;
+  /* I minuti non hanno bisogno di fuso: sono gli stessi ovunque.
+     L'orologio gira ogni dieci minuti, quindi ogni esecuzione cade in
+     una decina — 0, 10, 20... — e si ragiona su quella invece che sul
+     minuto esatto: una funzione programmata non parte al secondo, e un
+     controllo su "minuto === 10" salterebbe il giro a ogni ritardo. */
+  const decina = Math.floor(minuti / 10) * 10;
 
   // PROVA
-  const prova = allaMezza && ora === PROVA.ora && PROVA.minuto === 30;
+  const prova = ora === PROVA.ora && decina === Math.floor(PROVA.minuto / 10) * 10;
 
-  if (!prova && (allaMezza || ![14, 17, 20].includes(ora)))
+  /* La prova non guarda il calendario, di proposito: serve a provare
+     l'orologio e la consegna, non le convocazioni. Se dovesse anche
+     essere giorno di allenamento, un silenzio non direbbe piu se e
+     colpa del cron o del calendario vuoto — cioe esattamente la
+     domanda a cui deve rispondere. */
+  if (prova) {
+    if (await giaFatto(oggi, 'prova-' + ora + '-' + decina))
+      return 'prova gia inviata oggi';
+    if (!pushConfigurato()) return 'prova saltata: mancano le chiavi VAPID';
+
+    const membri = daConvocare(await tuttiGliUtenti());
+    if (!membri.length) return 'nessun membro approvato';
+
+    const n = await avvisa(oggi, membri, {}, 'prova');
+    return n + ' notifiche di prova partite';
+  }
+
+  if (decina !== 0 || ![14, 17, 20].includes(ora))
     return 'niente da fare a quest’ora';
 
   const giorni = await leggiGiorni();
@@ -167,14 +194,12 @@ async function giro(oggi, ora, minuti) {
   const membri = daConvocare(utenti);
   if (!membri.length) return 'nessun membro approvato';
 
-  // PROVA — segno di spunta suo, altrimenti la prova delle 17:30 e il
-  // richiamo delle 17:00 si escluderebbero a vicenda.
-  const fascia = prova ? 'prova-' + ora : String(ora);
+  const fascia = String(ora);
 
   if (await giaFatto(oggi, fascia))
     return 'fascia ' + fascia + ' gia inviata oggi';
 
-  if (!prova && ora === 20) {
+  if (ora === 20) {
     if (!postaConfigurata() || !process.env.EMAILJS_TEMPLATE_CONVOCAZIONI)
       return 'riepilogo saltato: posta non configurata';
     const n = await riepiloga(oggi, utenti, risposte);
@@ -184,8 +209,7 @@ async function giro(oggi, ora, minuti) {
   if (!pushConfigurato())
     return 'notifiche saltate: mancano le chiavi VAPID';
 
-  // PROVA — 'prova' e la terza modalita; senza, restano le due di sempre.
-  const modo = prova ? 'prova' : (ora === 17 ? 'richiamo' : 'prima');
+  const modo = ora === 17 ? 'richiamo' : 'prima';
 
   const n = await avvisa(oggi, membri, risposte, modo);
   return n + ' notifiche partite (' + modo + ')';
@@ -211,8 +235,13 @@ export default async () => {
   await segnaGiro({ oggi, ora, minuti, esito });
 };
 
-/* All'ora tonda e alla mezza, in UTC. Il filtro sull'ora italiana e
-   sopra: i minuti invece sono gli stessi in ogni fuso, quindi la mezza
-   e la mezza dappertutto. La mezz'ora serve alla fascia di PROVA delle
-   17:30; tolta quella, si puo tornare a '0 * * * *'. */
-export const config = { schedule: '0,30 * * * *' };
+/* Ogni dieci minuti, in UTC. Il filtro sull'ora italiana e sopra; i
+   minuti invece sono gli stessi in ogni fuso.
+
+   Piu spesso del necessario apposta: cosi l'orario della fascia di
+   PROVA si sposta cambiando una riga sola, senza dover ritoccare anche
+   il cron, e il battito dice come sta il sistema ogni dieci minuti
+   invece che ogni ora. Costa 144 esecuzioni al giorno su un piano che
+   ne regala 125.000 al mese, e quasi tutte finiscono in due letture e
+   un ritorno immediato. Tolta la prova si puo tornare a '0 * * * *'. */
+export const config = { schedule: '*/10 * * * *' };
