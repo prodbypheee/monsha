@@ -122,6 +122,17 @@ button, input, select, textarea { font: inherit; }
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
   background: rgba(11,11,13,.78);
   border-bottom: 1px solid var(--line);
+  /* La testata sta incollata in cima, e su iPhone "in cima" non e
+     sempre dove sembra: col sito aggiunto alla schermata Home il
+     sistema puo disegnare la pagina anche sotto l'orologio e la
+     batteria, e li sotto ci finivano le tab. env() e la distanza di
+     sicurezza che dichiara il sistema: in Safari vale zero e non
+     cambia niente, in standalone vale quanto serve. Cintura oltre
+     alle bretelle: il meta apple-mobile-web-app-status-bar-style e
+     gia impostato su "black" apposta, ma iOS quel meta lo legge solo
+     quando si installa l'icona, e questa riga regge anche per chi
+     l'icona ce l'ha da prima. */
+  padding-top: env(safe-area-inset-top);
 }
 .head-in {
   max-width: var(--wrap); margin: 0 auto; padding-inline: var(--pad);
