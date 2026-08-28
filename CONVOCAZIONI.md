@@ -199,6 +199,28 @@ dimensione, non pesa niente e prende i colori del tema. Le posizioni
 delle undici caselle stanno in un elenco solo, `CASELLE`, usato sia dal
 disegno sia dai controlli del server — così non possono disallinearsi.
 
+## 4-ter. Gli annunci
+
+Una bacheca dentro l'area riservata, e qui **non comanda nessuno**:
+scrivono tutti i membri approvati, giocatori compresi. A ogni annuncio
+parte una notifica con **chi ha scritto nel titolo e il testo nel
+corpo**, così si legge dalla schermata bloccata senza aprire niente.
+
+Ognuno cancella i propri annunci; l'amministratore può cancellare anche
+quelli degli altri, ed è la sua unica prerogativa qui.
+
+**Un annuncio al minuto a testa**, e il freno sta sul server, non nel
+sito. Qui chiunque può far vibrare venti telefoni: senza un limite
+basta una persona annoiata per far spegnere le notifiche a tutta la
+squadra — e con quelle se ne vanno anche le convocazioni. Un minuto non
+dà fastidio a chi ha davvero qualcosa da dire e rende impossibile il
+tormento. Massimo 500 caratteri.
+
+La notifica porta a `?tab=annunci`, che apre direttamente la bacheca.
+Gli annunci vivono in `annunci/<chiave>` nello stesso store, uno per
+annuncio: se due persone scrivono nello stesso momento su un unico
+documento, una delle due sparisce.
+
 ## 5. I due bottoni dentro la notifica
 
 **Su Android funzionano davvero**: si tocca "Presente" e la risposta
@@ -222,6 +244,8 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/comune.mjs` | sessione, cookie, utenti, date italiane — condiviso |
 | `netlify/lib/convocazioni.mjs` | giorni e risposte nell'archivio |
 | `netlify/lib/formazione.mjs` | il 3-4-1-2, le undici caselle e le loro regole |
+| `netlify/lib/annunci.mjs` | la bacheca: testo, freno di un minuto, cancellazioni |
+| `netlify/functions/annunci.mjs` | le API `/api/annunci/:azione` |
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |

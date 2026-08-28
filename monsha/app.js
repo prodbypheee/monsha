@@ -770,7 +770,7 @@
 
     /* ---- tab interne ---- */
 
-    const PANNELLI = ['convocazioni', 'formazione', 'profilo', 'gestione'];
+    const PANNELLI = ['convocazioni', 'formazione', 'annunci', 'profilo', 'gestione'];
 
     function pannello(quale) {
       PANNELLI.forEach(p => {
@@ -790,6 +790,9 @@
         // La gestione accessi si ricarica ogni volta che la si apre:
         // le richieste arrivano mentre il pannello e chiuso.
         if (voce.dataset.pannello === 'gestione') caricaRichieste();
+        // La bacheca si rilegge a ogni apertura: una vecchia di un'ora
+        // non e una bacheca.
+        if (voce.dataset.pannello === 'annunci') annunci.apri();
       });
     });
 
@@ -807,7 +810,18 @@
       $('arIntro').hidden = true;
       vestiBentornato(utente);
       schermata('arDentro');
-      pannello('convocazioni');
+
+      /* La notifica di un annuncio porta a ?tab=annunci: chi la tocca
+         deve trovarsi davanti quello che ha appena letto, non le
+         convocazioni. E solo un suggerimento su quale pannello aprire —
+         non autentica niente e non salta nessun controllo. */
+      const chiesta = new URLSearchParams(location.search).get('tab');
+      const dove = PANNELLI.includes(chiesta) && chiesta !== 'gestione'
+        ? chiesta : 'convocazioni';
+
+      pannello(dove);
+      if (dove === 'annunci') annunci.apri();
+
       if (utente.ruolo === 'admin') caricaRichieste();
       convocazioni.avvia(utente);
     }
@@ -818,6 +832,7 @@
       // Chi esce torna a essere uno di fuori: l'introduzione riappare.
       $('arIntro').hidden = false;
       convocazioni.chiudi();
+      annunci.chiudi();
       $('arFormAccedi').reset();
       schermata('arOspite');
     });
@@ -2022,6 +2037,189 @@
       }
 
       return { aggiorna, chiudi };
+    })();
+
+
+    /* ================= ANNUNCI =================
+       La bacheca. Qui non comanda nessuno: scrivono tutti i membri
+       approvati, giocatori compresi, e ogni annuncio fa vibrare i
+       telefoni della squadra.
+
+       Il testo di chi scrive entra sempre con textContent, mai come
+       HTML: e l'unico punto del sito dove una persona scrive del testo
+       che poi leggono tutti gli altri, ed e esattamente li che
+       basterebbe un tag per far succedere qualcosa nel browser
+       altrui. */
+
+    const annunci = (function () {
+
+      let limite = 500;
+      let caricati = false;
+
+      const apiAnn = (azione, corpo) => chiama('/api/annunci/' + azione, corpo);
+
+      /* "3 minuti fa" invece dell'ora esatta: in una bacheca conta
+         quanto e fresca una cosa, non a che ora precisa e stata detta.
+         Oltre il giorno si torna alla data, che a quel punto e
+         l'informazione utile. */
+      function quandoInParole(iso) {
+        const quando = new Date(iso);
+        const min = Math.round((Date.now() - quando.getTime()) / 60000);
+        if (min < 1) return 'adesso';
+        if (min < 60) return min + (min === 1 ? ' minuto fa' : ' minuti fa');
+        const ore = Math.round(min / 60);
+        if (ore < 24) return ore + (ore === 1 ? ' ora fa' : ' ore fa');
+        return quando.toLocaleDateString('it-IT',
+          { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }
+
+      function disegna(voci) {
+        const box = $('annElenco');
+        box.textContent = '';
+
+        if (!voci.length) {
+          const p = document.createElement('p');
+          p.className = 'ar-vuoto';
+          p.textContent = 'Ancora nessun annuncio. Comincia tu.';
+          box.appendChild(p);
+          return;
+        }
+
+        rosaPronta.then(() => {
+          box.textContent = '';
+
+          voci.forEach(a => {
+            const g = trovaGiocatore(a.autore);
+
+            const riga = document.createElement('div');
+            riga.className = 'ann-voce' + (a.mio ? ' mio' : '');
+
+            const faccia = document.createElement('div');
+            faccia.className = 'ann-faccia' + (g ? ' con-foto' : '');
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              faccia.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (a.autore || '?').charAt(0).toUpperCase();
+            faccia.appendChild(iniziale);
+
+            const corpo = document.createElement('div');
+
+            const testa = document.createElement('div');
+            testa.className = 'ann-testa';
+            const autore = document.createElement('span');
+            autore.className = 'ann-autore';
+            autore.textContent = a.autore;
+            const quando = document.createElement('span');
+            quando.className = 'ann-quando';
+            quando.textContent = quandoInParole(a.quando);
+            testa.append(autore, quando);
+
+            const testo = document.createElement('p');
+            testo.className = 'ann-testo';
+            // textContent, non innerHTML: lo scrive una persona.
+            testo.textContent = a.testo;
+
+            corpo.append(testa, testo);
+
+            if (a.cancellabile) {
+              const via = document.createElement('button');
+              via.type = 'button';
+              via.className = 'ann-cancella';
+              via.textContent = a.mio ? 'Cancella' : 'Cancella (admin)';
+              via.addEventListener('click', () => cancella(a, via));
+              corpo.appendChild(via);
+            }
+
+            riga.append(faccia, corpo);
+            box.appendChild(riga);
+          });
+        });
+      }
+
+      async function cancella(a, bottone) {
+        if (!confirm('Cancellare questo annuncio?')) return;
+        bottone.disabled = true;
+        const r = await apiAnn('cancella', { id: a.id });
+        if (!r.ok) {
+          bottone.disabled = false;
+          esito($('annEsito'), r.dati.errore || 'Non sono riuscito a cancellarlo.');
+          return;
+        }
+        carica();
+      }
+
+      async function carica() {
+        const btn = $('annAggiorna');
+        btn.disabled = true;
+        const r = await apiAnn('elenco');
+        btn.disabled = false;
+
+        if (!r.ok) {
+          esito($('annEsito'), r.dati.errore || 'Non riesco a leggere la bacheca.');
+          return;
+        }
+
+        limite = r.dati.limite || 500;
+        $('annTesto').setAttribute('maxlength', String(limite));
+        disegna(r.dati.annunci || []);
+        contaCaratteri();
+        caricati = true;
+      }
+
+      function contaCaratteri() {
+        const n = $('annTesto').value.length;
+        const eti = $('annConta');
+        eti.textContent = n + ' / ' + limite;
+        // Si accende solo quando il limite si avvicina davvero.
+        eti.classList.toggle('vicino', n > limite - 60);
+      }
+
+      $('annTesto').addEventListener('input', contaCaratteri);
+
+      $('annPubblica').addEventListener('click', async () => {
+        const testo = $('annTesto').value.trim();
+        const box = $('annEsito');
+
+        if (testo.length < 2) { esito(box, 'Scrivi qualcosa prima di pubblicare.'); return; }
+
+        const btn = $('annPubblica');
+        btn.disabled = true;
+        const etichetta = btn.textContent;
+        btn.textContent = 'Pubblico…';
+        esito(box, '');
+
+        const r = await apiAnn('pubblica', { testo });
+
+        btn.disabled = false;
+        btn.textContent = etichetta;
+
+        if (!r.ok) { esito(box, r.dati.errore || 'Non sono riuscito a pubblicare.'); return; }
+
+        $('annTesto').value = '';
+        contaCaratteri();
+
+        /* Il numero di notifiche partite si dice: chi scrive ha appena
+           interrotto venti persone e ha diritto di sapere quante. Zero
+           non e un errore — vuol dire che nessuno le ha ancora accese. */
+        esito(box, r.dati.notificati
+          ? 'Pubblicato. Notifica arrivata a ' + r.dati.notificati +
+            (r.dati.notificati === 1 ? ' dispositivo.' : ' dispositivi.')
+          : 'Pubblicato. Nessuna notifica: nessun altro le ha accese.', true);
+
+        carica();
+      });
+
+      $('annAggiorna').addEventListener('click', carica);
+
+      /* Si carica alla prima apertura della tab e poi quando si torna:
+         una bacheca vecchia di un'ora non e una bacheca. */
+      function apri() { carica(); }
+      function chiudi() { caricati = false; $('annElenco').textContent = ''; $('annTesto').value = ''; }
+
+      return { apri, chiudi, caricati: () => caricati };
     })();
 
     /* ---- avvio pigro ---- */

@@ -548,6 +548,8 @@
                 role="tab" aria-selected="true">Convocazioni</button>
         <button type="button" class="ar-sotto-voce" data-pannello="formazione"
                 role="tab" aria-selected="false">Formazione</button>
+        <button type="button" class="ar-sotto-voce" data-pannello="annunci"
+                role="tab" aria-selected="false">Annunci</button>
         <button type="button" class="ar-sotto-voce" data-pannello="profilo"
                 role="tab" aria-selected="false">Profilo</button>
         <button type="button" class="ar-sotto-voce" data-pannello="gestione" id="arVoceGestione"
@@ -703,6 +705,41 @@
           <div class="conv-griglia" id="sceltaElenco"></div>
         </div>
       </aside>
+
+      <!-- ===================== ANNUNCI ===================== -->
+      <section id="pan-annunci" hidden>
+
+        <div class="ar-scheda">
+          <div class="ar-corpo">
+            <div class="eyebrow">Bacheca</div>
+            <h3 class="wiz-tit" style="margin-top:14px;">Dillo a tutti</h3>
+            <p class="wiz-sub">Scrivono tutti, giocatori compresi. Quello che scrivi arriva sul telefono di chi ha acceso le notifiche, con il tuo nome e il testo.</p>
+
+            <textarea class="wiz-input ann-scrivi" id="annTesto" rows="3"
+                      placeholder="Che succede?" maxlength="500"></textarea>
+
+            <div class="ann-piede">
+              <span class="ar-aiuto" id="annConta">0 / 500</span>
+              <button type="button" class="btn btn-acc" id="annPubblica">Pubblica</button>
+            </div>
+
+            <p class="ar-esito" id="annEsito" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <div class="ar-scheda" style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Ultimi annunci</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Cosa si dicono</h3>
+              </div>
+              <button type="button" class="btn" id="annAggiorna">Aggiorna</button>
+            </div>
+            <div class="ann-elenco" id="annElenco"></div>
+          </div>
+        </div>
+      </section>
 
       <!-- ===================== PROFILO ===================== -->
       <section id="pan-profilo" hidden>
