@@ -34,8 +34,24 @@ export const INCARICHI = ['giocatore', 'capitano', 'amministrazione'];
 
 /* ---------- archivi ------------------------------------------- */
 
-export const store  = () => getStore('area-utenti');
-export const convoc = () => getStore('area-convocazioni');
+/* consistency: 'strong' non e un dettaglio, e la correzione di un
+   difetto vero. Netlify Blobs, se non glielo si dice, e a consistenza
+   EVENTUALE: una lettura fatta subito dopo una scrittura puo ancora
+   restituire il valore di prima. Si vedeva cosi — uno premeva
+   ASSENTE, il bottone diventava arancione, e l'elenco sotto
+   continuava a mostrarlo presente con la spunta verde, perche la
+   rilettura era arrivata prima che la scrittura fosse visibile.
+
+   Con "strong" la lettura aspetta di vedere l'ultima scrittura. Costa
+   qualche millisecondo in piu ed e il prezzo giusto: qui si scrive e
+   si rilegge nello stesso gesto, e un elenco che mente e peggio di un
+   elenco che arriva un attimo dopo.
+
+   Vale anche per gli utenti: e cio che rende vera la promessa che
+   revocare un accesso lo toglie al primo caricamento e non fra un
+   po'. */
+export const store  = () => getStore({ name: 'area-utenti',      consistency: 'strong' });
+export const convoc = () => getStore({ name: 'area-convocazioni', consistency: 'strong' });
 
 /* La chiave di ogni utente e l'impronta della sua email, cosi non
    compaiono indirizzi nei nomi delle chiavi. */

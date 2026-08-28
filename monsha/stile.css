@@ -1266,3 +1266,22 @@ button, input, select, textarea { font: inherit; }
 @media (max-width: 768px) {
   .testata-sfondo { height: clamp(240px, 62vw, 340px); }
 }
+
+/* ---------- la scheda di oggi ----------
+   Sta in cima all'area riservata nei giorni di allenamento, prima del
+   bentornato: chi arriva da una notifica ha una cosa sola da fare e
+   deve trovarla senza scorrere. Bordo arancione perche e l'unica cosa
+   in quella schermata che chiede un gesto. */
+.oggi {
+  margin-top: 34px; max-width: 780px;
+  border: 1px solid var(--acc-line); border-radius: var(--r-md);
+  background:
+    radial-gradient(120% 140% at 50% 0%, var(--acc-soft), transparent 62%),
+    var(--bg-2);
+  padding: clamp(20px, 3.4vw, 28px);
+}
+.oggi-testa { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.oggi-quando { font-size: 14px; font-weight: 600; color: var(--txt-2); }
+.oggi .conv-scelta { margin-top: 18px; }
+.oggi .conv-btn { min-height: 84px; }
+.oggi .ar-esito { margin-top: 14px; min-height: 0; }
