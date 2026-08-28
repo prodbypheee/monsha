@@ -148,29 +148,55 @@
     <div class="chisiamo-col" data-reveal>
       <div class="eyebrow">Chi siamo</div>
       <h2 class="titolone" style="font-size:clamp(30px,4.4vw,62px); line-height:.98; margin-top:18px;">Una malsana<br>idea del 2018</h2>
-      <figure class="foto-riquadro">
-        <img src="./immagini/gal-8-cerchio.jpeg" alt="I Monaci Shaolin stretti a cerchio a centrocampo" loading="lazy">
-        <figcaption>Il cerchio prima del fischio</figcaption>
-      </figure>
+      <p class="apertura" data-reveal style="margin-top:28px;">Un pomeriggio d'inverno, il Capitano <strong>RageeVII</strong> voleva solo un posto dove giocare con i suoi amici. Ne è uscito un club.</p>
     </div>
-    <div>
-      <p class="apertura" data-reveal>Un pomeriggio d'inverno, il Capitano <strong>RageeVII</strong> voleva solo un posto dove giocare con i suoi amici. Ne è uscito un club.</p>
-      <div class="tempo">
-        <div class="tempo-voce" data-reveal>
-          <div class="tempo-anno">2018</div>
-          <div><h3>Nasce il tempio</h3><p>Personaggi strambi, nomi diventati iconici e zero ambizioni. Solo voglia di stare insieme.</p></div>
-        </div>
-        <div class="tempo-voce" data-reveal>
-          <div class="tempo-anno">2020</div>
-          <div><h3>Quattro superstiti</h3><p>Il lockdown svuota la rosa. Capitano e Vice decidono di puntare all'eSports competitivo e vanno a cercare undici titolari su Telegram, Twitch, ovunque.</p></div>
-        </div>
-        <div class="tempo-voce" data-reveal>
-          <div class="tempo-anno">2025</div>
-          <div><h3>Nell'Olimpo</h3><p>FVPA Serie A, Eludo Serie C, una bacheca da venti titoli e una rosa in continua espansione. Il sogno, almeno in parte, è realtà.</p></div>
-        </div>
-        <div class="tempo-chiusa" data-reveal>
-          <p>Perché a volte basta sognare, crederci e osare.</p>
-        </div>
+
+    <div class="storia" data-reveal>
+      <!-- I punti li costruisce app.js dagli anni delle tappe qui
+           sotto: un elenco solo, e non se ne puo dimenticare uno. -->
+      <div class="storia-linea" id="storiaLinea" role="tablist" aria-label="Le tappe del club"></div>
+
+      <!-- Senza JavaScript restano visibili tutte e tre, una sotto
+           l'altra: si legge la storia intera invece di niente. -->
+      <div class="storia-tappe" id="storiaTappe">
+
+        <article class="storia-tappa attiva" data-anno="2018" role="tabpanel">
+          <figure class="storia-foto">
+            <img src="./immagini/storia-2018.jpeg" alt="Un salotto al buio nel 2018: due controller sul divano, la luce del televisore sulla parete" loading="lazy">
+          </figure>
+          <div class="storia-testo">
+            <div class="storia-anno">2018</div>
+            <h3>Nasce il tempio</h3>
+            <p>Personaggi strambi, nomi diventati iconici e zero ambizioni. Solo voglia di stare insieme.</p>
+          </div>
+        </article>
+
+        <article class="storia-tappa" data-anno="2020" role="tabpanel">
+          <figure class="storia-foto">
+            <img src="./immagini/storia-2020.jpeg" alt="Uno spogliatoio deserto: su una fila di ganci vuoti restano quattro maglie" loading="lazy">
+          </figure>
+          <div class="storia-testo">
+            <div class="storia-anno">2020</div>
+            <h3>Quattro superstiti</h3>
+            <p>Il lockdown svuota la rosa. Capitano e Vice decidono di puntare all'eSports competitivo e vanno a cercare undici titolari su Telegram, Twitch, ovunque.</p>
+          </div>
+        </article>
+
+        <article class="storia-tappa" data-anno="2025" role="tabpanel">
+          <figure class="storia-foto">
+            <img src="./immagini/storia-2025.jpeg" alt="La bacheca dei trofei del club e, oltre la vetrata, il campo illuminato nella nebbia" loading="lazy">
+          </figure>
+          <div class="storia-testo">
+            <div class="storia-anno">2025</div>
+            <h3>Nell'Olimpo</h3>
+            <p>FVPA Serie A, Eludo Serie C, una bacheca da venti titoli e una rosa in continua espansione. Il sogno, almeno in parte, è realtà.</p>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="tempo-chiusa">
+        <p>Perché a volte basta sognare, crederci e osare.</p>
       </div>
     </div>
   </div>

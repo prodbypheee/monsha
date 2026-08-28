@@ -135,6 +135,54 @@
     box.innerHTML = html + html;
   })();
 
+  /* ---------- LA STORIA: LINEA TEMPORALE -----------------------
+     I punti si costruiscono dalle tappe che stanno gia nel markup,
+     leggendo il loro data-anno: gli anni non sono scritti due volte,
+     quindi non possono discordare. Se JavaScript non gira, le tappe
+     restano tutte visibili una sotto l'altra e la storia si legge
+     lo stesso — e per questo che la classe che le nasconde la mette
+     il codice, non il foglio di stile. */
+
+  (function storia() {
+    const linea = document.getElementById('storiaLinea');
+    const box = document.getElementById('storiaTappe');
+    if (!linea || !box) return;
+
+    const tappe = [...box.querySelectorAll('.storia-tappa')];
+    if (tappe.length < 2) return;
+
+    function scegli(i) {
+      tappe.forEach((t, k) => t.classList.toggle('attiva', k === i));
+      [...linea.children].forEach((b, k) =>
+        b.setAttribute('aria-selected', String(k === i)));
+    }
+
+    tappe.forEach((tappa, i) => {
+      const anno = tappa.dataset.anno || '';
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'storia-punto';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(i === 0));
+      b.setAttribute('aria-label', 'Il ' + anno);
+      b.textContent = anno;
+      b.addEventListener('click', () => scegli(i));
+      // Frecce destra e sinistra: e una fila di punti, ci si aspetta
+      // di poterla percorrere da tastiera.
+      b.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const dove = (i + (e.key === 'ArrowRight' ? 1 : -1) + tappe.length) % tappe.length;
+        scegli(dove);
+        linea.children[dove].focus();
+      });
+      linea.appendChild(b);
+    });
+
+    box.classList.add('pronte');
+    scegli(0);
+  })();
+
   /* ---------- ROSA --------------------------------------------- */
 
   const REPARTI = [
