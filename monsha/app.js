@@ -928,8 +928,6 @@
       let scelti = new Set();
       let attivo = null;
       let chiavePush = '';
-      let dispositivi = 0;    // quante iscrizioni ha il SERVER per me
-      let diagnosi = null;    // solo per l'amministratore
 
       /* ---- conti sulle date ----
          Trattate come giorni di calendario e basta: si costruisce una
@@ -1262,12 +1260,6 @@
         $('pushStato').classList.toggle('on', attiva);
         $('pushAccendi').hidden = attiva;
         $('pushSpegni').hidden = !attiva;
-        /* Il bottone di prova compare quando il SERVER ha almeno
-           un'iscrizione. E la distinzione che conta: il telefono puo
-           credere di essere iscritto mentre al server non e arrivato
-           niente, ed e proprio quel caso che va scoperto subito. */
-        $('pushProva').hidden = dispositivi < 1;
-
         if (!supportate()) {
           $('pushAccendi').hidden = true;
           esito($('pushEsito'),
@@ -1332,7 +1324,13 @@
       });
 
       $('pushProva').addEventListener('click', async () => {
-        const btn = $('pushProva'), box = $('pushEsito');
+        // Una conferma prima di far vibrare venti telefoni. Su un
+        // telefono un tocco per sbaglio e cosa di tutti i giorni, e
+        // questa e una di quelle cose che non si annullano.
+        if (!confirm('Mando una notifica di prova a TUTTI i membri con le notifiche accese. Procedo?'))
+          return;
+
+        const btn = $('pushProva'), box = $('riepilogoEsito');
         btn.disabled = true;
         const testo = btn.textContent;
         btn.textContent = 'Mando…';
@@ -1345,15 +1343,16 @@
 
         if (!r.ok) { esito(box, r.dati.errore || 'La prova non e partita.'); return; }
 
-        // Zero partite con dispositivi iscritti vuol dire che il servizio
-        // di Apple o Google ha rifiutato: e un'informazione, non un
-        // dettaglio da nascondere dietro un "fatto".
+        /* Zero partite su N membri non vuol dire "errore": vuol dire
+           che nessuno ha ancora acceso le notifiche. Sono due cose
+           diverse e vanno dette diverse, altrimenti si cerca un guasto
+           dove non c'e. */
         esito(box, r.dati.partite
           ? 'Partita verso ' + r.dati.partite +
-            (r.dati.partite === 1 ? ' dispositivo.' : ' dispositivi.') +
-            ' Se non arriva entro qualche secondo, il problema e nella consegna, non nel sito.'
-          : 'Il server ha ' + r.dati.dispositivi + ' iscrizioni ma non e partita nessuna notifica: ' +
-            'le iscrizioni sono scadute. Spegni e riattiva le notifiche.',
+            (r.dati.partite === 1 ? ' dispositivo' : ' dispositivi') +
+            ' su ' + r.dati.membri + ' membri. Chi non la riceve non ha ancora acceso le notifiche.'
+          : 'Nessuna notifica partita: su ' + r.dati.membri +
+            ' membri, nessuno ha ancora acceso le notifiche sul proprio telefono.',
           !!r.dati.partite);
       });
 
@@ -1365,86 +1364,6 @@
         }
         esito($('pushEsito'), 'Spente su questo dispositivo.', true);
         mostraStatoPush();
-      });
-
-      /* ---- diagnosi, solo per l'amministratore ----
-         Risponde alla domanda che altrimenti costa sei ore di attesa:
-         e rotto il server o il mio telefono? */
-
-      function mostraDiagnosi() {
-        const box = $('convDiagnosi');
-        if (!diagnosi) { box.hidden = true; return; }
-        box.hidden = false;
-
-        const voci = $('convDiagnosiVoci');
-        voci.textContent = '';
-
-        const riga = (etichetta, valore, buono) => {
-          const d = document.createElement('div');
-          const dt = document.createElement('dt');
-          dt.textContent = etichetta;
-          const dd = document.createElement('dd');
-          dd.textContent = valore;
-          if (buono === true) dd.className = 'si';
-          if (buono === false) dd.className = 'no';
-          d.append(dt, dd);
-          voci.appendChild(d);
-        };
-
-        const g = diagnosi.orologio;
-        if (!g) {
-          riga('Orologio', 'non ha mai girato — la funzione programmata non parte', false);
-        } else {
-          const quando = new Date(g.quando);
-          const minutiFa = Math.round((Date.now() - quando.getTime()) / 60000);
-          const fresco = minutiFa <= 65;
-          riga('Ultimo giro',
-            quando.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) +
-            ' (' + (minutiFa < 1 ? 'adesso' : minutiFa + ' min fa') + ')',
-            fresco);
-          riga('Ha fatto', g.esito || '—');
-        }
-
-        riga('Chiavi notifiche', diagnosi.chiaviPush ? 'impostate' : 'MANCANTI', diagnosi.chiaviPush);
-
-        /* Variabile per variabile, col nome esatto da cercare su
-           Netlify. "Posta non configurata" e una diagnosi inutile
-           quando le variabili sono cinque: si sa che manca qualcosa e
-           non si sa cosa. */
-        const p = diagnosi.posta || {};
-        if (p.pronta) {
-          riga('Posta', 'configurata', true);
-        } else {
-          riga('Posta', 'NON configurata — manca quanto segue:', false);
-          ['EMAILJS_SERVICE_ID', 'EMAILJS_PUBLIC_KEY', 'EMAILJS_PRIVATE_KEY',
-           'EMAILJS_TEMPLATE_CONVOCAZIONI', 'EMAILJS_TEMPLATE_ID'].forEach(nome => {
-            riga(nome, p[nome] ? 'c’è' : 'MANCA', !!p[nome]);
-          });
-        }
-
-        riga('Allenamenti in calendario', giorni.length ? giorni.join(', ') : 'nessuno', giorni.length > 0);
-        riga('Tuoi dispositivi iscritti', String(dispositivi), dispositivi > 0);
-      }
-
-      /* Rilegge solo la diagnosi, senza rifare tutta la schermata: si
-         preme mentre si aspetta un giro dell'orologio, e ridisegnare
-         calendario ed elenchi a ogni tocco sarebbe uno sfarfallio. */
-      $('diagnosiAggiorna').addEventListener('click', async () => {
-        const btn = $('diagnosiAggiorna');
-        btn.disabled = true;
-        const testo = btn.textContent;
-        btn.textContent = 'Leggo…';
-
-        const r = await apiConv('stato');
-        if (r.ok) {
-          diagnosi = r.dati.diagnosi || null;
-          dispositivi = (r.dati.push && r.dati.push.attive) || 0;
-          giorni = r.dati.giorni;
-          mostraDiagnosi();
-        }
-
-        btn.disabled = false;
-        btn.textContent = testo;
       });
 
       $('riepilogoProva').addEventListener('click', async () => {
@@ -1485,8 +1404,6 @@
         giorni = r.dati.giorni;
         orizzonte = r.dati.orizzonte || 35;
         chiavePush = (r.dati.push && r.dati.push.chiave) || '';
-        dispositivi = (r.dati.push && r.dati.push.attive) || 0;
-        diagnosi = r.dati.diagnosi || null;
 
         $('convCapitano').hidden = !io.convoca;
         if (io.convoca) {
@@ -1510,7 +1427,10 @@
         else svuotaGiornata();
 
         mostraStatoPush();
-        mostraDiagnosi();
+
+        // I due bottoni di prova raggiungono persone vere: li vede
+        // solo l'amministratore.
+        $('convProve').hidden = io.ruolo !== 'admin';
       }
 
       function chiudi() {

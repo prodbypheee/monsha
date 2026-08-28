@@ -22,30 +22,13 @@
 
 import { tuttiGliUtenti, chiave, convoc, oggiRoma, oraRoma, dataInLettere }
   from '../lib/comune.mjs';
-import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo, segnaGiro }
+import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo }
   from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
 import { preparaRiepilogo } from '../lib/mail-riepilogo.mjs';
 
 const SITO = process.env.URL || 'https://monacishaolin.it';
-
-/* TEMPORANEA — fascia di prova, ora italiana.
-
-   Arriva a tutti i membri approvati, anche a chi ha gia segnato
-   presente o assente, e soprattutto ANCHE SE OGGI NON E GIORNO DI
-   ALLENAMENTO: e la differenza che conta. Serve a provare che
-   l'orologio giri e che la notifica arrivi; se dipendesse anche dal
-   calendario, un silenzio non direbbe piu se e colpa del cron o di un
-   calendario vuoto, cioe proprio la domanda a cui deve rispondere.
-
-   L'orario si sposta cambiando questa riga e basta: l'orologio gira
-   ogni dieci minuti, quindi va bene qualunque multiplo di dieci (le
-   21:15 partirebbero comunque alle 21:10, arrotondando in giu).
-
-   Quando la prova e finita si cancella questa costante: il resto del
-   file la usa nei punti segnati con PROVA. */
-const PROVA = { ora: 21, minuto: 10 };
 
 /* Segno di spunta contro il doppio invio. Netlify puo rieseguire una
    funzione programmata se la prima volta e andata storta a meta, e
@@ -129,40 +112,11 @@ async function riepiloga(data, utenti, risposte) {
 
 /* ---------- ingresso ------------------------------------------ */
 
-/* Il lavoro vero. Non ritorna niente di importante: ritorna una frase
-   corta che dice cosa ha fatto, e quella frase finisce nel battito.
-   E l'unico modo, da fuori, di distinguere un orologio fermo da un
-   orologio che gira e non ha niente da fare — dal di fuori sono
-   identici, cioe silenzio in entrambi i casi. */
-async function giro(oggi, ora, minuti) {
-  /* I minuti non hanno bisogno di fuso: sono gli stessi ovunque.
-     L'orologio gira ogni dieci minuti, quindi ogni esecuzione cade in
-     una decina — 0, 10, 20... — e si ragiona su quella invece che sul
-     minuto esatto: una funzione programmata non parte al secondo, e un
-     controllo su "minuto === 10" salterebbe il giro a ogni ritardo. */
-  const decina = Math.floor(minuti / 10) * 10;
-
-  // PROVA
-  const prova = ora === PROVA.ora && decina === Math.floor(PROVA.minuto / 10) * 10;
-
-  /* La prova non guarda il calendario, di proposito: serve a provare
-     l'orologio e la consegna, non le convocazioni. Se dovesse anche
-     essere giorno di allenamento, un silenzio non direbbe piu se e
-     colpa del cron o del calendario vuoto — cioe esattamente la
-     domanda a cui deve rispondere. */
-  if (prova) {
-    if (await giaFatto(oggi, 'prova-' + ora + '-' + decina))
-      return 'prova gia inviata oggi';
-    if (!pushConfigurato()) return 'prova saltata: mancano le chiavi VAPID';
-
-    const membri = daConvocare(await tuttiGliUtenti());
-    if (!membri.length) return 'nessun membro approvato';
-
-    const n = await avvisa(oggi, membri, {}, 'prova');
-    return n + ' notifiche di prova partite';
-  }
-
-  if (decina !== 0 || ![14, 17, 20].includes(ora))
+/* Il lavoro vero. Ritorna una frase corta che dice cosa ha fatto, e
+   quella frase finisce nei log di Netlify: quando un giorno non
+   arrivera una notifica, la prima cosa da leggere e li. */
+async function giro(oggi, ora) {
+  if (![14, 17, 20].includes(ora))
     return 'niente da fare a quest’ora';
 
   const giorni = await leggiGiorni();
@@ -190,39 +144,32 @@ async function giro(oggi, ora, minuti) {
   if (!pushConfigurato())
     return 'notifiche saltate: mancano le chiavi VAPID';
 
-  const modo = ora === 17 ? 'richiamo' : 'prima';
+  /* Booleano e non stringa, e non e un dettaglio: avvisa() distingue
+     la prima notifica dal richiamo con un si/no, e passandogli
+     'prima' — che in JavaScript e vero — ogni notifica usciva col
+     testo del richiamo. Le due chiamate devono parlare la stessa
+     lingua, e qui la lingua e il si/no. */
+  const richiamo = ora === 17;
 
-  const n = await avvisa(oggi, membri, risposte, modo);
-  return n + ' notifiche partite (' + modo + ')';
+  const n = await avvisa(oggi, membri, risposte, richiamo);
+  return n + ' notifiche partite (' + (richiamo ? 'richiamo' : 'prima') + ')';
 }
 
 export default async () => {
-  const oggi   = oggiRoma();
-  const ora    = oraRoma();
-  const minuti = new Date().getUTCMinutes();
+  const oggi = oggiRoma();
+  const ora  = oraRoma();
 
   let esito;
   try {
-    esito = await giro(oggi, ora, minuti);
+    esito = await giro(oggi, ora);
   } catch (e) {
     esito = 'errore: ' + (e && e.message ? e.message : e);
     console.error('convocazioni-cron:', e);
   }
 
-  console.log('convocazioni-cron:', oggi, ora + ':' + String(minuti).padStart(2, '0'), '—', esito);
-
-  // Il battito si scrive sempre, anche quando non si e fatto niente e
-  // soprattutto quando qualcosa e andato storto.
-  await segnaGiro({ oggi, ora, minuti, esito });
+  console.log('convocazioni-cron:', oggi, ora + ':00 —', esito);
 };
 
-/* Ogni dieci minuti, in UTC. Il filtro sull'ora italiana e sopra; i
-   minuti invece sono gli stessi in ogni fuso.
-
-   Piu spesso del necessario apposta: cosi l'orario della fascia di
-   PROVA si sposta cambiando una riga sola, senza dover ritoccare anche
-   il cron, e il battito dice come sta il sistema ogni dieci minuti
-   invece che ogni ora. Costa 144 esecuzioni al giorno su un piano che
-   ne regala 125.000 al mese, e quasi tutte finiscono in due letture e
-   un ritorno immediato. Tolta la prova si puo tornare a '0 * * * *'. */
-export const config = { schedule: '*/10 * * * *' };
+/* Ogni ora tonda, in UTC. Il filtro sull'ora italiana e sopra: cosi
+   il passaggio all'ora legale non sposta niente. */
+export const config = { schedule: '0 * * * *' };

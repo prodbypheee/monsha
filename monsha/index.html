@@ -560,23 +560,19 @@
             <p class="ar-esito" id="pushEsito" role="status" aria-live="polite"></p>
             <div class="ar-azioni">
               <button type="button" class="btn btn-acc" id="pushAccendi">Attiva le notifiche</button>
-              <button type="button" class="btn" id="pushProva" hidden>Mandami una prova adesso</button>
               <button type="button" class="btn" id="pushSpegni" hidden>Spegni su questo dispositivo</button>
             </div>
 
-            <!-- Diagnosi. Compare solo all'amministratore: a un membro non
-                 serve sapere se l'orologio del server ha girato. -->
-            <div class="diagnosi" id="convDiagnosi" hidden>
-              <div class="diagnosi-testa">
-                <div class="diagnosi-tit">Come sta il sistema</div>
-                <!-- Senza questo il riquadro e una fotografia scattata
-                     all'apertura dell'area, e chi lo guarda mezz'ora dopo
-                     legge dati vecchi credendoli freschi. -->
-                <button type="button" class="ar-mini" id="diagnosiAggiorna">Aggiorna</button>
-              </div>
-              <dl id="convDiagnosiVoci"></dl>
+            <!-- Solo l'amministratore. Sono due bottoni che raggiungono
+                 persone vere: uno fa vibrare tutti i telefoni della
+                 squadra, l'altro manda una mail agli indirizzi veri. Non
+                 e roba da lasciare a chiunque entri nell'area. -->
+            <div class="prove" id="convProve" hidden>
+              <div class="prove-tit">Prove — solo amministratore</div>
+              <p class="ar-aiuto" style="margin:0 0 16px;">Servono a controllare che tutto parta senza aspettare un giorno di allenamento. Raggiungono davvero tutta la squadra, quindi usali quando serve.</p>
               <div class="ar-azioni">
-                <button type="button" class="btn" id="riepilogoProva">Mandami il riepilogo adesso</button>
+                <button type="button" class="btn" id="pushProva">Notifica di prova a tutti</button>
+                <button type="button" class="btn" id="riepilogoProva">Manda il riepilogo adesso</button>
               </div>
               <p class="ar-esito" id="riepilogoEsito" role="status" aria-live="polite"></p>
             </div>
