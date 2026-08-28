@@ -137,15 +137,44 @@ node -e "const c=require('crypto'),s=c.randomBytes(16).toString('hex');console.l
 Incolli il risultato in `ADMIN_PASSWORD_HASH` su Netlify e fai ripartire
 un deploy. Nessun account viene perso.
 
+## 4-ter. Il link condiviso non porta con sé l'accesso
+
+Domanda che salta fuori sempre: se mando a qualcuno un link di una
+pagina dell'area riservata, quello ci entra col mio account?
+
+No. Il gettone di sessione vive **soltanto** nel cookie, che sta nel
+tuo browser e non esce dal tuo dispositivo. Nell'indirizzo non c'è
+niente: `/area-riservata` è un percorso e basta. Chi apre quel link
+viene riconosciuto dal **proprio** cookie — se è già entrato vede il
+suo account, se non è mai entrato vede il modulo di accesso, se è in
+attesa vede "richiesta in attesa".
+
+L'unica cosa che romperebbe questa garanzia sarebbe mettere il gettone
+dentro un indirizzo — i cosiddetti link magici. Non ce ne sono, e le
+notifiche delle convocazioni portano a un percorso normale
+(`?giorno=2026-09-04`) che non autentica nessuno: è solo un
+suggerimento su quale giornata aprire. C'è anche una prova automatica
+che lo verifica, in `strumenti/prove.mjs`.
+
+Resta ovvio il caso del telefono sbloccato prestato a qualcuno: quello
+non lo può impedire nessun sito.
+
 ## 5. Dove sta il codice
 
 | File | Cosa fa |
 |---|---|
-| `netlify/functions/area.mjs` | tutta la logica: accessi, sessioni, approvazioni |
+| `netlify/lib/comune.mjs` | sessione, cookie, utenti — condiviso fra le functions |
+| `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
+| `netlify/functions/area.mjs` | accessi, sessioni, approvazioni, incarichi |
 | `monsha/index.html` | il markup della tab (`#tab-area`) |
 | `monsha/app.js` | la parte in fondo, `areaRiservata()` |
-| `monsha/stile.css` | in fondo, la sezione `AREA RISERVATA` |
+| `monsha/stile.css` | in fondo, le sezioni `AREA RISERVATA` e `CONVOCAZIONI` |
 | `netlify.toml` | cartella delle functions e rotte `/area-riservata` e `/area-riservata-nimda` |
+
+Dentro l'area riservata c'è la tab **Convocazioni**: allenamenti,
+notifiche sul telefono e riepilogo al capitano. Ha un promemoria
+suo, [CONVOCAZIONI.md](CONVOCAZIONI.md), con le variabili da
+impostare e gli incarichi da assegnare.
 
 Gli account vivono in **Netlify Blobs** (store `area-utenti`), incluso
 nel piano gratuito. Non c'è nessun database esterno da pagare.

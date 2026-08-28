@@ -1,0 +1,19 @@
+{
+  "_nota": "Serve per aggiungere il sito alla schermata Home. Su iPhone non e un vezzo: senza l'aggiunta alla Home, Safari non consegna nessuna notifica. start_url punta all'area riservata perche chi installa il sito lo fa per le convocazioni.",
+  "name": "Monaci Shaolin",
+  "short_name": "Monaci",
+  "description": "Area riservata dei Monaci Shaolin: convocazioni e allenamenti.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "/area-riservata",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0d",
+  "theme_color": "#0b0b0d",
+  "icons": [
+    { "src": "/immagini/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/immagini/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/immagini/icona-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

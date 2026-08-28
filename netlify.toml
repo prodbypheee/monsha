@@ -107,3 +107,18 @@
   for = "/area-riservata-nimda"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
+
+# Il service worker delle notifiche non va mai servito dalla cache: e
+# il file che decide cosa succede quando si tocca un bottone dentro la
+# notifica, e una versione vecchia rimasta in cache continuerebbe a
+# comandare per ore senza che si capisca perche.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Content-Type = "application/manifest+json; charset=utf-8"

@@ -28,6 +28,10 @@
    di ogni utente e l'impronta SHA-256 della sua email, cosi non
    compaiono indirizzi nei nomi delle chiavi.
 
+   Sessione, cookie e lettura utenti stanno in ../lib/comune.mjs:
+   li usa anche la funzione delle convocazioni, e la stessa logica
+   di sicurezza scritta due volte prima o poi diverge.
+
    Variabili d'ambiente da impostare nel pannello Netlify
    (Site configuration > Environment variables):
 
@@ -44,52 +48,22 @@
      EMAILJS_PUBLIC_KEY  EMAILJS_PRIVATE_KEY
    ============================================================= */
 
-import { getStore } from '@netlify/blobs';
 import crypto from 'node:crypto';
+
+import {
+  DURATA, DURATA_ADMIN, INCARICHI,
+  store, chiave, normEmail, normId, emailValida,
+  json, errore, creaGettone, leggiGettone, cookieSessione, leggiCookie,
+  leggiUtente, salvaUtente, tuttiGliUtenti, pubblico, esigiAdmin
+} from '../lib/comune.mjs';
+
+import { mandaMail } from '../lib/posta.mjs';
 
 /* ---------- costanti ------------------------------------------ */
 
-const COOKIE        = 'ms_sessione';
-/* Quattrocento giorni e il massimo che i browser accettano: Chrome
-   taglia da solo qualunque cookie piu lungo, quindi chiederne di piu
-   non servirebbe a niente. A rendere l'accesso davvero permanente non e
-   comunque questo numero ma il rinnovo a ogni visita, piu sotto: chi
-   apre il sito anche solo una volta ogni tanto non lo rifa mai. */
-const DURATA        = 60 * 60 * 24 * 400;
-const DURATA_ADMIN  = 60 * 60 * 24 * 2;        // 2 giorni: il pannello vale di piu
 const PIATTAFORME   = ['PlayStation', 'Xbox', 'PC'];
 const MAX_TENTATIVI = 8;
 const BLOCCO_MS     = 15 * 60 * 1000;          // 15 minuti
-
-/* ---------- utilita ------------------------------------------- */
-
-const store = () => getStore('area-utenti');
-
-const chiave = email =>
-  crypto.createHash('sha256').update(email).digest('hex');
-
-const normEmail = v => String(v || '').trim().toLowerCase();
-
-const emailValida = v =>
-  /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v) && v.length <= 254;
-
-function json(dati, stato = 200, intestazioni = {}) {
-  return new Response(JSON.stringify(dati), {
-    status: stato,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...intestazioni }
-  });
-}
-
-const errore = (msg, stato = 400) => json({ errore: msg }, stato);
-
-/* ---------- ID di gioco ---------------------------------------
-   L'ID e la meta segreta delle credenziali, quindi va confrontato
-   con indulgenza su cio che non conta: maiuscole e spazi ai bordi.
-   Nessuno si ricorda se il suo tag era "TizioPSN" o "tiziopsn", e
-   farlo sbagliare su quello sarebbe solo una porta chiusa in faccia
-   alla persona giusta. */
-
-const normId = v => String(v || '').trim().toLowerCase();
 
 /* ---------- password dell'amministratore ----------------------
    Solo l'admin ne ha una. scrypt e la funzione di derivazione
@@ -114,6 +88,13 @@ async function passwordAdminCorretta(password, atteso) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+/* ---------- ID di gioco ---------------------------------------
+   L'ID e la meta segreta delle credenziali, quindi va confrontato
+   con indulgenza su cio che non conta: maiuscole e spazi ai bordi.
+   Nessuno si ricorda se il suo tag era "TizioPSN" o "tiziopsn", e
+   farlo sbagliare su quello sarebbe solo una porta chiusa in faccia
+   alla persona giusta. */
+
 function idCorretto(prova, utente) {
   // idConfronto non c'e sugli account nati con la versione a
   // password: per quelli si ricava al volo dall'ID salvato.
@@ -125,115 +106,16 @@ function idCorretto(prova, utente) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-/* ---------- sessione ------------------------------------------
-   Gettone firmato in HMAC: <payload base64url>.<firma base64url>.
-   Non e cifrato — il contenuto e leggibile — ma non e falsificabile
-   senza AUTH_SECRET, ed e questo che conta: nessuno puo promuoversi
-   admin riscrivendo il proprio cookie. */
-
-const b64u   = buf => Buffer.from(buf).toString('base64url');
-const deb64u = str => Buffer.from(str, 'base64url').toString('utf8');
-
-function firma(testo, segreto) {
-  return crypto.createHmac('sha256', segreto).update(testo).digest('base64url');
-}
-
-function creaGettone(dati, segreto, durata = DURATA) {
-  const corpo = b64u(JSON.stringify({ ...dati, sca: Date.now() + durata * 1000 }));
-  return corpo + '.' + firma(corpo, segreto);
-}
-
-function leggiGettone(gettone, segreto) {
-  if (!gettone || typeof gettone !== 'string') return null;
-  const [corpo, sigla] = gettone.split('.');
-  if (!corpo || !sigla) return null;
-  const a = Buffer.from(sigla);
-  const b = Buffer.from(firma(corpo, segreto));
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
-  try {
-    const dati = JSON.parse(deb64u(corpo));
-    if (!dati.sca || dati.sca < Date.now()) return null;
-    return dati;
-  } catch { return null; }
-}
-
-function cookieSessione(valore, durata) {
-  return [
-    COOKIE + '=' + valore,
-    'Path=/',
-    'HttpOnly',              // fuori portata di JavaScript: un XSS non ruba la sessione
-    'Secure',
-    'SameSite=Lax',
-    'Max-Age=' + durata
-  ].join('; ');
-}
-
-function leggiCookie(req) {
-  const grezzo = req.headers.get('cookie') || '';
-  for (const pezzo of grezzo.split(';')) {
-    const [n, ...resto] = pezzo.trim().split('=');
-    if (n === COOKIE) return resto.join('=');
-  }
-  return null;
-}
-
-/* ---------- lettura utenti ------------------------------------ */
-
-async function leggiUtente(email) {
-  return await store().get(chiave(email), { type: 'json' });
-}
-
-async function salvaUtente(utente) {
-  await store().setJSON(chiave(utente.email), utente);
-}
-
-// Vista ripulita. idGioco resta dentro apposta: l'amministratore
-// decide guardando proprio quello, e a ogni altro utente arriva solo
-// il proprio. idConfronto invece non esce mai: e un dettaglio interno.
-const pubblico = u => ({
-  email:       u.email,
-  piattaforma: u.piattaforma,
-  idGioco:     u.idGioco,
-  stato:       u.stato,
-  ruolo:       u.ruolo,
-  creato:      u.creato,
-  deciso:      u.deciso || null
-});
-
-/* ---------- avviso all'amministratore -------------------------
-   Parte dal server, non dal browser: cosi arriva anche se chi si
-   registra chiude la scheda un istante dopo aver premuto invio.
-   Se le variabili EmailJS non ci sono, si tace e si prosegue —
-   la richiesta e comunque salvata e visibile nel pannello. */
+/* ---------- avviso all'amministratore ------------------------- */
 
 async function avvisaAdmin(utente, origine) {
-  const { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID,
-          EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY } = process.env;
-  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID ||
-      !EMAILJS_PUBLIC_KEY || !EMAILJS_PRIVATE_KEY) return;
-
-  try {
-    await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        service_id:  EMAILJS_SERVICE_ID,
-        template_id: EMAILJS_TEMPLATE_ID,
-        user_id:     EMAILJS_PUBLIC_KEY,
-        accessToken: EMAILJS_PRIVATE_KEY,
-        template_params: {
-          user_email:   utente.email,
-          platform:     utente.piattaforma,
-          player_id:    utente.idGioco,
-          requested_at: new Date(utente.creato).toLocaleString('it-IT'),
-          panel_url:    origine + '/area-riservata'
-        }
-      })
-    });
-  } catch {
-    // Un disservizio della posta non deve far fallire una registrazione
-    // gia andata a buon fine: l'utente ha il suo account in attesa.
-  }
+  await mandaMail(process.env.EMAILJS_TEMPLATE_ID, {
+    user_email:   utente.email,
+    platform:     utente.piattaforma,
+    player_id:    utente.idGioco,
+    requested_at: new Date(utente.creato).toLocaleString('it-IT'),
+    panel_url:    origine + '/area-riservata'
+  });
 }
 
 /* ---------- azioni -------------------------------------------- */
@@ -267,6 +149,10 @@ async function registrati(req, segreto, adminEmail, origine) {
     email, piattaforma, idGioco, idConfronto: normId(idGioco),
     stato:  admin ? 'approvato' : 'in-attesa',
     ruolo:  admin ? 'admin' : 'membro',
+    // L'incarico nelle convocazioni: si nasce giocatori, il resto lo
+    // assegna l'admin. Anche l'admin: comandare sugli accessi non
+    // vuol dire essere il capitano.
+    incarico: 'giocatore',
     creato: new Date().toISOString(),
     deciso: admin ? new Date().toISOString() : null,
     tentativi: 0,
@@ -369,7 +255,12 @@ function esci() {
 
 /* Chi sono. Rilegge sempre l'utente dall'archivio invece di fidarsi
    del cookie: se revochi un accesso mentre la persona e connessa,
-   deve cadere fuori al primo caricamento, non fra trenta giorni. */
+   deve cadere fuori al primo caricamento, non fra quattrocento giorni.
+
+   Il gettone non esce mai da qui dentro: sta nel cookie e basta, non
+   compare in nessun indirizzo. E per questo che condividere un link
+   dell'area riservata non condivide nessun accesso — chi lo apre
+   viene riconosciuto dal proprio cookie, o da nessuno. */
 async function sessione(req, segreto) {
   const dati = leggiGettone(leggiCookie(req), segreto);
   if (!dati) return json({ utente: null });
@@ -387,24 +278,11 @@ async function sessione(req, segreto) {
     { 'set-cookie': cookieSessione(gettone, durata) });
 }
 
-async function esigiAdmin(req, segreto) {
-  const dati = leggiGettone(leggiCookie(req), segreto);
-  if (!dati) return { errore: errore('Accesso richiesto.', 401) };
-  const utente = await leggiUtente(dati.email);
-  if (!utente || utente.ruolo !== 'admin' || utente.stato !== 'approvato')
-    return { errore: errore('Non autorizzato.', 403) };
-  return { utente };
-}
-
 async function elenco(req, segreto) {
   const g = await esigiAdmin(req, segreto);
   if (g.errore) return g.errore;
 
-  const { blobs } = await store().list();
-  const tutti = await Promise.all(
-    blobs.map(b => store().get(b.key, { type: 'json' }).catch(() => null))
-  );
-  const validi = tutti.filter(Boolean).map(pubblico)
+  const validi = (await tuttiGliUtenti()).map(pubblico)
     .sort((a, b) => new Date(b.creato) - new Date(a.creato));
 
   return json({
@@ -443,6 +321,31 @@ async function decidi(req, segreto) {
   return json({ ok: true, utente: pubblico(utente) });
 }
 
+/* Chi e capitano, chi amministrazione, chi solo giocatore.
+   Lo decide l'admin e nessun altro: se potesse farlo un capitano,
+   il primo capitano nominato sarebbe anche l'ultimo a poter essere
+   sostituito. Sul proprio account l'admin puo agire — assegnarsi il
+   capitanato e legittimo — perche qui non si toglie nessun accesso. */
+async function incarico(req, segreto) {
+  const g = await esigiAdmin(req, segreto);
+  if (g.errore) return g.errore;
+
+  const corpo = await req.json().catch(() => ({}));
+  const email = normEmail(corpo.email);
+  const quale = String(corpo.incarico || '');
+
+  if (!INCARICHI.includes(quale)) return errore('Incarico non valido.');
+
+  const utente = await leggiUtente(email);
+  if (!utente) return errore('Utente non trovato.', 404);
+  if (utente.stato !== 'approvato')
+    return errore('Prima approva l’accesso, poi assegna l’incarico.', 409);
+
+  utente.incarico = quale;
+  await salvaUtente(utente);
+  return json({ ok: true, utente: pubblico(utente) });
+}
+
 /* ---------- ingresso ------------------------------------------ */
 
 export default async (req) => {
@@ -463,6 +366,7 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'accedi')     return await accedi(req, segreto);
     if (req.method === 'POST' && azione === 'esci')       return esci();
     if (req.method === 'POST' && azione === 'decidi')     return await decidi(req, segreto);
+    if (req.method === 'POST' && azione === 'incarico')   return await incarico(req, segreto);
     return errore('Azione sconosciuta.', 404);
   } catch (e) {
     console.error('area riservata:', e);

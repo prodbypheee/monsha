@@ -202,17 +202,32 @@
     if (s && stretto()) apriFoglio(giocatori[+s.dataset.i]);
   });
 
-  fetch('./rosa.json')
+  /* La promessa viene tenuta da parte: l'area riservata deve poter
+     aspettare la rosa per mostrare a ciascuno la propria foto, e non
+     puo sapere se il caricamento e gia finito o no. */
+  const rosaPronta = fetch('./rosa.json')
     .then(r => r.json())
     .then(d => {
       giocatori = d.giocatori || [];
       disegnaFiltri();
       disegnaRosa();
+      return giocatori;
     })
     .catch(() => {
       const box = document.getElementById('rosa');
       if (box) box.innerHTML = '<p class="sottotesto">Non riesco a caricare la rosa. Ricarica la pagina.</p>';
+      return [];
     });
+
+  /* Accostamento fra ID di gioco e rosa. Il confronto ignora maiuscole
+     e spazi ai bordi, esattamente come fa il server quando controlla
+     l'ID all'accesso: se le due regole divergessero, uno entrerebbe nel
+     sito ma non si riconoscerebbe nella propria scheda. */
+  const idPiatto = v => String(v || '').trim().toLowerCase();
+  const trovaGiocatore = id => {
+    const k = idPiatto(id);
+    return k ? (giocatori.find(g => idPiatto(g.nick) === k) || null) : null;
+  };
 
   /* ---------- FOGLIO DETTAGLIO (telefono) ---------------------- */
 
@@ -477,6 +492,7 @@
 
     let avviata = false;
     let piattaforma = '';
+    let ioSono = null;      // l'utente della sessione, quando c'e
 
     /* L'indirizzo riservato non e una difesa — chi lo scopre non guadagna
        niente, a fermarlo e la password. Serve a non mettere davanti ai
@@ -497,7 +513,7 @@
 
     /* ---- dialogo col server ---- */
 
-    async function api(azione, corpo) {
+    async function chiama(indirizzo, corpo) {
       const opzioni = { credentials: 'same-origin', method: corpo === undefined ? 'GET' : 'POST' };
       if (corpo !== undefined && corpo !== null) {
         opzioni.headers = { 'content-type': 'application/json' };
@@ -505,7 +521,7 @@
       }
       let risposta;
       try {
-        risposta = await fetch('/api/area/' + azione, opzioni);
+        risposta = await fetch(indirizzo, opzioni);
       } catch {
         return { ok: false, stato: 0, dati: { errore: 'Connessione non riuscita. Riprova.' } };
       }
@@ -513,6 +529,9 @@
       try { dati = await risposta.json(); } catch { /* risposta senza corpo */ }
       return { ok: risposta.ok, stato: risposta.status, dati };
     }
+
+    const api     = (azione, corpo) => chiama('/api/area/' + azione, corpo);
+    const apiConv = (azione, corpo) => chiama('/api/convocazioni/' + azione, corpo);
 
     /* ---- schermate ---- */
 
@@ -651,18 +670,101 @@
 
     /* ---- dentro ---- */
 
+    const ETICHETTA = {
+      giocatore: 'Giocatore',
+      capitano: 'Capitano',
+      amministrazione: 'Amministrazione'
+    };
+
+    /* La scheda di bentornato. La foto arriva dalla rosa pubblica
+       accostando l'ID di gioco al nick: nessun dato nuovo da tenere
+       aggiornato in due posti, e chi entra si vede subito in faccia. */
+    function vestiBentornato(utente) {
+      const ritratto = $('arBentornato').querySelector('.ben-ritratto');
+
+      $('benNick').textContent     = utente.idGioco;
+      $('benIniziale').textContent = (utente.idGioco || '?').trim().charAt(0).toUpperCase();
+
+      const targhe = $('benTarghe');
+      targhe.textContent = '';
+      const targa = (testo, acceso) => {
+        const s = document.createElement('span');
+        s.className = 'targa' + (acceso ? ' acc' : '');
+        s.textContent = testo;
+        targhe.appendChild(s);
+      };
+
+      rosaPronta.then(() => {
+        const g = trovaGiocatore(utente.idGioco);
+
+        if (g) {
+          $('benFoto').style.backgroundImage = "url('./immagini/" + g.img + "')";
+          ritratto.classList.add('con-foto');
+          $('benEp').textContent = g.epiteto;
+          targa(g.ruolo);
+          $('benNota').hidden = true;
+        } else {
+          ritratto.classList.remove('con-foto');
+          $('benFoto').style.backgroundImage = '';
+          $('benEp').textContent = '';
+          $('benNota').hidden = false;
+          $('benNota').textContent =
+            'Il tuo ID di gioco non compare fra quelli della rosa sul sito, ' +
+            'quindi non ho una foto da metterti qui. Se dovrebbe esserci, dillo a un amministratore.';
+        }
+
+        const inc = utente.incarico || 'giocatore';
+        if (inc !== 'giocatore') targa(ETICHETTA[inc], true);
+        if (utente.ruolo === 'admin') targa('Amministratore', true);
+        targa(utente.piattaforma);
+      });
+    }
+
+    /* ---- tab interne ---- */
+
+    const PANNELLI = ['convocazioni', 'profilo', 'gestione'];
+
+    function pannello(quale) {
+      PANNELLI.forEach(p => {
+        const sez = $('pan-' + p);
+        if (sez) sez.hidden = p !== quale;
+      });
+      document.querySelectorAll('.ar-sotto-voce').forEach(v => {
+        const attiva = v.dataset.pannello === quale;
+        v.classList.toggle('attiva', attiva);
+        v.setAttribute('aria-selected', String(attiva));
+      });
+    }
+
+    document.querySelectorAll('.ar-sotto-voce').forEach(voce => {
+      voce.addEventListener('click', () => {
+        pannello(voce.dataset.pannello);
+        // La gestione accessi si ricarica ogni volta che la si apre:
+        // le richieste arrivano mentre il pannello e chiuso.
+        if (voce.dataset.pannello === 'gestione') caricaRichieste();
+      });
+    });
+
     function entra(utente) {
-      $('arProfEmail').textContent = utente.email;
-      $('arProfPiatt').textContent = utente.piattaforma;
-      $('arProfId').textContent    = utente.idGioco;
-      $('arProfRuolo').textContent = utente.ruolo === 'admin' ? 'Amministratore' : 'Membro';
-      $('arAdmin').hidden = utente.ruolo !== 'admin';
+      ioSono = utente;
+      $('arProfEmail').textContent    = utente.email;
+      $('arProfPiatt').textContent    = utente.piattaforma;
+      $('arProfId').textContent       = utente.idGioco;
+      $('arProfRuolo').textContent    = utente.ruolo === 'admin' ? 'Amministratore' : 'Membro';
+      $('arProfIncarico').textContent = ETICHETTA[utente.incarico || 'giocatore'];
+
+      $('arVoceGestione').hidden = utente.ruolo !== 'admin';
+      vestiBentornato(utente);
       schermata('arDentro');
+      pannello('convocazioni');
       if (utente.ruolo === 'admin') caricaRichieste();
+      convocazioni.avvia(utente);
     }
 
     $('arEsci').addEventListener('click', async () => {
       await api('esci', {});
+      ioSono = null;
+      convocazioni.chiudi();
       $('arFormAccedi').reset();
       schermata('arOspite');
     });
@@ -672,7 +774,7 @@
        ID di gioco li scrive chi si registra, e con innerHTML basterebbe
        un ID fatto di tag per eseguire codice nel browser dell'admin. */
 
-    function riga(utente, azioni) {
+    function riga(utente, azioni, conIncarico) {
       const el = document.createElement('div');
       el.className = 'ar-voce';
 
@@ -691,6 +793,46 @@
 
       const gruppo = document.createElement('div');
       gruppo.className = 'ar-voce-azioni';
+
+      /* L'incarico si cambia da un menu invece che da tre bottoni: le
+         voci sono poche ma si escludono a vicenda, e un menu dice da
+         solo qual e quella in vigore. Compare solo sugli approvati:
+         nominare capitano qualcuno che non puo ancora entrare sarebbe
+         una promessa a vuoto. */
+      if (conIncarico) {
+        const menu = document.createElement('select');
+        menu.className = 'ar-incarico';
+        menu.setAttribute('aria-label', 'Incarico di ' + utente.email);
+        [['giocatore', 'Giocatore'],
+         ['capitano', 'Capitano'],
+         ['amministrazione', 'Amministrazione']].forEach(([v, t]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = t;
+          o.selected = (utente.incarico || 'giocatore') === v;
+          menu.appendChild(o);
+        });
+        menu.addEventListener('change', async () => {
+          menu.disabled = true;
+          const r = await api('incarico', { email: utente.email, incarico: menu.value });
+          menu.disabled = false;
+          if (!r.ok) {
+            alert(r.dati.errore || 'Non sono riuscito a cambiare l\'incarico.');
+            menu.value = utente.incarico || 'giocatore';
+            return;
+          }
+          utente.incarico = menu.value;
+          // Se l'admin ha cambiato il proprio incarico, la scheda di
+          // bentornato e le convocazioni devono accorgersene subito.
+          if (ioSono && utente.email === ioSono.email) {
+            ioSono.incarico = menu.value;
+            $('arProfIncarico').textContent = ETICHETTA[menu.value];
+            vestiBentornato(ioSono);
+            convocazioni.avvia(ioSono);
+          }
+        });
+        gruppo.appendChild(menu);
+      }
+
       azioni.forEach(([etichetta, esitoAzione, stile]) => {
         const b = document.createElement('button');
         b.type = 'button';
@@ -704,7 +846,7 @@
       return el;
     }
 
-    function riempi(contenitore, utenti, azioni, vuoto) {
+    function riempi(contenitore, utenti, azioni, vuoto, conIncarico) {
       contenitore.textContent = '';
       if (!utenti.length) {
         const p = document.createElement('p');
@@ -713,7 +855,7 @@
         contenitore.appendChild(p);
         return;
       }
-      utenti.forEach(u => contenitore.appendChild(riga(u, azioni)));
+      utenti.forEach(u => contenitore.appendChild(riga(u, azioni, conIncarico)));
     }
 
     async function caricaRichieste() {
@@ -734,7 +876,7 @@
 
       riempi($('arListaApprovati'), approvati,
         [['Revoca', 'rifiuta', 'no']],
-        'Nessun membro approvato.');
+        'Nessun membro approvato.', true);
 
       riempi($('arListaRifiutati'), rifiutati,
         [['Riammetti', 'approva', 'si'], ['Elimina', 'elimina', 'no']],
@@ -752,6 +894,501 @@
     }
 
     $('arAggiorna').addEventListener('click', caricaRichieste);
+
+    /* ================= CONVOCAZIONI =================
+       La prima tab interna dell'area. Tre mestieri in una schermata
+       sola, perche sono la stessa cosa vista da altezze diverse:
+
+         chiunque       dice presente o assente e vede chi c'e
+         capitano       in piu sceglie i giorni di allenamento
+         amministrazione stessa cosa del capitano
+         admin          ha entrambe, piu la gestione accessi altrove
+
+       Il calendario e il pezzo delicato: le date sono stringhe
+       AAAA-MM-GG e i conti si fanno su un calendario UTC, mai con
+       l'orologio del telefono. Un telefono col fuso sbagliato o in
+       viaggio non deve poter spostare un allenamento di un giorno,
+       e la data di "oggi" arriva comunque dal server. */
+
+    const convocazioni = (function () {
+
+      const INIZIALI = ['D', 'L', 'M', 'M', 'G', 'V', 'S'];
+      const SETTIMANE = ['Questa settimana', 'La prossima', 'Fra due settimane',
+                         'Fra tre settimane', 'Fra quattro settimane'];
+      const GIORNI_NOME = ['domenica', 'lunedì', 'martedì', 'mercoledì',
+                           'giovedì', 'venerdì', 'sabato'];
+      const GIORNI_CORTI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+      const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+                    'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+
+      let io = null;
+      let oggi = '';
+      let orizzonte = 35;
+      let giorni = [];
+      let scelti = new Set();
+      let attivo = null;
+      let chiavePush = '';
+
+      /* ---- conti sulle date ----
+         Trattate come giorni di calendario e basta: si costruisce una
+         data UTC dai tre numeri, si somma, si riprende la stringa. Nessun
+         fuso di mezzo, quindi nessun 31 marzo che diventa 30. */
+
+      function piu(data, n) {
+        const [a, m, g] = data.split('-').map(Number);
+        const d = new Date(Date.UTC(a, m - 1, g));
+        d.setUTCDate(d.getUTCDate() + n);
+        return d.toISOString().slice(0, 10);
+      }
+      function settimana(data) {
+        const [a, m, g] = data.split('-').map(Number);
+        return new Date(Date.UTC(a, m - 1, g)).getUTCDay();
+      }
+      const maiuscola = t => t.charAt(0).toUpperCase() + t.slice(1);
+      const inLettere = d =>
+        GIORNI_NOME[settimana(d)] + ' ' + Number(d.slice(8)) + ' ' + MESI[Number(d.slice(5, 7)) - 1];
+      const cortissima = d => GIORNI_CORTI[settimana(d)] + ' ' + Number(d.slice(8));
+
+      function vicinanza(d) {
+        if (d === oggi) return 'Oggi';
+        if (d === piu(oggi, 1)) return 'Domani';
+        if (d === piu(oggi, 2)) return 'Dopodomani';
+        return 'Prossimo allenamento';
+      }
+
+      /* ---- calendario del capitano ---- */
+
+      function disegnaCalendario() {
+        const box = $('convCalendario');
+        box.textContent = '';
+
+        // Si parte dal lunedi di questa settimana anche se e gia
+        // giovedi: vedere la settimana intera aiuta a orientarsi, i
+        // giorni passati restano li ma spenti.
+        const lunedi = piu(oggi, -((settimana(oggi) + 6) % 7));
+        const ultimo = piu(oggi, orizzonte);
+
+        SETTIMANE.forEach((nome, s) => {
+          const sett = document.createElement('div');
+          sett.className = 'cal-sett';
+
+          const eti = document.createElement('div');
+          eti.className = 'cal-eti';
+          eti.textContent = nome;
+
+          const riga = document.createElement('div');
+          riga.className = 'cal-riga';
+
+          for (let g = 0; g < 7; g++) {
+            const data = piu(lunedi, s * 7 + g);
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cal-giorno' + (data === oggi ? ' oggi' : '');
+            b.disabled = data < oggi || data > ultimo;
+            b.setAttribute('aria-pressed', String(scelti.has(data)));
+            b.setAttribute('aria-label', inLettere(data));
+
+            const i = document.createElement('small');
+            i.textContent = INIZIALI[settimana(data)];
+            const n = document.createElement('b');
+            n.textContent = Number(data.slice(8));
+            b.append(i, n);
+
+            b.addEventListener('click', () => {
+              if (scelti.has(data)) scelti.delete(data); else scelti.add(data);
+              b.setAttribute('aria-pressed', String(scelti.has(data)));
+              esito($('convEsitoGiorni'), '');
+            });
+
+            riga.appendChild(b);
+          }
+
+          sett.append(eti, riga);
+          box.appendChild(sett);
+        });
+      }
+
+      $('convSalva').addEventListener('click', async () => {
+        const btn = $('convSalva'), box = $('convEsitoGiorni');
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Salvo…';
+
+        const r = await apiConv('giorni', { giorni: [...scelti] });
+
+        btn.disabled = false;
+        btn.textContent = testo;
+
+        if (!r.ok) { esito(box, r.dati.errore || 'Non sono riuscito a salvare.'); return; }
+
+        giorni = r.dati.giorni;
+        scelti = new Set(giorni);
+        esito(box, giorni.length
+          ? 'Calendario salvato: ' + giorni.length + (giorni.length === 1 ? ' allenamento.' : ' allenamenti.')
+          : 'Calendario svuotato: nessun allenamento in programma.', true);
+
+        disegnaGiorni();
+        if (giorni.length) mostraGiorno(giorni.includes(attivo) ? attivo : giorni[0]);
+        else svuotaGiornata();
+      });
+
+      /* ---- la striscia dei prossimi allenamenti ---- */
+
+      function disegnaGiorni() {
+        const box = $('convGiorni');
+        box.textContent = '';
+        giorni.slice(0, 10).forEach(d => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'conv-chip';
+          b.setAttribute('aria-pressed', String(d === attivo));
+          b.textContent = d === oggi ? 'oggi' : (d === piu(oggi, 1) ? 'domani' : cortissima(d));
+          b.addEventListener('click', () => mostraGiorno(d));
+          box.appendChild(b);
+        });
+      }
+
+      function segnaChip() {
+        [...$('convGiorni').children].forEach((b, i) =>
+          b.setAttribute('aria-pressed', String(giorni[i] === attivo)));
+      }
+
+      function svuotaGiornata() {
+        attivo = null;
+        $('convEtichetta').textContent = 'Allenamenti';
+        $('convQuando').textContent = 'Nessun allenamento in calendario';
+        $('convScelta').hidden = true;
+        $('convConta').hidden = true;
+        $('convElenco').textContent = '';
+        esito($('convEsito'), io && io.convoca
+          ? 'Scegli i giorni qui sopra e salva: da quel momento partono le notifiche.'
+          : 'Quando il capitano fissa un allenamento lo trovi qui, e ti arriva una notifica.');
+      }
+
+      /* ---- una giornata ---- */
+
+      async function mostraGiorno(data) {
+        attivo = data;
+        segnaChip();
+        $('convEtichetta').textContent = vicinanza(data);
+        $('convQuando').textContent = maiuscola(inLettere(data));
+        $('convScelta').hidden = false;
+        esito($('convEsito'), '');
+        segnaScelta(null, true);
+
+        const r = await apiConv('giorno?data=' + encodeURIComponent(data));
+        // Nel frattempo si puo aver toccato un altro giorno: la
+        // risposta vecchia non deve sovrascrivere quella nuova.
+        if (!r.ok || attivo !== data) {
+          if (!r.ok) esito($('convEsito'), r.dati.errore || 'Non riesco a leggere la giornata.');
+          return;
+        }
+
+        const mia = (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        segnaScelta(mia, !r.dati.apribile);
+        if (!r.dati.apribile)
+          esito($('convEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
+
+        disegnaConta(r.dati.conta);
+        disegnaElenco(r.dati.elenco);
+      }
+
+      /* Il conteggio si scrive a mano invece di stare fisso nel markup
+         perche in italiano "1 assenti" non si puo leggere, e la voce a
+         zero e rumore: si nasconde. */
+      function disegnaConta(c) {
+        const box = $('convConta');
+        box.textContent = '';
+        box.hidden = false;
+
+        const voci = [
+          ['si',   c.presenti, 'presente',  'presenti'],
+          ['no',   c.assenti,  'assente',   'assenti'],
+          ['zero', c.muti,     'non ha ancora risposto', 'non hanno ancora risposto']
+        ].filter(v => v[1] > 0);
+
+        if (!voci.length) {
+          const p = document.createElement('span');
+          p.textContent = 'Nessuno ha ancora risposto.';
+          box.appendChild(p);
+          return;
+        }
+
+        voci.forEach(([classe, n, uno, tanti]) => {
+          const gruppo = document.createElement('span');
+          gruppo.className = 'conv-voce';
+
+          const pallino = document.createElement('span');
+          pallino.className = 'conv-pallino ' + classe;
+
+          const numero = document.createElement('b');
+          numero.textContent = n;
+
+          const parola = document.createElement('span');
+          parola.textContent = ' ' + (n === 1 ? uno : tanti);
+
+          gruppo.append(pallino, numero, parola);
+          box.appendChild(gruppo);
+        });
+      }
+
+      function segnaScelta(stato, bloccata) {
+        $('convScelta').querySelectorAll('.conv-btn').forEach(b => {
+          b.setAttribute('aria-pressed', String(b.dataset.risposta === stato));
+          b.disabled = !!bloccata;
+        });
+      }
+
+      /* La griglia delle facce. Le foto vengono dalla rosa pubblica;
+         chi non ha ancora risposto resta in penombra, cosi il capitano
+         capisce in un colpo d'occhio chi deve ancora sentire. */
+      function disegnaElenco(voci) {
+        const box = $('convElenco');
+        const perQuale = attivo;
+        box.textContent = '';
+
+        rosaPronta.then(() => {
+          if (attivo !== perQuale) return;
+
+          voci.forEach(v => {
+            const g = trovaGiocatore(v.idGioco);
+            const stato = v.stato === 'presente' ? 'si' : (v.stato === 'assente' ? 'no' : 'zero');
+
+            const tessera = document.createElement('div');
+            tessera.className = 'conv-tessera ' + stato + (v.io ? ' io' : '');
+
+            const avatar = document.createElement('div');
+            avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
+
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              avatar.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (v.idGioco || '?').charAt(0).toUpperCase();
+            avatar.appendChild(iniziale);
+
+            if (v.stato) {
+              const segno = document.createElement('em');
+              segno.className = 'conv-segno ' + stato;
+              segno.textContent = v.stato === 'presente' ? '✓' : '✕';
+              segno.title = v.stato;
+              avatar.appendChild(segno);
+            }
+
+            const nome = document.createElement('span');
+            nome.className = 'conv-nome';
+            nome.textContent = v.idGioco;
+
+            tessera.append(avatar, nome);
+
+            if (v.incarico && v.incarico !== 'giocatore') {
+              const r = document.createElement('span');
+              r.className = 'conv-ruolo';
+              r.textContent = ETICHETTA[v.incarico];
+              tessera.appendChild(r);
+            }
+
+            box.appendChild(tessera);
+          });
+        });
+      }
+
+      $('convScelta').addEventListener('click', async e => {
+        const b = e.target.closest('.conv-btn');
+        if (!b || !attivo || b.disabled) return;
+
+        const scelta = b.dataset.risposta;
+        // Si colora subito e si corregge dopo se il server dice di no:
+        // su un telefono in corsa l'attesa di mezzo secondo sembra un
+        // bottone che non ha funzionato, e si finisce per toccarlo due volte.
+        segnaScelta(scelta, false);
+        esito($('convEsito'), '');
+
+        const quale = attivo;
+        const r = await apiConv('rispondi', { data: quale, stato: scelta });
+        if (!r.ok) {
+          esito($('convEsito'), r.dati.errore || 'Non sono riuscito a registrare la risposta.');
+          segnaScelta(null, false);
+          return;
+        }
+        // La conferma si scrive DOPO il ricarico: mostraGiorno azzera il
+        // messaggio, e scrivendola prima si vedrebbe sparire da sola.
+        await mostraGiorno(quale);
+        if (attivo === quale)
+          esito($('convEsito'), scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
+      });
+
+      /* ---- notifiche del telefono ----
+         Su iPhone Safari consegna le notifiche solo a un sito aggiunto
+         alla schermata Home, e ignora i bottoni dentro la notifica: li
+         il tocco apre il sito, gia sulla giornata giusta. Su Android
+         funziona tutto, bottoni compresi. */
+
+      const iPhone = () =>
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      const inHome = () =>
+        window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+      const supportate = () =>
+        'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+      /* La chiave pubblica viaggia in base64url e il browser la vuole
+         in byte: questa e la conversione, ed e sempre la stessa. */
+      function daBase64(chiave) {
+        const pieno = (chiave + '='.repeat((4 - chiave.length % 4) % 4))
+          .replace(/-/g, '+').replace(/_/g, '/');
+        const grezzo = atob(pieno);
+        const byte = new Uint8Array(grezzo.length);
+        for (let i = 0; i < grezzo.length; i++) byte[i] = grezzo.charCodeAt(i);
+        return byte;
+      }
+
+      async function sottoscrizione() {
+        if (!supportate()) return null;
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) return null;
+        return await reg.pushManager.getSubscription();
+      }
+
+      async function mostraStatoPush() {
+        const attiva = !!(await sottoscrizione()) && Notification.permission === 'granted';
+        $('pushStato').textContent = attiva ? 'attive' : 'spente';
+        $('pushStato').classList.toggle('on', attiva);
+        $('pushAccendi').hidden = attiva;
+        $('pushSpegni').hidden = !attiva;
+
+        if (!supportate()) {
+          $('pushAccendi').hidden = true;
+          esito($('pushEsito'),
+            'Questo browser non sa ricevere notifiche. Puoi comunque rispondere da questa pagina.');
+        } else if (iPhone() && !inHome()) {
+          esito($('pushEsito'),
+            'Su iPhone le notifiche arrivano solo se il sito sta nella schermata Home: ' +
+            'tocca Condividi, poi «Aggiungi alla schermata Home», riapri il sito da lì e torna qui.');
+        } else if (Notification.permission === 'denied') {
+          // Il bottone sparisce: una volta negato il permesso, il browser
+          // non ripropone la domanda, e lasciarlo li vorrebbe dire offrire
+          // un bottone che non puo funzionare.
+          $('pushAccendi').hidden = true;
+          esito($('pushEsito'),
+            'Le notifiche sono bloccate per questo sito. Si riattivano dalle impostazioni del browser, ' +
+            'alla voce dei permessi di monacishaolin.it.');
+        }
+      }
+
+      $('pushAccendi').addEventListener('click', async () => {
+        const box = $('pushEsito');
+        const btn = $('pushAccendi');
+
+        if (!supportate()) return mostraStatoPush();
+        if (iPhone() && !inHome()) return mostraStatoPush();
+        if (!chiavePush)
+          return esito(box, 'Le notifiche non sono ancora configurate sul server: mancano le chiavi VAPID.');
+
+        // Il permesso si chiede per primo e senza niente prima: Safari
+        // lo concede solo se la domanda nasce dal tocco, e qualunque
+        // attesa in mezzo fa perdere quel legame.
+        let permesso;
+        try { permesso = await Notification.requestPermission(); }
+        catch { permesso = 'denied'; }
+
+        if (permesso !== 'granted') {
+          esito(box, 'Senza il permesso non posso avvisarti. Puoi sempre rispondere da qui.');
+          return mostraStatoPush();
+        }
+
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Attivo…';
+
+        try {
+          const reg = await navigator.serviceWorker.register('/sw.js');
+          await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: daBase64(chiavePush)
+          });
+          const r = await apiConv('push-iscrivi', { sottoscrizione: sub.toJSON() });
+          if (!r.ok) throw new Error(r.dati.errore || 'rifiutata');
+          esito(box, 'Fatto: ti avviso io nei giorni di allenamento.', true);
+        } catch (e) {
+          esito(box, 'Non sono riuscito ad attivarle su questo dispositivo. Riprova, o rispondi da qui.');
+        }
+
+        btn.disabled = false;
+        btn.textContent = testo;
+        mostraStatoPush();
+      });
+
+      $('pushSpegni').addEventListener('click', async () => {
+        const sub = await sottoscrizione();
+        if (sub) {
+          await apiConv('push-esci', { endpoint: sub.endpoint });
+          await sub.unsubscribe().catch(() => {});
+        }
+        esito($('pushEsito'), 'Spente su questo dispositivo.', true);
+        mostraStatoPush();
+      });
+
+      /* ---- avvio e chiusura ---- */
+
+      async function avvia(utente) {
+        const r = await apiConv('stato');
+        if (!r.ok) {
+          esito($('convEsito'), r.dati.errore || 'Non riesco a leggere le convocazioni.');
+          return;
+        }
+
+        io = r.dati.io;
+        oggi = r.dati.oggi;
+        giorni = r.dati.giorni;
+        orizzonte = r.dati.orizzonte || 35;
+        chiavePush = (r.dati.push && r.dati.push.chiave) || '';
+
+        $('convCapitano').hidden = !io.convoca;
+        if (io.convoca) {
+          scelti = new Set(giorni);
+          $('convSaluto').textContent = io.incarico === 'capitano'
+            ? 'Ciao capitano, quali giorni ci sarà allenamento?'
+            : 'Quali giorni ci sarà allenamento?';
+          disegnaCalendario();
+        }
+
+        disegnaGiorni();
+
+        // Se si arriva da una notifica, l'indirizzo dice quale giornata
+        // aprire: ?giorno=AAAA-MM-GG. E solo un suggerimento di
+        // navigazione — non autentica niente e non salta nessun
+        // controllo: chi apre quel link senza accesso vede il modulo.
+        const daLink = new URLSearchParams(location.search).get('giorno');
+        const scelto = (daLink && giorni.includes(daLink)) ? daLink : r.dati.prossimo;
+
+        if (scelto) mostraGiorno(scelto);
+        else svuotaGiornata();
+
+        mostraStatoPush();
+      }
+
+      function chiudi() {
+        io = null; giorni = []; scelti = new Set(); attivo = null;
+        $('convCapitano').hidden = true;
+        $('convGiorni').textContent = '';
+        $('convElenco').textContent = '';
+        $('convConta').hidden = true;
+      }
+
+      /* Tornando sul sito dopo aver risposto dalla notifica, la pagina
+         ha in mano dati vecchi: si ricarica la giornata da sola. */
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && io && attivo) mostraGiorno(attivo);
+      });
+
+      return { avvia, chiudi };
+    })();
 
     /* ---- avvio pigro ---- */
 
