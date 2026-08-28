@@ -365,15 +365,15 @@
 
       <form class="ar-corpo" id="arFormAccedi" novalidate>
         <h3 class="wiz-tit">Bentornato</h3>
-        <p class="wiz-sub">Email e password del tuo account.</p>
+        <p class="wiz-sub">Le stesse due cose con cui ti sei registrato: nessuna password da ricordare.</p>
 
         <label class="wiz-eti" for="arAccEmail">Email</label>
         <input class="wiz-input" type="email" id="arAccEmail" name="email"
                autocomplete="email" placeholder="nome@esempio.it" required>
 
-        <label class="wiz-eti" for="arAccPassword" style="margin-top:20px;">Password</label>
-        <input class="wiz-input" type="password" id="arAccPassword" name="password"
-               autocomplete="current-password" placeholder="La tua password" required>
+        <label class="wiz-eti" for="arAccId" style="margin-top:20px;">ID di gioco</label>
+        <input class="wiz-input" type="text" id="arAccId" name="idGioco"
+               autocomplete="off" placeholder="Il tuo ID in gioco" required>
 
         <p class="ar-esito" id="arAccEsito" role="status" aria-live="polite"></p>
 
@@ -384,19 +384,11 @@
 
       <form class="ar-corpo" id="arFormRegistra" hidden novalidate>
         <h3 class="wiz-tit">Chiedi l'accesso</h3>
-        <p class="wiz-sub">Compila i campi: la richiesta arriva a un amministratore, che la approva o la rifiuta.</p>
+        <p class="wiz-sub">Niente password: bastano la tua email e l'ID con cui giochi. La richiesta arriva a un amministratore, che la approva o la rifiuta.</p>
 
         <label class="wiz-eti" for="arRegEmail">Email</label>
         <input class="wiz-input" type="email" id="arRegEmail" name="email"
                autocomplete="email" placeholder="nome@esempio.it" required>
-
-        <label class="wiz-eti" for="arRegPassword" style="margin-top:20px;">Password</label>
-        <input class="wiz-input" type="password" id="arRegPassword" name="password"
-               autocomplete="new-password" placeholder="Almeno 8 caratteri" required minlength="8">
-
-        <label class="wiz-eti" for="arRegPassword2" style="margin-top:20px;">Ripeti la password</label>
-        <input class="wiz-input" type="password" id="arRegPassword2" name="password2"
-               autocomplete="new-password" placeholder="Di nuovo, per sicurezza" required>
 
         <span class="wiz-eti" style="margin-top:26px;">Piattaforma</span>
         <div class="piatt" id="arPiatt" style="margin-top:13px;">
@@ -409,6 +401,7 @@
         <input class="wiz-input" type="text" id="arRegId" name="idGioco"
                placeholder="Seleziona prima la piattaforma" required>
         <small class="ar-aiuto" id="arRegIdAiuto"></small>
+        <small class="ar-aiuto">Segnatelo: insieme all'email è quello che userai per entrare.</small>
 
         <p class="ar-esito" id="arRegEsito" role="status" aria-live="polite"></p>
 

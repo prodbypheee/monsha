@@ -1,10 +1,14 @@
 # Area riservata — cosa fare per accenderla
 
-Il codice è già tutto nel repo. Mancano solo due variabili da mettere nel
-pannello Netlify: senza quelle la tab risponde "Area riservata non
-configurata" e non fa entrare nessuno.
+Il codice è nel repo e le due variabili sono già impostate su Netlify:
+l'area funziona. Questo file resta come promemoria di com'è messa
+insieme e di cosa rifare se un giorno il sito va ricostruito da zero.
 
 ## 1. Le due variabili obbligatorie
+
+Senza queste la tab risponde "Area riservata non configurata" e non fa
+entrare nessuno.
+
 
 Netlify → **Site configuration → Environment variables → Add a variable**.
 
@@ -68,9 +72,11 @@ pagina, così arriva anche se chi si registra chiude subito la scheda.
 
 ## 4. Come funziona, in breve
 
+**Non ci sono password.** Si entra con email e ID di gioco, la stessa
+coppia che vedi tu quando approvi.
+
 - **Registrazione** → l'account nasce con stato `in-attesa`. Non fa
-  entrare. La password viene salvata cifrata con scrypt e un sale per
-  utente: nemmeno chi legge il database la può ricavare.
+  entrare nessuno finché non decidi tu.
 - **Tu approvi o rifiuti** dal pannello. `Revoca` rimette fuori un
   membro già approvato, e chi è connesso in quel momento cade fuori al
   primo caricamento: la sessione viene ricontrollata contro il database
@@ -79,13 +85,29 @@ pagina, così arriva anche se chi si registra chiude subito la scheda.
   Non è leggibile da JavaScript, quindi non è rubabile con un XSS, e
   non è falsificabile senza `AUTH_SECRET`: nessuno può promuoversi
   amministratore riscrivendoselo.
-- **Otto password sbagliate** bloccano quell'account per 15 minuti.
+- **Otto tentativi sbagliati** bloccano quell'account per 15 minuti.
+  Senza password questo freno conta il doppio: un ID di gioco è corto e
+  indovinabile, e senza limite si proverebbe a raffica.
+- L'ID si confronta ignorando maiuscole e spazi ai bordi: nessuno si
+  ricorda se il suo tag era `TizioPSN` o `tiziopsn`.
+
+### Il limite, detto chiaro
+
+Chi conosce email e ID di gioco di un membro **già approvato** entra al
+suo posto, e gli ID si vedono in partita. L'approvazione blocca chi non
+è nella lista, non l'impersonificazione di chi c'è. Regge finché
+nell'area non ci sono dati sensibili.
+
+Se un giorno ce ne fossero, la strada da prendere non è rimettere le
+password ma il **collegamento usa-e-getta via mail**: l'utente scrive
+l'indirizzo, riceve un link valido una volta sola e clicca. Niente da
+ricordare per lui, e nessun segreto indovinabile.
 
 ## 5. Dove sta il codice
 
 | File | Cosa fa |
 |---|---|
-| `netlify/functions/area.mjs` | tutta la logica: password, sessioni, approvazioni |
+| `netlify/functions/area.mjs` | tutta la logica: accessi, sessioni, approvazioni |
 | `monsha/index.html` | il markup della tab (`#tab-area`) |
 | `monsha/app.js` | la parte in fondo, `areaRiservata()` |
 | `monsha/stile.css` | in fondo, la sezione `AREA RISERVATA` |
