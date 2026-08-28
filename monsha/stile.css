@@ -510,15 +510,19 @@ button, input, select, textarea { font: inherit; }
   :root { --nav-h: 56px; }
 
   /* La nav a pillole nell'intestazione si riduceva a 142px su 390: una
-     striscia da far scorrere per leggere quattro voci. Su telefono
-     diventa una barra fissa in basso, dove arriva il pollice, con
-     quattro bersagli larghi uguali e alti abbastanza da centrarli. */
+     striscia da far scorrere per leggere le voci. Su telefono diventa
+     una barra fissa in basso, dove arriva il pollice, con bersagli
+     larghi uguali e alti abbastanza da centrarli.
+
+     Il numero di colonne va tenuto allineato alle voci del menu: era
+     inchiodato a quattro, e la quinta voce e finita a capo fuori dallo
+     schermo. Ora si contano da sole. */
   .head-in { gap: 12px; justify-content: space-between; }
   .head .btn { display: inline-flex; padding: 10px 16px; font-size: 10.5px; letter-spacing: .1em; }
 
   .nav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0;
     padding: 0; border: 0; border-top: 1px solid var(--line);
     border-radius: 0;
     background: rgba(11,11,13,.94);
@@ -526,11 +530,16 @@ button, input, select, textarea { font: inherit; }
     padding-bottom: env(safe-area-inset-bottom);
   }
   .nav button {
-    border-radius: 0; padding: 0; height: 58px;
-    font-size: 10.5px; letter-spacing: .1em;
+    border-radius: 0; padding: 0 2px; height: 58px;
+    /* Cinque voci su 390px lasciano 78px a testa: con i valori di prima
+       "Albo d'Oro" sarebbe uscito dalla sua casella. */
+    font-size: 9.5px; letter-spacing: .04em;
     display: flex; align-items: center; justify-content: center;
     position: relative;
   }
+  /* Le due voci lunghe hanno una forma corta buona solo qui. */
+  .nav .voce-lunga { display: none; }
+  .nav .voce-corta { display: inline; }
   .nav button[aria-current="page"] { background: transparent; color: var(--acc); }
   .nav button[aria-current="page"]::before {
     content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
@@ -714,4 +723,14 @@ button, input, select, textarea { font: inherit; }
   .ar-voce-azioni { width: 100%; }
   .ar-voce-azioni .ar-mini { flex: 1; }
   .ar-intestazione .btn { width: 100%; }
+}
+
+/* Le forme corte delle voci di menu esistono solo nella barra del
+   telefono: da qui in su vince l'etichetta per esteso.
+
+   Va dichiarata dentro una media query e non come regola semplice:
+   stando in fondo al foglio, a parita di specificita batterebbe anche
+   quella del blocco telefono, e le due voci resterebbero vuote. */
+@media (min-width: 769px) {
+  .nav .voce-corta { display: none; }
 }
