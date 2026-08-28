@@ -26,6 +26,7 @@ import { leggiGiorni, leggiRisposte, daConvocare, destinatariRiepilogo, segnaGir
   from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
+import { preparaRiepilogo } from '../lib/mail-riepilogo.mjs';
 
 const SITO = process.env.URL || 'https://monacishaolin.it';
 
@@ -105,41 +106,21 @@ async function riepiloga(data, utenti, risposte) {
     return 0;
   }
 
-  const voci = daConvocare(utenti).map(u => ({
-    id: u.idGioco,
-    stato: (risposte[chiave(u.email)] || {}).stato || null
-  })).sort((a, b) => a.id.localeCompare(b.id, 'it'));
-
-  const presenti = voci.filter(v => v.stato === 'presente').map(v => v.id);
-  const assenti  = voci.filter(v => v.stato === 'assente').map(v => v.id);
-  const muti     = voci.filter(v => !v.stato).map(v => v.id);
-
-  const elenco = n => n.length ? n.join(', ') : '—';
-  const quando = dataInLettere(data);
-
   const destinatari = destinatariRiepilogo(utenti);
   if (!destinatari.length) {
     console.log('convocazioni: riepilogo saltato, nessun destinatario');
     return 0;
   }
 
-  let partite = 0;
+  // Il contenuto si costruisce una volta sola e vale per tutti: cambia
+  // solo il destinatario. Ed e lo stesso costruttore che usa il bottone
+  // di prova, altrimenti la prova smetterebbe di provare cio che arriva.
+  const comuni = await preparaRiepilogo({ data, utenti, risposte, sito: SITO });
 
+  let partite = 0;
   for (const d of destinatari) {
     const esito = await mandaMail(modello, {
-      to_email:      d.email,
-      capitano:      d.idGioco,
-      allenamento:   quando.charAt(0).toUpperCase() + quando.slice(1),
-      data:          data,
-      n_presenti:    presenti.length,
-      n_assenti:     assenti.length,
-      n_muti:        muti.length,
-      presenti:      elenco(presenti),
-      assenti:       elenco(assenti),
-      non_risposto:  elenco(muti),
-      riassunto:     presenti.length + ' presenti · ' + assenti.length +
-                     ' assenti · ' + muti.length + ' senza risposta',
-      panel_url:     SITO + '/area-riservata?giorno=' + data
+      ...comuni, to_email: d.email, capitano: d.idGioco
     });
     if (esito.ok) partite++;
   }

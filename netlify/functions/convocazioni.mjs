@@ -37,6 +37,7 @@ import {
 } from '../lib/push.mjs';
 
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
+import { preparaRiepilogo } from '../lib/mail-riepilogo.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
 
@@ -237,31 +238,22 @@ async function riepilogoProva(req, segreto) {
   const data = dataValida(corpo.data) ? corpo.data : oggiRoma();
 
   const [utenti, risposte] = await Promise.all([tuttiGliUtenti(), leggiRisposte(data)]);
-  const voci = daConvocare(utenti).map(u => ({
-    id: u.idGioco,
-    stato: (risposte[chiave(u.email)] || {}).stato || null
-  })).sort((a, b) => a.id.localeCompare(b.id, 'it'));
-
-  const presenti = voci.filter(v => v.stato === 'presente').map(v => v.id);
-  const assenti  = voci.filter(v => v.stato === 'assente').map(v => v.id);
-  const muti     = voci.filter(v => !v.stato).map(v => v.id);
-  const elenco   = n => n.length ? n.join(', ') : '—';
-  const quando   = dataInLettere(data);
-  const titolo   = quando.charAt(0).toUpperCase() + quando.slice(1);
 
   const destinatari = destinatariRiepilogo(utenti);
+
+  /* Stesso costruttore della mail automatica delle 20:00: se il
+     contenuto lo facesse ognuno per conto suo, questa prova
+     smetterebbe di provare quello che poi arriva davvero. */
+  const comuni = await preparaRiepilogo({
+    data, utenti, risposte, sito: new URL(req.url).origin
+  });
+
   let partite = 0;
   let motivo = null;      // la prima spiegazione di EmailJS, se rifiuta
 
   for (const d of destinatari) {
     const esito = await mandaMail(modello, {
-      to_email: d.email, capitano: d.idGioco,
-      allenamento: titolo, data,
-      n_presenti: presenti.length, n_assenti: assenti.length, n_muti: muti.length,
-      presenti: elenco(presenti), assenti: elenco(assenti), non_risposto: elenco(muti),
-      riassunto: presenti.length + ' presenti · ' + assenti.length +
-                 ' assenti · ' + muti.length + ' senza risposta',
-      panel_url: new URL(req.url).origin + '/area-riservata?giorno=' + data
+      ...comuni, to_email: d.email, capitano: d.idGioco
     });
     if (esito.ok) partite++;
     else if (!motivo) motivo = (esito.stato ? esito.stato + ' — ' : '') + esito.messaggio;
