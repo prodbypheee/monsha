@@ -91,3 +91,19 @@
   to = "/index.html"
   status = 200
   force = true
+
+# Indirizzo separato per il pannello amministratore. Non e una difesa —
+# chi lo scopre trova comunque la password — ma tiene il campo password
+# fuori dalla vista dei membri e il pannello fuori dal menu.
+[[redirects]]
+  from = "/area-riservata-nimda"
+  to = "/index.html"
+  status = 200
+  force = true
+
+# Fuori dai motori di ricerca: senza, prima o poi finisce indicizzato e
+# "separato" non vuole piu dire niente.
+[[headers]]
+  for = "/area-riservata-nimda"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

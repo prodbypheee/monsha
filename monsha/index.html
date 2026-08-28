@@ -359,13 +359,13 @@
       <div class="ar-linguette" role="tablist" aria-label="Accesso">
         <button type="button" class="ar-linguetta attiva" data-modulo="accedi"
                 role="tab" aria-selected="true">Accedi</button>
-        <button type="button" class="ar-linguetta" data-modulo="registra"
+        <button type="button" class="ar-linguetta" data-modulo="registra" id="arLingRegistra"
                 role="tab" aria-selected="false">Crea un account</button>
       </div>
 
       <form class="ar-corpo" id="arFormAccedi" novalidate>
-        <h3 class="wiz-tit">Bentornato</h3>
-        <p class="wiz-sub">Le stesse due cose con cui ti sei registrato: nessuna password da ricordare.</p>
+        <h3 class="wiz-tit" id="arAccTit">Bentornato</h3>
+        <p class="wiz-sub" id="arAccSub">Le stesse due cose con cui ti sei registrato: nessuna password da ricordare.</p>
 
         <label class="wiz-eti" for="arAccEmail">Email</label>
         <input class="wiz-input" type="email" id="arAccEmail" name="email"
@@ -374,6 +374,15 @@
         <label class="wiz-eti" for="arAccId" style="margin-top:20px;">ID di gioco</label>
         <input class="wiz-input" type="text" id="arAccId" name="idGioco"
                autocomplete="off" placeholder="Il tuo ID in gioco" required>
+
+        <!-- Campo per il solo amministratore. Nascosto ai membri, che non
+             hanno password: compare all'indirizzo riservato, oppure se il
+             server risponde che per quell'account serve. -->
+        <div id="arAccChiave" hidden>
+          <label class="wiz-eti" for="arAccPassword" style="margin-top:20px;">Password amministratore</label>
+          <input class="wiz-input" type="password" id="arAccPassword" name="password"
+                 autocomplete="current-password" placeholder="La password del pannello">
+        </div>
 
         <p class="ar-esito" id="arAccEsito" role="status" aria-live="polite"></p>
 

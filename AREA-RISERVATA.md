@@ -1,10 +1,10 @@
 # Area riservata — cosa fare per accenderla
 
-Il codice è nel repo e le due variabili sono già impostate su Netlify:
+Il codice è nel repo e le variabili sono impostate su Netlify:
 l'area funziona. Questo file resta come promemoria di com'è messa
 insieme e di cosa rifare se un giorno il sito va ricostruito da zero.
 
-## 1. Le due variabili obbligatorie
+## 1. Le variabili obbligatorie
 
 Senza queste la tab risponde "Area riservata non configurata" e non fa
 entrare nessuno.
@@ -16,6 +16,7 @@ Netlify → **Site configuration → Environment variables → Add a variable**.
 |---|---|
 | `AUTH_SECRET` | una stringa casuale lunga (vedi sotto) |
 | `ADMIN_EMAIL` | `federicomar123456789@gmail.com` |
+| `ADMIN_PASSWORD_HASH` | l'impronta della password del pannello, formato `sale:impronta` (vedi §4-bis per generarla) |
 
 Per generare `AUTH_SECRET`, in un terminale:
 
@@ -72,8 +73,23 @@ pagina, così arriva anche se chi si registra chiude subito la scheda.
 
 ## 4. Come funziona, in breve
 
-**Non ci sono password.** Si entra con email e ID di gioco, la stessa
-coppia che vedi tu quando approvi.
+**I membri non hanno password.** Entrano con email e ID di gioco, la
+stessa coppia che vedi tu quando approvi.
+
+**Tu sì.** Il tuo account non è come gli altri: da lì si approva, si
+rifiuta e si elimina chiunque, e mail e ID di gioco sono cose che si
+vedono in giro. Quindi l'accesso amministratore chiede anche una
+password, e vive a un indirizzo suo:
+
+```
+monacishaolin.it/area-riservata-nimda
+```
+
+Quell'indirizzo non compare nel menù, non è linkato da nessuna pagina e
+ha `X-Robots-Tag: noindex` così non finisce su Google. Ma è comodità,
+non sicurezza: chi lo scoprisse troverebbe comunque la password. Se
+apri per sbaglio `/area-riservata` e provi a entrare col tuo account, il
+campo password compare da solo — non resti fuori.
 
 - **Registrazione** → l'account nasce con stato `in-attesa`. Non fa
   entrare nessuno finché non decidi tu.
@@ -81,27 +97,45 @@ coppia che vedi tu quando approvi.
   membro già approvato, e chi è connesso in quel momento cade fuori al
   primo caricamento: la sessione viene ricontrollata contro il database
   a ogni richiesta, non ci si fida del cookie.
-- **Accesso** → cookie firmato, `HttpOnly` e `Secure`, valido 30 giorni.
+- **Accesso** → cookie firmato, `HttpOnly` e `Secure`: 30 giorni per un
+  membro, 2 giorni per te, perché un cookie del pannello rubato vale
+  molto più di uno di un membro.
   Non è leggibile da JavaScript, quindi non è rubabile con un XSS, e
   non è falsificabile senza `AUTH_SECRET`: nessuno può promuoversi
   amministratore riscrivendoselo.
 - **Otto tentativi sbagliati** bloccano quell'account per 15 minuti.
-  Senza password questo freno conta il doppio: un ID di gioco è corto e
+  Vale sia sull'ID di gioco sia sulla password del pannello. Un ID è corto e
   indovinabile, e senza limite si proverebbe a raffica.
 - L'ID si confronta ignorando maiuscole e spazi ai bordi: nessuno si
   ricorda se il suo tag era `TizioPSN` o `tiziopsn`.
 
 ### Il limite, detto chiaro
 
-Chi conosce email e ID di gioco di un membro **già approvato** entra al
+Chi conosce email e ID di gioco di un **membro** già approvato entra al
 suo posto, e gli ID si vedono in partita. L'approvazione blocca chi non
-è nella lista, non l'impersonificazione di chi c'è. Regge finché
-nell'area non ci sono dati sensibili.
+è nella lista, non l'impersonificazione di chi c'è. Regge perché a un
+membro l'area non dà nessun potere: legge e basta.
 
-Se un giorno ce ne fossero, la strada da prendere non è rimettere le
-password ma il **collegamento usa-e-getta via mail**: l'utente scrive
-l'indirizzo, riceve un link valido una volta sola e clicca. Niente da
-ricordare per lui, e nessun segreto indovinabile.
+Il pannello amministratore, che invece il potere ce l'ha, non ha questo
+problema: lì serve la password.
+
+Se un giorno anche ai membri servisse una difesa vera, la strada non è
+rimettere le password ma il **collegamento usa-e-getta via mail**:
+l'utente scrive l'indirizzo, riceve un link valido una volta sola e
+clicca. Niente da ricordare per lui, e nessun segreto indovinabile.
+
+## 4-bis. Se perdi la password del pannello
+
+Non è recuperabile: nell'archivio c'è solo l'impronta, e l'impronta non
+si può tornare indietro. Se ne genera una nuova. In un terminale, con la
+password che vuoi al posto di `LA-TUA-NUOVA-PASSWORD`:
+
+```bash
+node -e "const c=require('crypto'),s=c.randomBytes(16).toString('hex');console.log(s+':'+c.scryptSync('LA-TUA-NUOVA-PASSWORD',s,64,{N:16384,r:8,p:1}).toString('hex'))"
+```
+
+Incolli il risultato in `ADMIN_PASSWORD_HASH` su Netlify e fai ripartire
+un deploy. Nessun account viene perso.
 
 ## 5. Dove sta il codice
 
@@ -111,7 +145,7 @@ ricordare per lui, e nessun segreto indovinabile.
 | `monsha/index.html` | il markup della tab (`#tab-area`) |
 | `monsha/app.js` | la parte in fondo, `areaRiservata()` |
 | `monsha/stile.css` | in fondo, la sezione `AREA RISERVATA` |
-| `netlify.toml` | cartella delle functions e rotta `/area-riservata` |
+| `netlify.toml` | cartella delle functions e rotte `/area-riservata` e `/area-riservata-nimda` |
 
 Gli account vivono in **Netlify Blobs** (store `area-utenti`), incluso
 nel piano gratuito. Non c'è nessun database esterno da pagare.
@@ -119,6 +153,7 @@ nel piano gratuito. Non c'è nessun database esterno da pagare.
 ## 6. Se qualcosa non va
 
 - **"Area riservata non configurata"** → manca `AUTH_SECRET`.
+- **"Accesso amministratore non configurato"** → manca `ADMIN_PASSWORD_HASH`.
 - **Ti sei registrato ma non sei admin** → `ADMIN_EMAIL` era assente o
   scritta diversamente quando ti sei registrato. Impostala, poi apri il
   pannello Netlify → Blobs → store `area-utenti` ed elimina la tua voce:
