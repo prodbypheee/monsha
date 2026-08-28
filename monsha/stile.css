@@ -615,10 +615,16 @@ button, input, select, textarea { font: inherit; }
     padding-bottom: env(safe-area-inset-bottom);
   }
   .nav button {
-    border-radius: 0; padding: 0 2px; height: 58px;
-    /* Cinque voci su 390px lasciano 78px a testa: con i valori di prima
-       "Albo d'Oro" sarebbe uscito dalla sua casella. */
-    font-size: 9.5px; letter-spacing: .04em;
+    border-radius: 0; padding: 0 4px; height: 58px;
+    /* Le cinque celle sono gia larghe uguali. A far sembrare le
+       distanze incoerenti era che "SPOGLIATOIO" riempiva la sua cella
+       da bordo a bordo mentre "HOME" ne occupava un terzo: la parola
+       piu lunga toccava le vicine e lo schermo. Con un corpo un filo
+       piu piccolo e meno spaziatura fra le lettere resta aria anche
+       intorno alla piu lunga, e la fila si legge regolare.
+       Il corpo segue la larghezza dello schermo: sui telefoni grandi
+       torna a 9.5px, su quelli piccoli scende invece di traboccare. */
+    font-size: clamp(8px, 2.3vw, 9.5px); letter-spacing: .02em;
     display: flex; align-items: center; justify-content: center;
     position: relative;
   }
