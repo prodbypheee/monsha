@@ -251,9 +251,10 @@ async function riepilogoProva(req, segreto) {
 
   const destinatari = destinatariRiepilogo(utenti);
   let partite = 0;
+  let motivo = null;      // la prima spiegazione di EmailJS, se rifiuta
 
   for (const d of destinatari) {
-    const ok = await mandaMail(modello, {
+    const esito = await mandaMail(modello, {
       to_email: d.email, capitano: d.idGioco,
       allenamento: titolo, data,
       n_presenti: presenti.length, n_assenti: assenti.length, n_muti: muti.length,
@@ -262,10 +263,14 @@ async function riepilogoProva(req, segreto) {
                  ' assenti · ' + muti.length + ' senza risposta',
       panel_url: new URL(req.url).origin + '/area-riservata?giorno=' + data
     });
-    if (ok) partite++;
+    if (esito.ok) partite++;
+    else if (!motivo) motivo = (esito.stato ? esito.stato + ' — ' : '') + esito.messaggio;
   }
 
-  return json({ ok: true, destinatari: destinatari.length, partite,
+  // Il motivo esce solo di qui, che e riservato all'amministratore, e
+  // non contiene segreti: EmailJS risponde con una frase, non con le
+  // chiavi. Ma e la frase che dice cosa aggiustare.
+  return json({ ok: true, destinatari: destinatari.length, partite, motivo,
                 indirizzi: destinatari.map(d => d.email) });
 }
 

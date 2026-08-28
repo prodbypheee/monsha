@@ -24,9 +24,21 @@ export function postaConfigurata() {
   return !!(EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY && EMAILJS_PRIVATE_KEY);
 }
 
+/* Ritorna { ok, stato, messaggio }, non un si/no.
+
+   Il motivo: EmailJS, quando rifiuta, SPIEGA perche — "API calls are
+   disabled for non-browser applications", "The Public Key is invalid",
+   "The recipients address is empty". Quella frase e la diagnosi gia
+   pronta, e ridurla a un booleano vuol dire buttarla e poi indovinare.
+   Chi chiama e libero di ignorare il risultato, e gli invii in massa
+   lo fanno; ma il bottone di prova la mostra all'amministratore, e li
+   una frase precisa vale un'ora di tentativi. */
+
 export async function mandaMail(modello, parametri) {
   const { EMAILJS_SERVICE_ID, EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY } = process.env;
-  if (!modello || !postaConfigurata()) return false;
+
+  if (!modello) return { ok: false, stato: 0, messaggio: 'manca EMAILJS_TEMPLATE_CONVOCAZIONI' };
+  if (!postaConfigurata()) return { ok: false, stato: 0, messaggio: 'chiavi EmailJS non configurate' };
 
   try {
     const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -40,10 +52,13 @@ export async function mandaMail(modello, parametri) {
         template_params: parametri
       })
     });
-    if (!r.ok) console.error('posta: EmailJS ha risposto', r.status, await r.text().catch(() => ''));
-    return r.ok;
+
+    const testo = await r.text().catch(() => '');
+    if (!r.ok) console.error('posta: EmailJS ha risposto', r.status, testo);
+    return { ok: r.ok, stato: r.status, messaggio: testo.trim().slice(0, 300) };
   } catch (e) {
-    console.error('posta: invio non riuscito', e && e.message);
-    return false;
+    const messaggio = (e && e.message) || 'connessione non riuscita';
+    console.error('posta: invio non riuscito', messaggio);
+    return { ok: false, stato: 0, messaggio };
   }
 }

@@ -1460,9 +1460,14 @@
         btn.textContent = testo;
 
         if (!r.ok) { esito(box, r.dati.errore || 'Non e partito.'); return; }
+
+        // Quando EmailJS rifiuta, dice sempre perche. Si riporta la sua
+        // frase invece di indovinare: "controlla il template e la chiave"
+        // e un consiglio, "API calls are disabled for non-browser
+        // applications" e la soluzione.
         esito(box, r.dati.partite
           ? 'Partito a ' + r.dati.partite + ' di ' + r.dati.destinatari + ': ' + r.dati.indirizzi.join(', ')
-          : 'EmailJS ha rifiutato tutti gli invii: controlla il template e la chiave privata.',
+          : 'EmailJS ha rifiutato. Risposta testuale: ' + (r.dati.motivo || 'nessuna'),
           !!r.dati.partite);
       });
 
