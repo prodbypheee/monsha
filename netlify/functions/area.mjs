@@ -50,7 +50,12 @@ import crypto from 'node:crypto';
 /* ---------- costanti ------------------------------------------ */
 
 const COOKIE        = 'ms_sessione';
-const DURATA        = 60 * 60 * 24 * 30;       // 30 giorni, per i membri
+/* Quattrocento giorni e il massimo che i browser accettano: Chrome
+   taglia da solo qualunque cookie piu lungo, quindi chiederne di piu
+   non servirebbe a niente. A rendere l'accesso davvero permanente non e
+   comunque questo numero ma il rinnovo a ogni visita, piu sotto: chi
+   apre il sito anche solo una volta ogni tanto non lo rifa mai. */
+const DURATA        = 60 * 60 * 24 * 400;
 const DURATA_ADMIN  = 60 * 60 * 24 * 2;        // 2 giorni: il pannello vale di piu
 const PIATTAFORME   = ['PlayStation', 'Xbox', 'PC'];
 const MAX_TENTATIVI = 8;
@@ -371,7 +376,15 @@ async function sessione(req, segreto) {
   const utente = await leggiUtente(dati.email);
   if (!utente || utente.stato !== 'approvato')
     return json({ utente: null }, 200, { 'set-cookie': cookieSessione('', 0) });
-  return json({ utente: pubblico(utente) });
+
+  // Il conto riparte da qui. E questo, non la durata scritta sopra, a
+  // rendere l'accesso permanente: un membro che apre il sito ogni tanto
+  // non rivede mai il modulo. Una scadenza fissa invece scatta anche a
+  // chi entra tutti i giorni, ed e esattamente il fastidio da togliere.
+  const durata = utente.ruolo === 'admin' ? DURATA_ADMIN : DURATA;
+  const gettone = creaGettone({ email: utente.email, ruolo: utente.ruolo }, segreto, durata);
+  return json({ utente: pubblico(utente) }, 200,
+    { 'set-cookie': cookieSessione(gettone, durata) });
 }
 
 async function esigiAdmin(req, segreto) {
