@@ -34,6 +34,11 @@
 
 * { box-sizing: border-box; }
 
+/* L'attributo hidden nasconde con display:none della UA, che qualunque
+   display dichiarato dal foglio sovrascrive senza preavviso: e cosi che
+   il pulsante Invia restava visibile a ogni passo del modulo. */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; }
 
 body {
@@ -96,11 +101,19 @@ button, input, select, textarea { font: inherit; }
   background: var(--acc); color: #140801; white-space: nowrap;
   display: flex; align-items: center;
 }
-.ticker-track { display: flex; width: 200%; animation: msMarquee 40s linear infinite; will-change: transform; }
+/* La larghezza la detta il contenuto, non una percentuale fissa.
+   Con width:200% sulla pista e 50% su ogni meta, ogni meta valeva
+   esattamente uno schermo: il testo, che e molto piu lungo e non puo
+   andare a capo, traboccava e si sovrapponeva alla meta successiva.
+   Con max-content la pista misura le due meta reali, e il -50%
+   dell'animazione corrisponde a una meta esatta: il ciclo resta continuo. */
+.ticker-track { display: flex; width: max-content; animation: msMarquee 40s linear infinite; will-change: transform; }
 .ticker-half {
-  display: flex; align-items: center; gap: 34px; width: 50%; padding-right: 34px;
+  display: flex; align-items: center; gap: 34px; flex: 0 0 auto; padding-right: 34px;
   font-size: 11.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
 }
+/* senza questo le voci si comprimerebbero per stare nel flex */
+.ticker-half > span { flex: 0 0 auto; }
 .ticker-half span.sep { opacity: .45; }
 
 /* ---------- intestazione ---------- */
