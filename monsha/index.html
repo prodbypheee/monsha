@@ -2,7 +2,14 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Senza viewport-fit=cover di proposito. Con "cover" iOS disegna la
+       pagina fin sotto l'orologio e la batteria quando il sito e stato
+       aggiunto alla schermata Home, e li sotto finiva la riga delle tab:
+       si potevano toccare ma non si leggevano. Senza, lo spazio della
+       barra di stato lo riserva il sistema e non c'e piu niente da
+       compensare. Si perde il bordo a bordo in orizzontale sui telefoni
+       col notch: uno scambio che conviene. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Monaci Shaolin — eSports Club</title>
 
   <!-- Anteprime di condivisione: valori della home. Sugli altri percorsi
