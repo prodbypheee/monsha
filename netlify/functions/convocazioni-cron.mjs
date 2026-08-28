@@ -126,7 +126,7 @@ async function riepiloga(data, utenti, risposte) {
   let partite = 0;
 
   for (const d of destinatari) {
-    const ok = await mandaMail(modello, {
+    const esito = await mandaMail(modello, {
       to_email:      d.email,
       capitano:      d.idGioco,
       allenamento:   quando.charAt(0).toUpperCase() + quando.slice(1),
@@ -141,7 +141,7 @@ async function riepiloga(data, utenti, risposte) {
                      ' assenti · ' + muti.length + ' senza risposta',
       panel_url:     SITO + '/area-riservata?giorno=' + data
     });
-    if (ok) partite++;
+    if (esito.ok) partite++;
   }
   return partite;
 }
