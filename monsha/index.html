@@ -560,7 +560,19 @@
             <p class="ar-esito" id="pushEsito" role="status" aria-live="polite"></p>
             <div class="ar-azioni">
               <button type="button" class="btn btn-acc" id="pushAccendi">Attiva le notifiche</button>
+              <button type="button" class="btn" id="pushProva" hidden>Mandami una prova adesso</button>
               <button type="button" class="btn" id="pushSpegni" hidden>Spegni su questo dispositivo</button>
+            </div>
+
+            <!-- Diagnosi. Compare solo all'amministratore: a un membro non
+                 serve sapere se l'orologio del server ha girato. -->
+            <div class="diagnosi" id="convDiagnosi" hidden>
+              <div class="diagnosi-tit">Come sta il sistema</div>
+              <dl id="convDiagnosiVoci"></dl>
+              <div class="ar-azioni">
+                <button type="button" class="btn" id="riepilogoProva">Mandami il riepilogo adesso</button>
+              </div>
+              <p class="ar-esito" id="riepilogoEsito" role="status" aria-live="polite"></p>
             </div>
           </div>
         </div>
