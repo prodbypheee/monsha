@@ -273,12 +273,78 @@ button, input, select, textarea { font: inherit; }
 .apertura { margin: 0 0 26px; font-size: clamp(18px,2.1vw,27px); line-height: 1.42; letter-spacing: -.015em; color: var(--txt); }
 .apertura strong { font-weight: 600; color: var(--acc); }
 
-.tempo { display: flex; flex-direction: column; margin-top: 34px; }
-.tempo-voce { display: grid; grid-template-columns: 78px 1fr; gap: clamp(14px,2vw,28px); padding: 24px 0; border-top: 1px solid var(--line); }
-.tempo-anno { font-size: 13px; font-weight: 600; letter-spacing: .1em; color: var(--acc); }
-.tempo-voce h3 { margin: 0 0 7px; font-size: 16px; font-weight: 600; }
-.tempo-voce p { margin: 0; font-size: 14.5px; line-height: 1.62; color: var(--txt-3); }
-.tempo-chiusa { padding: 24px 0 0; border-top: 1px solid var(--line); }
+/* ---------- la storia: linea temporale ----------
+   I punti degli anni su una riga, e sotto la tappa scelta con la sua
+   foto e il suo testo. Su telefono e la stessa cosa: la riga dei punti
+   ci sta anche a 320px con tre anni, e se un giorno diventassero sei
+   scorre di lato invece di andare a capo. */
+
+.storia { margin-top: 8px; }
+
+.storia-linea {
+  position: relative;
+  display: flex; justify-content: space-between;
+  padding: 26px 0 30px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.storia-linea::-webkit-scrollbar { display: none; }
+/* La riga che unisce i punti: sta dietro e non arriva ai bordi, si
+   ferma dove stanno il primo e l'ultimo punto. */
+.storia-linea::before {
+  content: ""; position: absolute; left: 8%; right: 8%; top: 39px;
+  height: 1px; background: var(--line-2);
+}
+
+.storia-punto {
+  position: relative; z-index: 1; flex: 1 0 auto; min-width: 84px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  background: none; border: 0; padding: 0 6px; cursor: pointer;
+  color: var(--txt-4);
+  font-size: 13px; font-weight: 600; letter-spacing: .08em;
+  transition: color .3s;
+}
+.storia-punto::before {
+  content: ""; width: 13px; height: 13px; border-radius: 50%;
+  border: 1px solid var(--line-2); background: var(--bg);
+  transition: border-color .3s, background .3s, box-shadow .3s, transform .3s;
+}
+.storia-punto:hover { color: var(--txt-2); }
+.storia-punto:hover::before { border-color: rgba(236,233,228,.45); }
+.storia-punto[aria-selected="true"] { color: var(--acc); }
+.storia-punto[aria-selected="true"]::before {
+  border-color: var(--acc); background: var(--acc);
+  box-shadow: 0 0 0 5px var(--acc-soft);
+  transform: scale(1.12);
+}
+
+/* Finche JavaScript non ha costruito i punti restano visibili tutte
+   le tappe: senza, chi ha lo script bloccato non leggerebbe niente. */
+.storia-tappe.pronte .storia-tappa { display: none; }
+.storia-tappe.pronte .storia-tappa.attiva { display: block; animation: msTappa .45s var(--ease); }
+.storia-tappa + .storia-tappa { margin-top: 34px; }
+
+@keyframes msTappa {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.storia-foto {
+  margin: 0; border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden; background: var(--bg-2);
+}
+.storia-foto img {
+  width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block;
+  filter: grayscale(.5) contrast(1.06) brightness(.82);
+  transition: filter .5s;
+}
+.storia-tappa.attiva .storia-foto img { filter: grayscale(.25) contrast(1.04) brightness(.9); }
+
+.storia-testo { margin-top: 22px; }
+.storia-anno { font-size: 12px; font-weight: 600; letter-spacing: .18em; color: var(--acc); }
+.storia-testo h3 { margin: 10px 0 8px; font-size: clamp(19px, 2.4vw, 24px); font-weight: 600; }
+.storia-testo p { margin: 0; font-size: 15px; line-height: 1.64; color: var(--txt-3); }
+
+.tempo-chiusa { margin-top: 34px; padding: 24px 0 0; border-top: 1px solid var(--line); }
 .tempo-chiusa p {
   margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-style: italic;
   font-size: clamp(20px,2.5vw,30px); line-height: 1.35; color: var(--txt);
@@ -515,6 +581,14 @@ button, input, select, textarea { font: inherit; }
 @media (max-width: 900px) {
   .hero-in { grid-template-columns: 1fr; gap: 34px; padding-top: 108px; }
   .codice { border-left: 0; border-top: 1px solid rgba(236,233,228,.12); padding-left: 0; padding-top: 24px; }
+
+  /* "Chi siamo" era a due colonne a QUALUNQUE larghezza: su un
+     telefono da 375px diventavano due colonne da 169, e la storia con
+     la sua foto ci stava dentro come un francobollo. Su schermo
+     stretto si impilano, e la colonna del titolo smette di stare
+     appiccicata in alto: appiccicata a cosa, se e sola in fila. */
+  .chisiamo { grid-template-columns: 1fr; gap: 34px; }
+  .chisiamo-col { position: static; }
 }
 
 @media (max-width: 768px) {
