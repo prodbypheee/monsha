@@ -37,7 +37,11 @@ import {
 } from '../lib/push.mjs';
 
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
-import { preparaRiepilogo } from '../lib/mail-riepilogo.mjs';
+import { preparaRiepilogo, leggiRosa } from '../lib/mail-riepilogo.mjs';
+
+import {
+  CASELLE, leggiFormazione, salvaFormazione, verificaSchieramento
+} from '../lib/formazione.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
 
@@ -150,6 +154,73 @@ async function rispondi(req, segreto) {
 
   await salvaRisposta(data, g.utente, scelta);
   return json({ ok: true, data, stato: scelta });
+}
+
+/* ---------- formazione ----------------------------------------
+   Una per giornata. La compila chi puo convocare, la leggono tutti:
+   e la stessa divisione della tab convocazioni, e per la stessa
+   ragione — la squadra la schiera chi la allena, non chi passa. */
+
+async function formazione(req, segreto, indirizzo) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+
+  const data = String(indirizzo.searchParams.get('data') || '');
+  if (!dataValida(data)) return errore('Data non valida.');
+
+  const [salvata, risposte, utenti] = await Promise.all([
+    leggiFormazione(data), leggiRisposte(data), tuttiGliUtenti()
+  ]);
+
+  // Chi c'e davvero quel giorno: sono gli unici schierabili, e il
+  // sito non deve nemmeno proporre gli altri.
+  const presenti = daConvocare(utenti)
+    .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
+    .map(u => u.idGioco)
+    .sort((a, b) => a.localeCompare(b, 'it'));
+
+  return json({
+    data,
+    modulo: salvata.modulo,
+    caselle: CASELLE,
+    schieramento: salvata.schieramento,
+    aggiornato: salvata.aggiornato,
+    da: salvata.da,
+    presenti,
+    modificabile: puoConvocare(g.utente)
+  });
+}
+
+async function salvaLaFormazione(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono schierare la squadra.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+  const data = String(corpo.data || '');
+  if (!dataValida(data)) return errore('Data non valida.');
+
+  const [risposte, utenti] = await Promise.all([leggiRisposte(data), tuttiGliUtenti()]);
+  const presenti = daConvocare(utenti)
+    .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
+    .map(u => u.idGioco);
+
+  /* Il reparto si legge dalla rosa pubblicata sul sito, la stessa
+     che vede il browser. Se la rosa non si riesce a leggere non si
+     blocca il salvataggio: si perde il controllo sul reparto, che e
+     una regola di calcio, non una difesa. */
+  let repartoDi = null;
+  try {
+    const rosa = await leggiRosa(new URL(req.url).origin);
+    repartoDi = id => (rosa[id] || {}).reparto || null;
+  } catch { /* si prosegue senza */ }
+
+  const esito = verificaSchieramento(corpo.schieramento, presenti, repartoDi);
+  if (esito.errore) return errore(esito.errore, 409);
+
+  await salvaFormazione(data, esito.schieramento, g.utente.idGioco);
+  return json({ ok: true, data, schieramento: esito.schieramento });
 }
 
 /* ---------- notifiche ----------------------------------------- */
@@ -276,6 +347,8 @@ export default async (req) => {
   try {
     if (req.method === 'GET'  && azione === 'stato')        return await stato(req, segreto);
     if (req.method === 'GET'  && azione === 'giorno')       return await giorno(req, segreto, indirizzo);
+    if (req.method === 'GET'  && azione === 'formazione')   return await formazione(req, segreto, indirizzo);
+    if (req.method === 'POST' && azione === 'formazione')   return await salvaLaFormazione(req, segreto);
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);

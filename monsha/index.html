@@ -489,6 +489,8 @@
       <div class="ar-sotto" role="tablist" aria-label="Sezioni dell'area riservata">
         <button type="button" class="ar-sotto-voce attiva" data-pannello="convocazioni"
                 role="tab" aria-selected="true">Convocazioni</button>
+        <button type="button" class="ar-sotto-voce" data-pannello="formazione"
+                role="tab" aria-selected="false">Formazione</button>
         <button type="button" class="ar-sotto-voce" data-pannello="profilo"
                 role="tab" aria-selected="false">Profilo</button>
         <button type="button" class="ar-sotto-voce" data-pannello="gestione" id="arVoceGestione"
@@ -579,6 +581,65 @@
           </div>
         </div>
       </section>
+
+      <!-- ===================== FORMAZIONE ===================== -->
+      <section id="pan-formazione" hidden>
+        <div class="ar-scheda">
+          <div class="ar-corpo">
+
+            <div class="conv-testa">
+              <div>
+                <div class="eyebrow" id="formEtichetta">Formazione</div>
+                <h3 class="wiz-tit" id="formQuando" style="margin-top:14px;">—</h3>
+              </div>
+              <span class="conv-stato" id="formModulo">3-4-1-2</span>
+            </div>
+
+            <div class="conv-giorni" id="formGiorni"></div>
+
+            <p class="wiz-sub" id="formNota" style="margin-top:18px;">In campo va solo chi ha segnato presente.</p>
+
+            <!-- Il campo. Le undici caselle le posiziona app.js dalle
+                 stesse coordinate che usa il server: una sola verita. -->
+            <div class="campo" id="formCampo">
+              <svg class="campo-linee" viewBox="0 0 100 150" preserveAspectRatio="none" aria-hidden="true">
+                <rect x="1" y="1" width="98" height="148" rx="1"/>
+                <line x1="1" y1="75" x2="99" y2="75"/>
+                <circle cx="50" cy="75" r="13"/>
+                <circle cx="50" cy="75" r="1.1" class="pieno"/>
+                <rect x="24" y="1"   width="52" height="20"/>
+                <rect x="38" y="1"   width="24" height="8"/>
+                <rect x="24" y="129" width="52" height="20"/>
+                <rect x="38" y="141" width="24" height="8"/>
+              </svg>
+              <div class="campo-caselle" id="formCaselle"></div>
+            </div>
+
+            <p class="ar-esito" id="formEsito" role="status" aria-live="polite"></p>
+
+            <div class="ar-azioni" id="formAzioni" hidden>
+              <button type="button" class="btn btn-acc" id="formSalva">Salva la formazione</button>
+              <button type="button" class="btn" id="formSvuota">Svuota il campo</button>
+            </div>
+
+            <div class="form-firma" id="formFirma" hidden></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scelta del giocatore per una casella. Foglio dal basso su
+           telefono, come il dettaglio della rosa. -->
+      <div class="foglio-bg" id="sceltaBg"></div>
+      <aside class="foglio foglio-scelta" id="sceltaFoglio" role="dialog" aria-modal="true" aria-labelledby="sceltaTit">
+        <div class="foglio-maniglia"></div>
+        <button type="button" class="foglio-chiudi" id="sceltaChiudi" aria-label="Chiudi">✕</button>
+        <div class="foglio-corpo">
+          <div class="eyebrow" id="sceltaRuolo">Ruolo</div>
+          <h3 id="sceltaTit" style="margin:14px 0 4px;">Chi ci metti?</h3>
+          <p class="ar-aiuto" id="sceltaAiuto" style="margin-bottom:18px;"></p>
+          <div class="conv-griglia" id="sceltaElenco"></div>
+        </div>
+      </aside>
 
       <!-- ===================== PROFILO ===================== -->
       <section id="pan-profilo" hidden>

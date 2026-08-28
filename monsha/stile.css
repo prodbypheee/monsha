@@ -1009,3 +1009,113 @@ button, input, select, textarea { font: inherit; }
   font-size: 10.5px; font-weight: 600; letter-spacing: .18em;
   text-transform: uppercase; color: var(--acc); margin-bottom: 12px;
 }
+
+/* =============================================================
+   FORMAZIONE
+   Un campo visto dall'alto: la nostra porta in basso, quella
+   avversaria in alto. Le linee sono un SVG stirato invece che
+   un'immagine, cosi restano nitide a ogni dimensione, pesano
+   niente e si tingono col colore del tema.
+   ============================================================= */
+
+.campo {
+  position: relative;
+  margin-top: 24px;
+  aspect-ratio: 100 / 150;
+  max-width: 520px;
+  border-radius: var(--r-md);
+  /* Niente overflow:hidden: il nome del portiere sta sotto il suo
+     cerchio, che e in fondo al campo, e verrebbe tagliato dal bordo.
+     Gli angoli tondi non ne soffrono — il border-radius ritaglia gia
+     lo sfondo per conto suo, l'overflow serve solo per i figli. */
+  margin-bottom: 26px;
+  border: 1px solid var(--line);
+  /* Verde spentissimo, non un prato: il sito e nero e un campo
+     acceso qui dentro sembrerebbe incollato da un altro sito. */
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(90,140,95,.16), transparent 62%),
+    linear-gradient(180deg, #10160f 0%, #0c110c 55%, #0b0d0b 100%);
+}
+.campo-linee {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+}
+.campo-linee rect, .campo-linee circle, .campo-linee line {
+  fill: none; stroke: rgba(236,233,228,.16); stroke-width: .5;
+  vector-effect: non-scaling-stroke;
+}
+.campo-linee .pieno { fill: rgba(236,233,228,.22); stroke: none; }
+
+.campo-caselle { position: absolute; inset: 0; }
+
+/* La casella E il cerchio, e il nome ci sta appeso sotto in assoluto.
+   Prima il nome faceva parte del riquadro: le caselle piene erano piu
+   alte di quelle vuote e, essendo centrate sul riquadro, il cerchio
+   scivolava in alto di mezza etichetta. Bastava a far toccare il
+   portiere col centrale. Cosi invece il cerchio sta esattamente dove
+   dicono le coordinate, pieno o vuoto che sia. */
+.casella {
+  position: absolute; transform: translate(-50%, -50%);
+  /* 18 e non 22: le due caselle piu vicine, l'esterno e il centrale
+     di centrocampo, hanno i centri a 26 punti di distanza. A 22 si
+     sfioravano; a 18 resta aria fra i cerchi anche sullo schermo
+     stretto, dove il campo e largo poco piu di trecento pixel. */
+  width: 18%; aspect-ratio: 1;
+  padding: 0; border: 0; background: none; color: inherit; cursor: default;
+}
+.casella.tocca { cursor: pointer; }
+
+.casella-cerchio {
+  position: relative; width: 100%; height: 100%;
+  border-radius: 50%; overflow: hidden;
+  border: 1px solid var(--line-2); background: rgba(11,11,13,.72);
+  display: grid; place-items: center;
+  transition: border-color .25s, transform .12s;
+}
+.casella-cerchio i {
+  position: absolute; inset: 0; display: block;
+  background-size: cover; background-position: center 20%;
+}
+.casella.piena .casella-cerchio { border-color: var(--acc); }
+.casella.tocca:active .casella-cerchio { transform: scale(.94); }
+.casella.tocca:hover .casella-cerchio { border-color: rgba(236,233,228,.5); }
+
+.casella-sigla {
+  font-size: clamp(8.5px, 2.4vw, 11px); font-weight: 600;
+  letter-spacing: .1em; color: var(--txt-4);
+}
+.casella.piena .casella-sigla { display: none; }
+
+.casella-nome {
+  position: absolute; top: calc(100% + 5px); left: 50%;
+  transform: translateX(-50%);
+  width: 168%;
+  font-size: clamp(8px, 2.2vw, 10px); line-height: 1.2;
+  text-align: center; color: var(--txt-2); word-break: break-word;
+}
+.casella-nome b { display: block; font-size: 9px; color: var(--txt-5); font-weight: 600; letter-spacing: .08em; }
+
+.form-firma {
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--txt-4);
+}
+
+/* Il foglio di scelta riusa quello del dettaglio rosa: stessa
+   gestualita, un pannello che sale dal basso. Su schermo largo
+   diventa una finestra centrata. */
+.foglio-scelta { max-height: 76vh; overflow-y: auto; }
+.foglio-scelta .foglio-corpo { padding-top: 8px; }
+.scelta-vuoto { font-size: 13px; color: var(--txt-4); line-height: 1.6; }
+
+@media (min-width: 769px) {
+  .foglio-scelta {
+    position: fixed; left: 50%; top: 50%; right: auto; bottom: auto;
+    transform: translate(-50%, -46%) scale(.98);
+    width: min(560px, 92vw); border-radius: var(--r-md);
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s var(--ease), transform .3s var(--ease);
+  }
+  .foglio-scelta.aperto {
+    opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1);
+  }
+  .foglio-scelta .foglio-maniglia { display: none; }
+}

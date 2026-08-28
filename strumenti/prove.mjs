@@ -17,6 +17,7 @@ import {
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo }
   from '../netlify/lib/convocazioni.mjs';
+import { CASELLE, verificaSchieramento } from '../netlify/lib/formazione.mjs';
 
 let fatte = 0, rotte = 0;
 function prova(nome, fn) {
@@ -225,6 +226,94 @@ prova('una variabile piena di spazi non azzera i destinatari', () => {
   process.env.EMAIL_RIEPILOGO = '   ';
   assert.equal(destinatariRiepilogo(SQUADRA).length, 2);   // torna agli incarichi
   delete process.env.EMAIL_RIEPILOGO;
+});
+
+console.log('\nFormazione');
+
+const REPARTI = { pippo: 'portieri', dino: 'difensori', mimmo: 'centrocampisti',
+                  bomber: 'attaccanti', icona: 'icons' };
+const repartoDi = id => REPARTI[id] || null;
+const PRESENTI = ['Pippo', 'Dino', 'Mimmo', 'Bomber', 'Icona', 'Sconosciuto'];
+
+prova('uno schieramento giusto passa', () => {
+  const r = verificaSchieramento(
+    { por: 'Pippo', dcc: 'Dino', cdcs: 'Mimmo', atts: 'Bomber' }, PRESENTI, repartoDi);
+  assert.equal(r.errore, undefined);
+  assert.deepEqual(r.schieramento, { por: 'Pippo', dcc: 'Dino', cdcs: 'Mimmo', atts: 'Bomber' });
+});
+
+prova('chi non ha segnato presente non entra', () => {
+  assert.match(verificaSchieramento({ por: 'Estraneo' }, PRESENTI, repartoDi).errore, /presente/);
+});
+
+prova('lo stesso giocatore non puo stare in due caselle', () => {
+  assert.match(verificaSchieramento({ dcs: 'Dino', dcd: 'Dino' }, PRESENTI, repartoDi).errore,
+    /due caselle/);
+});
+
+prova('un attaccante non puo fare il difensore', () => {
+  assert.match(verificaSchieramento({ dcc: 'Bomber' }, PRESENTI, repartoDi).errore,
+    /reparto difensori/);
+});
+
+prova('un difensore non puo fare il portiere', () => {
+  assert.match(verificaSchieramento({ por: 'Dino' }, PRESENTI, repartoDi).errore,
+    /reparto portieri/);
+});
+
+prova('esterni e trequartista vogliono centrocampisti', () => {
+  ['es', 'ed', 'coc', 'cdcs', 'cdcd'].forEach(c => {
+    assert.equal(verificaSchieramento({ [c]: 'Mimmo' }, PRESENTI, repartoDi).errore, undefined);
+    assert.match(verificaSchieramento({ [c]: 'Bomber' }, PRESENTI, repartoDi).errore, /centrocampisti/);
+  });
+});
+
+prova('gli Icons restano fuori da ogni casella', () => {
+  CASELLE.forEach(c =>
+    assert.match(verificaSchieramento({ [c.id]: 'Icona' }, PRESENTI, repartoDi).errore, /reparto/));
+});
+
+prova('chi non e in rosa si puo mettere ovunque', () => {
+  // Senza reparto non si puo decidere: meglio schierabile che escluso.
+  assert.equal(verificaSchieramento({ por: 'Sconosciuto' }, PRESENTI, repartoDi).errore, undefined);
+  assert.equal(verificaSchieramento({ attd: 'Sconosciuto' }, PRESENTI, repartoDi).errore, undefined);
+});
+
+prova('una casella inventata viene rifiutata', () => {
+  assert.match(verificaSchieramento({ libero: 'Dino' }, PRESENTI, repartoDi).errore,
+    /Casella sconosciuta/);
+});
+
+prova('le caselle vuote restano vuote', () => {
+  const r = verificaSchieramento({ por: 'Pippo', dcs: null, dcd: '' }, PRESENTI, repartoDi);
+  assert.deepEqual(r.schieramento, { por: 'Pippo' });
+});
+
+prova('maiuscole e spazi non contano nel confronto', () => {
+  // Si salva l'ID come lo conosce l'archivio, non come e stato scritto.
+  assert.equal(verificaSchieramento({ por: '  pIppO ' }, PRESENTI, repartoDi).schieramento.por, 'Pippo');
+});
+
+prova('roba che non e un oggetto viene rifiutata', () => {
+  [null, 'ciao', 42, ['Pippo']].forEach(v =>
+    assert.match(verificaSchieramento(v, PRESENTI, repartoDi).errore, /non valida/));
+});
+
+prova('il 3-4-1-2 ha undici caselle e nessuna doppia', () => {
+  assert.equal(CASELLE.length, 11);
+  assert.equal(new Set(CASELLE.map(c => c.id)).size, 11);
+  const per = r => CASELLE.filter(c => c.reparto === r).length;
+  assert.equal(per('portieri'), 1);
+  assert.equal(per('difensori'), 3);
+  assert.equal(per('centrocampisti'), 5);   // due centrali, due esterni, il trequartista
+  assert.equal(per('attaccanti'), 2);
+});
+
+prova('le caselle stanno dentro il campo', () => {
+  CASELLE.forEach(c => {
+    assert.ok(c.x >= 5 && c.x <= 95, c.id + ' fuori in orizzontale');
+    assert.ok(c.y >= 5 && c.y <= 95, c.id + ' fuori in verticale');
+  });
 });
 
 console.log('\n' + fatte + ' passate, ' + rotte + ' rotte\n');
