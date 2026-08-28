@@ -41,9 +41,24 @@ template**, oltre a quello delle richieste di accesso. Nel campo
 destinatario metti `{{to_email}}`: i destinatari sono più d'uno e
 cambiano, quindi non può essere un indirizzo fisso.
 
+**Nel corpo del messaggio** metti una riga sola, con **tre** graffe:
+
+```
+{{{corpo}}}
+```
+
+Tre e non due: due graffe scrivono l'HTML come testo, tre lo inseriscono
+davvero. Tutta la grafica — testata, numeri, facce dei giocatori, bottone
+— la costruisce il server in `netlify/lib/mail-riepilogo.mjs`, quindi si
+modifica nel codice e non a mano dentro un campo di EmailJS.
+
+Se lasci il vecchio corpo a testo non si rompe niente: le variabili qui
+sotto ci sono ancora e la mail arriva, solo senza grafica.
+
 Variabili disponibili nel template:
 
 ```
+{{{corpo}}}        la mail intera, gia impaginata (TRE graffe)
 {{to_email}}       a chi sta arrivando (mettila nel campo "To")
 {{capitano}}       l'ID di gioco di chi la riceve
 {{allenamento}}    "Giovedì 4 settembre"
@@ -121,7 +136,7 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
    amministrazione e amministratore.
 
-> **C'è anche una fascia di prova temporanea alle 17:30.** A differenza
+> **C'è anche una fascia di prova temporanea alle 21:10.** A differenza
 > delle altre arriva a *tutti*, anche a chi ha già segnato presente o
 > assente: serve a verificare che le notifiche partano, non a
 > raccogliere presenze. I bottoni funzionano comunque, quindi una
@@ -133,7 +148,7 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
 > solo a questo.
 
 Gli orari sono ora italiana e restano giusti anche col cambio dell'ora
-legale: la funzione programmata gira ogni ora tonda e controlla che ore
+legale: la funzione programmata gira a intervalli fissi e ogni volta guarda che ore
 sono a Roma, invece di fidarsi di un orario fisso in UTC che
 sbaglierebbe di un'ora per metà anno.
 
@@ -166,8 +181,10 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/convocazioni.mjs` | giorni e risposte nell'archivio |
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
+| `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
 | `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00, 17:00, 20:00 |
+| `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |
 | `monsha/index.html` | il markup, dentro `#arDentro` |

@@ -6,7 +6,8 @@
   "scripts": {
     "prove": "node strumenti/prove.mjs",
     "icone": "node strumenti/icone.mjs",
-    "chiavi-push": "web-push generate-vapid-keys"
+    "chiavi-push": "web-push generate-vapid-keys",
+    "anteprima-mail": "node strumenti/anteprima-mail.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.2",
