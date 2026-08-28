@@ -1426,6 +1426,27 @@
         riga('Tuoi dispositivi iscritti', String(dispositivi), dispositivi > 0);
       }
 
+      /* Rilegge solo la diagnosi, senza rifare tutta la schermata: si
+         preme mentre si aspetta un giro dell'orologio, e ridisegnare
+         calendario ed elenchi a ogni tocco sarebbe uno sfarfallio. */
+      $('diagnosiAggiorna').addEventListener('click', async () => {
+        const btn = $('diagnosiAggiorna');
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Leggo…';
+
+        const r = await apiConv('stato');
+        if (r.ok) {
+          diagnosi = r.dati.diagnosi || null;
+          dispositivi = (r.dati.push && r.dati.push.attive) || 0;
+          giorni = r.dati.giorni;
+          mostraDiagnosi();
+        }
+
+        btn.disabled = false;
+        btn.textContent = testo;
+      });
+
       $('riepilogoProva').addEventListener('click', async () => {
         const btn = $('riepilogoProva'), box = $('riepilogoEsito');
         btn.disabled = true;

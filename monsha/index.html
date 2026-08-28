@@ -567,7 +567,13 @@
             <!-- Diagnosi. Compare solo all'amministratore: a un membro non
                  serve sapere se l'orologio del server ha girato. -->
             <div class="diagnosi" id="convDiagnosi" hidden>
-              <div class="diagnosi-tit">Come sta il sistema</div>
+              <div class="diagnosi-testa">
+                <div class="diagnosi-tit">Come sta il sistema</div>
+                <!-- Senza questo il riquadro e una fotografia scattata
+                     all'apertura dell'area, e chi lo guarda mezz'ora dopo
+                     legge dati vecchi credendoli freschi. -->
+                <button type="button" class="ar-mini" id="diagnosiAggiorna">Aggiorna</button>
+              </div>
               <dl id="convDiagnosiVoci"></dl>
               <div class="ar-azioni">
                 <button type="button" class="btn" id="riepilogoProva">Mandami il riepilogo adesso</button>
