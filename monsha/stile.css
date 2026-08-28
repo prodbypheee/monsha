@@ -1119,3 +1119,21 @@ button, input, select, textarea { font: inherit; }
   }
   .foglio-scelta .foglio-maniglia { display: none; }
 }
+
+/* ---------- la panchina ----------
+   Sotto il campo: chi c'e ma non e ancora schierato. Piu piccola dei
+   ritratti in campo, perche e una scorta e non una scelta gia fatta. */
+.panchina {
+  margin-top: 4px; padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.panchina-tit {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--txt-4);
+}
+.panchina .conv-griglia {
+  margin-top: 0;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+}
+.panchina .conv-avatar { max-width: 58px; }
