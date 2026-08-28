@@ -1022,3 +1022,9 @@ button, input, select, textarea { font: inherit; }
 @media (max-width: 420px) {
   .diagnosi dl > div { grid-template-columns: 1fr; gap: 3px; }
 }
+
+.diagnosi-testa {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; margin-bottom: 14px;
+}
+.diagnosi-testa .diagnosi-tit { margin-bottom: 0; }

@@ -44,7 +44,7 @@ const SITO = process.env.URL || 'https://monacishaolin.it';
 
    Quando la prova e finita si cancella questa costante: il resto del
    file la usa nei punti segnati con PROVA. */
-const PROVA = { ora: 21, minuto: 0 };
+const PROVA = { ora: 21, minuto: 10 };
 
 /* Segno di spunta contro il doppio invio. Netlify puo rieseguire una
    funzione programmata se la prima volta e andata storta a meta, e
