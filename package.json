@@ -2,8 +2,14 @@
   "name": "monacishaolin",
   "private": true,
   "type": "module",
-  "description": "Sito Monaci Shaolin. Le pagine sono statiche: questo file esiste solo per le dipendenze delle Netlify Functions (area riservata). Niente script build, altrimenti Netlify proverebbe a eseguirlo.",
+  "description": "Sito Monaci Shaolin. Le pagine sono statiche: questo file esiste per le dipendenze delle Netlify Functions (area riservata, convocazioni). Niente script chiamato build, altrimenti Netlify proverebbe a eseguirlo.",
+  "scripts": {
+    "prove": "node strumenti/prove.mjs",
+    "icone": "node strumenti/icone.mjs",
+    "chiavi-push": "web-push generate-vapid-keys"
+  },
   "dependencies": {
-    "@netlify/blobs": "^11.0.2"
+    "@netlify/blobs": "^11.0.2",
+    "web-push": "^3.6.7"
   }
 }

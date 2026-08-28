@@ -23,6 +23,16 @@
   <meta name="theme-color" content="#0b0b0d">
 
   <link rel="icon" href="./immagini/favico.ico">
+
+  <!-- Aggiunta alla schermata Home. Su iPhone non e un vezzo: Safari
+       consegna le notifiche solo a un sito installato in Home, quindi
+       senza manifest e icona i membri con iPhone non riceverebbero
+       nessuna convocazione. -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./immagini/icona-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Monaci">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -443,54 +453,155 @@
 
     <!-- ---------- MEMBRO CONNESSO ---------- -->
     <div id="arDentro" hidden>
-      <div class="ar-scheda">
-        <div class="ar-corpo">
-          <div class="ar-intestazione">
-            <div>
-              <div class="eyebrow">Accesso effettuato</div>
-              <h3 class="wiz-tit" style="margin-top:14px;">Benvenuto nel tempio</h3>
-            </div>
-            <button type="button" class="btn" id="arEsci">Esci</button>
-          </div>
 
-          <p class="wiz-sub" style="margin-top:18px;">Questa è la parte del sito visibile solo ai membri approvati. I contenuti arrivano presto.</p>
-
-          <dl class="ar-profilo">
-            <div><dt>Email</dt><dd id="arProfEmail">—</dd></div>
-            <div><dt>Piattaforma</dt><dd id="arProfPiatt">—</dd></div>
-            <div><dt>ID di gioco</dt><dd id="arProfId">—</dd></div>
-            <div><dt>Ruolo</dt><dd id="arProfRuolo">—</dd></div>
-          </dl>
+      <!-- Scheda di bentornato: la foto arriva da rosa.json accostando
+           l'ID di gioco al nick della rosa. Se non c'e corrispondenza
+           resta l'iniziale, e sotto compare una riga che spiega perche. -->
+      <div class="ben" id="arBentornato">
+        <div class="ben-ritratto">
+          <i id="benFoto" aria-hidden="true"></i>
+          <span class="ben-iniziale" id="benIniziale" aria-hidden="true"></span>
         </div>
+        <div class="ben-testo">
+          <div class="eyebrow" id="benSaluto">Bentornato</div>
+          <h3 class="ben-nick" id="benNick">—</h3>
+          <div class="ben-ep" id="benEp"></div>
+          <div class="ben-targhe" id="benTarghe"></div>
+          <p class="ben-nota" id="benNota" hidden></p>
+        </div>
+        <button type="button" class="btn ben-esci" id="arEsci">Esci</button>
       </div>
 
-      <!-- ---------- PANNELLO AMMINISTRATORE ---------- -->
-      <div class="ar-scheda" id="arAdmin" hidden style="margin-top:22px;">
-        <div class="ar-corpo">
-          <div class="ar-intestazione">
-            <div>
-              <div class="eyebrow">Pannello amministratore</div>
-              <h3 class="wiz-tit" style="margin-top:14px;">Gestione accessi</h3>
+      <!-- Le tab interne dell'area. Ne compaiono altre col tempo:
+           qui dentro si aggiunge un bottone e una sezione, nient'altro. -->
+      <div class="ar-sotto" role="tablist" aria-label="Sezioni dell'area riservata">
+        <button type="button" class="ar-sotto-voce attiva" data-pannello="convocazioni"
+                role="tab" aria-selected="true">Convocazioni</button>
+        <button type="button" class="ar-sotto-voce" data-pannello="profilo"
+                role="tab" aria-selected="false">Profilo</button>
+        <button type="button" class="ar-sotto-voce" data-pannello="gestione" id="arVoceGestione"
+                role="tab" aria-selected="false" hidden>Gestione</button>
+      </div>
+
+      <!-- ===================== CONVOCAZIONI ===================== -->
+      <section id="pan-convocazioni">
+
+        <!-- Solo capitano, amministrazione e admin -->
+        <div class="ar-scheda" id="convCapitano" hidden>
+          <div class="ar-corpo">
+            <div class="eyebrow">Calendario</div>
+            <h3 class="wiz-tit" id="convSaluto" style="margin-top:14px;">Ciao capitano, quali giorni ci sarà allenamento?</h3>
+            <p class="wiz-sub">Tocca i giorni. Arrivi fino a quattro settimane avanti, non solo questa e la prossima; i giorni passati spariscono da soli.</p>
+
+            <div class="cal" id="convCalendario"></div>
+
+            <p class="ar-esito" id="convEsitoGiorni" role="status" aria-live="polite"></p>
+            <div class="ar-azioni">
+              <button type="button" class="btn btn-acc" id="convSalva">Salva il calendario</button>
             </div>
-            <button type="button" class="btn" id="arAggiorna">Aggiorna</button>
-          </div>
-
-          <div class="ar-gruppo">
-            <div class="ar-gruppo-tit">In attesa <span class="ar-conta" id="arContaAttesa">0</span></div>
-            <div class="ar-lista" id="arListaAttesa"></div>
-          </div>
-
-          <div class="ar-gruppo">
-            <div class="ar-gruppo-tit">Approvati <span class="ar-conta" id="arContaApprovati">0</span></div>
-            <div class="ar-lista" id="arListaApprovati"></div>
-          </div>
-
-          <div class="ar-gruppo">
-            <div class="ar-gruppo-tit">Rifiutati <span class="ar-conta" id="arContaRifiutati">0</span></div>
-            <div class="ar-lista" id="arListaRifiutati"></div>
           </div>
         </div>
-      </div>
+
+        <!-- La giornata: due bottoni e la lista di chi ha risposto -->
+        <div class="ar-scheda" id="convGiornata" style="margin-top:22px;">
+          <div class="ar-corpo">
+
+            <div class="conv-testa">
+              <div>
+                <div class="eyebrow" id="convEtichetta">Prossimo allenamento</div>
+                <h3 class="wiz-tit" id="convQuando" style="margin-top:14px;">—</h3>
+              </div>
+            </div>
+
+            <div class="conv-giorni" id="convGiorni"></div>
+
+            <div class="conv-scelta" id="convScelta">
+              <button type="button" class="conv-btn si" data-risposta="presente" aria-pressed="false">
+                <b>Presente</b><span>ci sono</span>
+              </button>
+              <button type="button" class="conv-btn no" data-risposta="assente" aria-pressed="false">
+                <b>Assente</b><span>non ci sono</span>
+              </button>
+            </div>
+
+            <p class="ar-esito" id="convEsito" role="status" aria-live="polite"></p>
+
+            <!-- Riempito da app.js: le tre voci si accordano al singolare
+                 o al plurale, e "1 assenti" non si puo leggere. -->
+            <div class="conv-conta" id="convConta" hidden></div>
+
+            <div class="conv-griglia" id="convElenco"></div>
+          </div>
+        </div>
+
+        <!-- Notifiche del telefono -->
+        <div class="ar-scheda" id="convNotifiche" style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Notifiche</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Avvisami sul telefono</h3>
+              </div>
+              <span class="conv-stato" id="pushStato">spente</span>
+            </div>
+            <p class="wiz-sub" id="pushSpiega" style="margin-top:18px;">Nei giorni di allenamento arriva un avviso alle 14:00 e, se non hai ancora risposto, un secondo alle 18:00. Su Android rispondi dai due bottoni della notifica, senza aprire niente.</p>
+            <p class="ar-esito" id="pushEsito" role="status" aria-live="polite"></p>
+            <div class="ar-azioni">
+              <button type="button" class="btn btn-acc" id="pushAccendi">Attiva le notifiche</button>
+              <button type="button" class="btn" id="pushSpegni" hidden>Spegni su questo dispositivo</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PROFILO ===================== -->
+      <section id="pan-profilo" hidden>
+        <div class="ar-scheda">
+          <div class="ar-corpo">
+            <div class="eyebrow">Il tuo account</div>
+            <h3 class="wiz-tit" style="margin-top:14px;">Come ti vede il tempio</h3>
+            <dl class="ar-profilo">
+              <div><dt>Email</dt><dd id="arProfEmail">—</dd></div>
+              <div><dt>Piattaforma</dt><dd id="arProfPiatt">—</dd></div>
+              <div><dt>ID di gioco</dt><dd id="arProfId">—</dd></div>
+              <div><dt>Ruolo</dt><dd id="arProfRuolo">—</dd></div>
+              <div><dt>Incarico</dt><dd id="arProfIncarico">—</dd></div>
+            </dl>
+            <p class="ar-aiuto" style="margin-top:18px;">L’accesso resta valido su questo dispositivo: non dovrai rifarlo. Un link dell’area riservata mandato a qualcun altro non porta con sé il tuo accesso — chi lo apre entra col proprio account, o vede il modulo di accesso.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== GESTIONE (solo admin) ===================== -->
+      <section id="pan-gestione" hidden>
+        <div class="ar-scheda" id="arAdmin">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Pannello amministratore</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Gestione accessi</h3>
+              </div>
+              <button type="button" class="btn" id="arAggiorna">Aggiorna</button>
+            </div>
+
+            <div class="ar-gruppo">
+              <div class="ar-gruppo-tit">In attesa <span class="ar-conta" id="arContaAttesa">0</span></div>
+              <div class="ar-lista" id="arListaAttesa"></div>
+            </div>
+
+            <div class="ar-gruppo">
+              <div class="ar-gruppo-tit">Approvati <span class="ar-conta" id="arContaApprovati">0</span></div>
+              <p class="ar-aiuto" style="margin:12px 0 0;">L’incarico decide chi può fissare gli allenamenti. Capitano e amministrazione hanno gli stessi poteri sul calendario; nessuno dei due tocca gli accessi.</p>
+              <div class="ar-lista" id="arListaApprovati"></div>
+            </div>
+
+            <div class="ar-gruppo">
+              <div class="ar-gruppo-tit">Rifiutati <span class="ar-conta" id="arContaRifiutati">0</span></div>
+              <div class="ar-lista" id="arListaRifiutati"></div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
   </section>
