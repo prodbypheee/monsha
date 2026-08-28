@@ -7,13 +7,22 @@
    controllo accessi fatto li non e un controllo: e un suggerimento.
    Qui invece gira su Netlify, l'utente vede solo la risposta.
 
-   NIENTE PASSWORD, ed e una scelta deliberata. Si entra con email e
-   ID di gioco, la stessa coppia che l'amministratore vede quando
-   approva. Il prezzo va detto: chi conosce mail e ID di un membro
-   approvato entra al posto suo, e gli ID di gioco si vedono in
-   partita. Regge perche qui dentro non ci sono dati sensibili. Se un
-   giorno ce ne fossero, questa e la prima cosa da cambiare — e la
-   strada e il collegamento usa-e-getta via mail, non la password.
+   I MEMBRI non hanno password, ed e una scelta deliberata: entrano con
+   email e ID di gioco, la stessa coppia che l'amministratore vede
+   quando approva. Il prezzo va detto: chi conosce mail e ID di un
+   membro approvato entra al posto suo, e gli ID di gioco si vedono in
+   partita. Regge perche a un membro l'area non da nessun potere.
+
+   L'AMMINISTRATORE invece ha anche una password, perche il suo account
+   non e come gli altri: da li si approva, si rifiuta e si elimina
+   chiunque. La sua impronta sta in ADMIN_PASSWORD_HASH, una variabile
+   d'ambiente e non l'archivio: chi riuscisse a leggere il database
+   degli utenti non troverebbe comunque niente con cui entrare da admin.
+
+     ADMIN_PASSWORD_HASH  obbligatoria per l'accesso amministratore, nel
+                          formato sale:impronta (scrypt). Senza, l'admin
+                          non entra affatto — meglio una porta chiusa
+                          che una aperta solo con mail e ID.
 
    Archivio: Netlify Blobs, incluso nel piano gratuito. La chiave
    di ogni utente e l'impronta SHA-256 della sua email, cosi non
@@ -41,7 +50,8 @@ import crypto from 'node:crypto';
 /* ---------- costanti ------------------------------------------ */
 
 const COOKIE        = 'ms_sessione';
-const DURATA        = 60 * 60 * 24 * 30;       // 30 giorni
+const DURATA        = 60 * 60 * 24 * 30;       // 30 giorni, per i membri
+const DURATA_ADMIN  = 60 * 60 * 24 * 2;        // 2 giorni: il pannello vale di piu
 const PIATTAFORME   = ['PlayStation', 'Xbox', 'PC'];
 const MAX_TENTATIVI = 8;
 const BLOCCO_MS     = 15 * 60 * 1000;          // 15 minuti
@@ -76,6 +86,29 @@ const errore = (msg, stato = 400) => json({ errore: msg }, stato);
 
 const normId = v => String(v || '').trim().toLowerCase();
 
+/* ---------- password dell'amministratore ----------------------
+   Solo l'admin ne ha una. scrypt e la funzione di derivazione
+   raccomandata fra quelle incluse in Node: costa memoria oltre che
+   tempo, quindi le schede grafiche non la macinano come farebbero
+   con SHA. Il sale sta nella variabile insieme all'impronta. */
+
+function derivaScrypt(password, sale) {
+  return new Promise((ok, ko) => {
+    crypto.scrypt(password, sale, 64, { N: 16384, r: 8, p: 1 }, (err, buf) => {
+      if (err) ko(err); else ok(buf.toString('hex'));
+    });
+  });
+}
+
+async function passwordAdminCorretta(password, atteso) {
+  const [sale, impronta] = String(atteso || '').split(':');
+  if (!sale || !impronta || !password) return false;
+  const prova = await derivaScrypt(password, sale);
+  const a = Buffer.from(prova, 'hex');
+  const b = Buffer.from(impronta, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 function idCorretto(prova, utente) {
   // idConfronto non c'e sugli account nati con la versione a
   // password: per quelli si ricava al volo dall'ID salvato.
@@ -100,8 +133,8 @@ function firma(testo, segreto) {
   return crypto.createHmac('sha256', segreto).update(testo).digest('base64url');
 }
 
-function creaGettone(dati, segreto) {
-  const corpo = b64u(JSON.stringify({ ...dati, sca: Date.now() + DURATA * 1000 }));
+function creaGettone(dati, segreto, durata = DURATA) {
+  const corpo = b64u(JSON.stringify({ ...dati, sca: Date.now() + durata * 1000 }));
   return corpo + '.' + firma(corpo, segreto);
 }
 
@@ -216,6 +249,15 @@ async function registrati(req, segreto, adminEmail, origine) {
 
   const admin = adminEmail && email === normEmail(adminEmail);
 
+  // Registrarsi con l'indirizzo dell'admin non basta a diventarlo:
+  // serve la password. Conta solo se l'account admin non esiste piu —
+  // altrimenti si e gia fermati sopra — ma e proprio quel caso, il
+  // giorno che qualcuno lo cancellasse, a non dover essere una porta
+  // aperta per il primo che indovina l'indirizzo.
+  if (admin && !(await passwordAdminCorretta(
+        String(corpo.password || ''), process.env.ADMIN_PASSWORD_HASH)))
+    return errore('Password amministratore non corretta.', 401);
+
   const utente = {
     email, piattaforma, idGioco, idConfronto: normId(idGioco),
     stato:  admin ? 'approvato' : 'in-attesa',
@@ -230,9 +272,9 @@ async function registrati(req, segreto, adminEmail, origine) {
   // L'amministratore entra subito: sarebbe assurdo che dovesse
   // approvare se stesso da un pannello a cui non puo accedere.
   if (admin) {
-    const gettone = creaGettone({ email, ruolo: 'admin' }, segreto);
+    const gettone = creaGettone({ email, ruolo: 'admin' }, segreto, DURATA_ADMIN);
     return json({ utente: pubblico(utente) }, 201,
-      { 'set-cookie': cookieSessione(gettone, DURATA) });
+      { 'set-cookie': cookieSessione(gettone, DURATA_ADMIN) });
   }
 
   await avvisaAdmin(utente, origine);
@@ -268,6 +310,36 @@ async function accedi(req, segreto) {
     return errore(NEGATO, 401);
   }
 
+  // L'amministratore ha una serratura in piu. Il suo account non e come
+  // gli altri: da li si approva, si rifiuta e si elimina chiunque, e
+  // mail e ID di gioco sono cose che si vedono in giro.
+  if (utente.ruolo === 'admin') {
+    const atteso = process.env.ADMIN_PASSWORD_HASH;
+
+    // Senza la variabile l'admin non entra. Sembra scomodo, ma
+    // l'alternativa sarebbe lasciare il pannello dietro sola mail e ID:
+    // meglio una porta chiusa che una che si apre da sola.
+    if (!atteso)
+      return errore('Accesso amministratore non configurato: manca ADMIN_PASSWORD_HASH.', 503);
+
+    const password = String(corpo.password || '');
+
+    // Chi arriva qui ha gia indovinato mail e ID, quindi dirgli che
+    // manca la password non gli regala niente — e all'admin che ha
+    // aperto l'indirizzo sbagliato risparmia un errore incomprensibile.
+    if (!password) return json({ stato: 'serve-password' }, 403);
+
+    if (!(await passwordAdminCorretta(password, atteso))) {
+      utente.tentativi = (utente.tentativi || 0) + 1;
+      if (utente.tentativi >= MAX_TENTATIVI) {
+        utente.bloccoFino = Date.now() + BLOCCO_MS;
+        utente.tentativi = 0;
+      }
+      await salvaUtente(utente);
+      return errore('Password amministratore non corretta.', 401);
+    }
+  }
+
   if (utente.tentativi || utente.bloccoFino) {
     utente.tentativi = 0; utente.bloccoFino = 0;
     await salvaUtente(utente);
@@ -278,9 +350,12 @@ async function accedi(req, segreto) {
   if (utente.stato === 'in-attesa')  return json({ stato: 'in-attesa' }, 403);
   if (utente.stato === 'rifiutato')  return json({ stato: 'rifiutato' }, 403);
 
-  const gettone = creaGettone({ email, ruolo: utente.ruolo }, segreto);
+  // Sessione piu corta per l'admin: un cookie rubato al pannello vale
+  // molto piu di uno rubato a un membro, quindi scade prima.
+  const durata = utente.ruolo === 'admin' ? DURATA_ADMIN : DURATA;
+  const gettone = creaGettone({ email, ruolo: utente.ruolo }, segreto, durata);
   return json({ utente: pubblico(utente) }, 200,
-    { 'set-cookie': cookieSessione(gettone, DURATA) });
+    { 'set-cookie': cookieSessione(gettone, durata) });
 }
 
 function esci() {

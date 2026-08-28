@@ -27,7 +27,10 @@
     '/unisciti-a-noi': 'unisciti',
     '/uniscitianoi':   'unisciti',
     '/area-riservata': 'area',
-    '/areariservata':  'area'
+    '/areariservata':  'area',
+    // Indirizzo del pannello: sta qui solo perche la SPA sappia che tab
+    // aprire. Non compare nel menu e non e linkato da nessuna parte.
+    '/area-riservata-nimda': 'area'
   };
 
   function percorso() {
@@ -475,6 +478,19 @@
     let avviata = false;
     let piattaforma = '';
 
+    /* L'indirizzo riservato non e una difesa — chi lo scopre non guadagna
+       niente, a fermarlo e la password. Serve a non mettere davanti ai
+       membri un campo che non li riguarda, e a tenere il pannello fuori
+       dal menu. Il modulo e lo stesso, cambia solo cosa si vede. */
+    const modoAdmin = () => /nimda/.test(location.pathname);
+
+    function vestiDaAdmin() {
+      $('arAccChiave').hidden = false;
+      $('arLingRegistra').hidden = true;
+      $('arAccTit').textContent = 'Accesso amministratore';
+      $('arAccSub').textContent = 'Email, ID di gioco e la password del pannello.';
+    }
+
     /* ---- dialogo col server ---- */
 
     async function api(azione, corpo) {
@@ -549,6 +565,7 @@
       const btn = $('arAccInvia'), box = $('arAccEsito');
       const email = $('arAccEmail').value.trim();
       const idGioco = $('arAccId').value.trim();
+      const password = $('arAccPassword').value;
 
       if (!email || !idGioco) { esito(box, 'Inserisci email e ID di gioco.'); return; }
 
@@ -557,14 +574,23 @@
       btn.textContent = 'Verifico…';
       esito(box, '');
 
-      const r = await api('accedi', { email, idGioco });
+      const r = await api('accedi', { email, idGioco, password });
 
       btn.disabled = false;
       btn.textContent = testo;
 
       if (r.ok) {
         $('arAccId').value = '';
+        $('arAccPassword').value = '';
         return entra(r.dati.utente);
+      }
+      // Account amministratore raggiunto dall'indirizzo normale: invece
+      // di un errore incomprensibile, si scopre il campo che manca.
+      if (r.dati.stato === 'serve-password') {
+        vestiDaAdmin();
+        $('arAccPassword').focus();
+        esito(box, 'Questo account richiede la password del pannello.');
+        return;
       }
       if (r.dati.stato === 'in-attesa') {
         return avviso('⏳', 'Richiesta ancora in attesa',
@@ -724,6 +750,7 @@
     document.addEventListener('area:aperta', async () => {
       if (avviata) return;
       avviata = true;
+      if (modoAdmin()) vestiDaAdmin();
       const r = await api('sessione');
       if (r.ok && r.dati.utente) entra(r.dati.utente);
       else schermata('arOspite');
