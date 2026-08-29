@@ -156,6 +156,22 @@ async function rispondi(req, segreto) {
   return json({ ok: true, data, stato: scelta });
 }
 
+/* ---------- chi c'e stato -------------------------------------
+   La classifica delle presenze degli ultimi sette giorni. La vede chi
+   puo convocare: e uno strumento di chi allena, non una graduatoria
+   da appendere in bacheca. */
+
+async function presenze(req, segreto, indirizzo) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Non autorizzato.', 403);
+
+  const quanti = Math.min(60, Math.max(1, Number(indirizzo.searchParams.get('giorni')) || 7));
+  const dati = await presenzeRecenti(await tuttiGliUtenti(), quanti);
+  return json(dati);
+}
+
 /* ---------- formazione ----------------------------------------
    Una per giornata. La compila chi puo convocare, la leggono tutti:
    e la stessa divisione della tab convocazioni, e per la stessa
@@ -341,6 +357,7 @@ export default async (req) => {
   try {
     if (req.method === 'GET'  && azione === 'stato')        return await stato(req, segreto);
     if (req.method === 'GET'  && azione === 'giorno')       return await giorno(req, segreto, indirizzo);
+    if (req.method === 'GET'  && azione === 'presenze')     return await presenze(req, segreto, indirizzo);
     if (req.method === 'GET'  && azione === 'formazione')   return await formazione(req, segreto, indirizzo);
     if (req.method === 'POST' && azione === 'formazione')   return await salvaLaFormazione(req, segreto);
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);

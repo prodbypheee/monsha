@@ -141,6 +141,32 @@ legale: la funzione programmata gira ogni ora tonda e ogni volta guarda
 che ore sono a Roma, invece di fidarsi di un orario fisso in UTC che
 sbaglierebbe di un'ora per metà anno.
 
+### Rispondere in anticipo
+
+In cima all'area riservata, appena c'è un allenamento in calendario,
+compare la scheda con **PRESENTE** e **ASSENTE**. Le frecce ‹ › scorrono
+tutti i giorni programmati: non serve aspettare il giorno stesso, si può
+rispondere per giovedì già di lunedì. Si aprono su oggi se oggi si
+allena, altrimenti sul primo che viene, e si fermano ai due capi invece
+di girare in tondo.
+
+### Chi c'è stato
+
+Sotto le convocazioni, e **solo per chi può convocare**, la classifica
+degli ultimi sette giorni: quante presenze su quanti allenamenti, con
+sotto le assenze e i silenzi tenuti distinti — chi ha detto «non ci
+sono» ha fatto la sua parte, chi non ha risposto no.
+
+La finestra scorre da sola: sono sempre oggi e i sei giorni prima. Se in
+quella settimana non si è tenuto nessun allenamento la scheda **non
+compare affatto**: «0 su 0» non è un'informazione, è un riquadro vuoto
+che sembra un guasto.
+
+Perché funzioni, i giorni passati restano nell'archivio invece di essere
+cancellati a ogni salvataggio del calendario, come succedeva prima:
+senza quella storia non si può dire chi c'è stato. Se ne tengono sei
+mesi.
+
 ### Le due prove, solo per l'amministratore
 
 In fondo alla scheda Notifiche, e visibili **solo all'amministratore**,
