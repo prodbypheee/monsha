@@ -202,9 +202,14 @@ toccano e i bottoni non ci sono proprio.
 
 Due regole, e sono di natura diversa:
 
-- **In campo va solo chi ha segnato presente** quel giorno. Questa la
-  fa rispettare il server: riguarda i dati, e un sito manomesso non
-  deve poter schierare un assente.
+- **In campo va solo chi ha segnato presente** quel giorno, e vale in
+  ogni momento, non solo quando si schiera. Chi segna assente dopo
+  essere stato messo in campo **esce dalle caselle da solo**; e in
+  lettura la formazione viene comunque filtrata contro i presenti di
+  quel giorno, così un assente non può comparire nemmeno se
+  nell'archivio fosse rimasto scritto. L'altra metà della regola viene
+  da sé: la panchina è «i presenti meno quelli in campo», quindi chi è
+  presente sta sempre da una delle due parti e non sparisce mai.
 - **Ogni casella suggerisce un reparto, ma non lo impone.** Il sito
   propone per primi quelli del ruolo giusto e mette gli altri sotto
   una riga che lo dice; **trascinando si mette chiunque ovunque**. Un
