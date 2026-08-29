@@ -792,6 +792,9 @@
         // La bacheca si rilegge a ogni apertura: una vecchia di un'ora
         // non e una bacheca.
         if (voce.dataset.pannello === 'annunci') annunci.apri();
+        // I presenti cambiano mentre la gente risponde: la panchina va
+        // riletta ogni volta che si apre il campo.
+        if (voce.dataset.pannello === 'formazione') formazione.ricarica();
       });
     });
 
@@ -1774,6 +1777,8 @@
         // torna sul sito dopo aver risposto dalla notifica deve
         // vedere la sua risposta, non un lampeggio.
         if (!document.hidden && io && attivo) caricaGiornata(attivo, true);
+        // E se si stava guardando il campo, anche quello.
+        if (!document.hidden && !$('pan-formazione').hidden) formazione.ricarica();
       });
 
       return { avvia, chiudi };
@@ -1812,6 +1817,10 @@
       let presenti = [];
       let modificabile = false;
       let apertaSu = null;      // la casella che il foglio sta compilando
+      /* Vero quando il campo e stato toccato e non ancora salvato. Serve
+         a non ricaricare la giornata da sotto le mani a chi sta
+         schierando: rileggere dal server cancellerebbe il suo lavoro. */
+      let sporco = false;
 
       const REPARTO_ETICHETTA = {
         portieri: 'un portiere',
@@ -2129,6 +2138,7 @@
         }
 
         disegnaCampo();
+        sporco = true;
         esito($('formEsito'), 'Modifica non ancora salvata.', false);
       }
 
@@ -2218,7 +2228,8 @@
           else delete schieramento[c.id];
           chiudiScelta();
           disegnaCampo();
-          esito($('formEsito'), 'Modifica non ancora salvata.', false);
+          sporco = true;
+        esito($('formEsito'), 'Modifica non ancora salvata.', false);
         });
 
         return t;
@@ -2254,6 +2265,7 @@
         if (!r.ok) { esito(box, r.dati.errore || 'Non sono riuscito a salvare.'); return; }
 
         schieramento = r.dati.schieramento || {};
+        sporco = false;                       // salvato: si puo rileggere
         const quanti = Object.keys(schieramento).length;
         esito(box, quanti === 11
           ? 'Formazione salvata: undici in campo.'
@@ -2272,6 +2284,7 @@
         if (!confirm('Tolgo tutti dal campo? La formazione resta vuota finche non salvi.')) return;
         schieramento = {};
         disegnaCampo();
+        sporco = true;
         esito($('formEsito'), 'Campo svuotato. Salva per confermare.', false);
       });
 
@@ -2306,6 +2319,7 @@
         schieramento = r.dati.schieramento || {};
         presenti = r.dati.presenti || [];
         modificabile = !!r.dati.modificabile;
+        sporco = false;                       // appena letta dal server
 
         $('formModulo').textContent = r.dati.modulo;
         $('formAzioni').hidden = !modificabile;
@@ -2359,7 +2373,19 @@
         io = null; giorni = [];
       }
 
-      return { aggiorna, chiudi };
+      /* Rilettura della giornata aperta. La chiamano l'apertura della
+         tab e il ritorno sul sito: i presenti cambiano mentre la gente
+         risponde, e una panchina di dieci minuti fa non serve a niente.
+
+         Se pero c'e del lavoro non salvato non si tocca niente:
+         ricaricare cancellerebbe la formazione che il capitano sta
+         mettendo in piedi, ed e molto peggio di una panchina vecchia. */
+      function ricarica() {
+        if (!io || !attivo || sporco) return;
+        mostra(attivo);
+      }
+
+      return { aggiorna, chiudi, ricarica };
     })();
 
 
