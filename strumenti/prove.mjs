@@ -17,7 +17,7 @@ import {
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo }
   from '../netlify/lib/convocazioni.mjs';
-import { CASELLE, verificaSchieramento } from '../netlify/lib/formazione.mjs';
+import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
 
 let fatte = 0, rotte = 0;
 function prova(nome, fn) {
@@ -309,6 +309,40 @@ prova('il 3-4-1-2 ha undici caselle e nessuna doppia', () => {
   assert.equal(per('difensori'), 3);
   assert.equal(per('centrocampisti'), 5);   // due centrali, due esterni, il trequartista
   assert.equal(per('attaccanti'), 2);
+});
+
+prova('un assente non puo comparire in campo, comunque sia scritto', () => {
+  // La regola: in campo si vede solo chi e presente adesso. Vale anche
+  // se nell'archivio e rimasto qualcuno che poi si e sfilato.
+  const salvato = { por: 'Pippo', dcc: 'Dino', atts: 'Bomber' };
+  const r = soloPresenti(salvato, ['Pippo', 'Bomber']);
+  assert.deepEqual(r, { por: 'Pippo', atts: 'Bomber' });
+});
+
+prova('il filtro non guarda maiuscole ne spazi', () => {
+  assert.deepEqual(soloPresenti({ por: 'Pippo' }, ['  pIPPo ']), { por: 'Pippo' });
+});
+
+prova('senza nessun presente il campo resta vuoto', () => {
+  assert.deepEqual(soloPresenti({ por: 'Pippo', dcc: 'Dino' }, []), {});
+});
+
+prova('caselle vuote o guaste non passano il filtro', () => {
+  assert.deepEqual(soloPresenti({ por: null, dcs: '', dcc: 'Dino' }, ['Dino']), { dcc: 'Dino' });
+  assert.deepEqual(soloPresenti(null, ['Dino']), {});
+});
+
+prova('chi e presente resta sempre da qualche parte', () => {
+  /* L'altra meta della regola: la panchina e "i presenti meno quelli
+     in campo", quindi ogni presente sta o in campo o in panchina, e
+     non puo sparire. Qui si verifica proprio che i due insiemi
+     coprano sempre tutti i presenti. */
+  const presenti = ['Pippo', 'Dino', 'Mimmo', 'Bomber'];
+  const campo = soloPresenti({ por: 'Pippo', dcc: 'Dino', atts: 'Estraneo' }, presenti);
+  const inCampo = new Set(Object.values(campo).map(v => v.toLowerCase()));
+  const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
+  assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
+                   presenti.map(p => p.toLowerCase()).sort());
 });
 
 prova('le caselle stanno dentro il campo', () => {
