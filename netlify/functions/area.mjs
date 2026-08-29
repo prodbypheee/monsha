@@ -169,7 +169,20 @@ async function registrati(req, segreto, adminEmail, origine) {
   }
 
   await avvisaAdmin(utente, origine);
-  return json({ utente: pubblico(utente) }, 201);
+
+  /* Anche a chi resta in attesa si da subito il cookie di sessione.
+     Non gli apre niente — ogni endpoint esige stato "approvato", e
+     finche non lo e non passa da nessuna parte — ma fa si che il
+     giorno che lo approvi sia gia riconosciuto e non debba rifare
+     l'accesso. Prima doveva ridigitare email e ID una seconda volta,
+     e quella era l'unica ragione per cui doveva farlo.
+
+     Non regala niente a nessuno: il cookie va a chi ha appena scritto
+     quella email e quell'ID di suo pugno, e la decisione di farlo
+     entrare resta tutta tua, nel pannello. */
+  const gettone = creaGettone({ email, ruolo: 'membro' }, segreto, DURATA);
+  return json({ utente: pubblico(utente) }, 201,
+    { 'set-cookie': cookieSessione(gettone, DURATA) });
 }
 
 async function accedi(req, segreto) {
@@ -264,9 +277,25 @@ function esci() {
 async function sessione(req, segreto) {
   const dati = leggiGettone(leggiCookie(req), segreto);
   if (!dati) return json({ utente: null });
+
   const utente = await leggiUtente(dati.email);
-  if (!utente || utente.stato !== 'approvato')
+
+  /* Account sparito: il cookie non vale piu niente e si butta. */
+  if (!utente)
     return json({ utente: null }, 200, { 'set-cookie': cookieSessione('', 0) });
+
+  /* In attesa: il cookie SI TIENE. E la sessione di chi si e appena
+     registrato, e serve a farlo riconoscere il giorno che lo approvi
+     senza che debba ridigitare email e ID. Non gli apre niente: ogni
+     altra richiesta esige stato "approvato". */
+  if (utente.stato === 'in-attesa')
+    return json({ utente: null, stato: 'in-attesa' });
+
+  /* Rifiutato o revocato: fuori, e il cookie si butta. Tenerlo
+     vorrebbe dire mostrargli per sempre la stessa porta chiusa. */
+  if (utente.stato !== 'approvato')
+    return json({ utente: null, stato: utente.stato }, 200,
+      { 'set-cookie': cookieSessione('', 0) });
 
   // Il conto riparte da qui. E questo, non la durata scritta sopra, a
   // rendere l'accesso permanente: un membro che apre il sito ogni tanto
