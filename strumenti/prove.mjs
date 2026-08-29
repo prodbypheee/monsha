@@ -16,7 +16,7 @@ import {
   incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo,
-  attesaSollecito, PAUSA_SOLLECITO_MS }
+  attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi }
   from '../netlify/lib/convocazioni.mjs';
 import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
 
@@ -344,6 +344,59 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nGli appuntamenti della giornata');
+
+prova('alle 8:30 si da il buongiorno', () => {
+  assert.equal(fasciaDi(8, 30), 'mattina');
+});
+
+prova('alle 8:00 non si sveglia nessuno', () => {
+  /* Girando ogni mezz'ora, l'esecuzione delle 8:00 esiste eccome: se
+     non distinguesse i minuti, il buongiorno partirebbe mezz'ora
+     prima. */
+  assert.equal(fasciaDi(8, 0), null);
+  assert.equal(fasciaDi(8, 29), null);
+});
+
+prova('un ritardo del cron non fa saltare il buongiorno', () => {
+  /* Netlify fa partire una funzione all'orario giusto o qualche
+     istante dopo, mai prima: la tolleranza sta tutta in avanti. */
+  assert.equal(fasciaDi(8, 31), 'mattina');
+  assert.equal(fasciaDi(8, 45), 'mattina');
+  assert.equal(fasciaDi(8, 59), 'mattina');
+});
+
+prova('alle 14:00 il secondo avviso, alle 14:30 no', () => {
+  assert.equal(fasciaDi(14, 0), 'pomeriggio');
+  assert.equal(fasciaDi(14, 12), 'pomeriggio');
+  assert.equal(fasciaDi(14, 30), null);
+});
+
+prova('alle 20:00 il riepilogo, alle 20:30 no', () => {
+  assert.equal(fasciaDi(20, 0), 'riepilogo');
+  assert.equal(fasciaDi(20, 30), null);
+});
+
+prova('nelle altre ore non succede niente', () => {
+  for (let o = 0; o < 24; o++) {
+    for (const m of [0, 30]) {
+      const f = fasciaDi(o, m);
+      if (o === 8 && m === 30) continue;
+      if (o === 14 && m === 0) continue;
+      if (o === 20 && m === 0) continue;
+      assert.equal(f, null, 'le ' + o + ':' + m + ' non dovrebbero fare niente');
+    }
+  }
+});
+
+prova('le tre fasce sono tre nomi diversi', () => {
+  /* Il segno di spunta contro il doppio invio usa il nome della
+     fascia come chiave: due fasce che si chiamassero uguale si
+     spegnerebbero a vicenda, e una delle due non partirebbe mai. */
+  const nomi = [fasciaDi(8, 30), fasciaDi(14, 0), fasciaDi(20, 0)];
+  assert.equal(new Set(nomi).size, 3);
 });
 
 console.log('\nLa pausa fra un sollecito e l\'altro');

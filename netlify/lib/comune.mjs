@@ -216,6 +216,13 @@ export const oraRoma = (quando = new Date()) =>
   Number(new Intl.DateTimeFormat('en-GB',
     { timeZone: FUSO, hour: '2-digit', hourCycle: 'h23' }).format(quando));
 
+/* I minuti servono da quando c'e un appuntamento alle 8:30: con le
+   sole ore non si distingue l'esecuzione delle 8:00 da quella delle
+   8:30, e il buongiorno partirebbe mezz'ora prima. */
+export const minutoRoma = (quando = new Date()) =>
+  Number(new Intl.DateTimeFormat('en-GB',
+    { timeZone: FUSO, minute: '2-digit' }).format(quando));
+
 export const dataValida = v => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
 
 const GIORNI_SET = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
