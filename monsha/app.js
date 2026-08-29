@@ -1107,6 +1107,15 @@
          con le frecce si scorrono tutti gli allenamenti programmati e
          si puo rispondere in anticipo. */
       let sopra = null;
+
+      /* Quando si potra risollecitare ciascuno, per ID di gioco
+         appiattito. Sono istanti dell'orologio di QUESTO telefono,
+         ricavati dai secondi che manda il server: se il telefono e
+         sfasato si sbaglia di poco e per poco, perche a ogni rilettura
+         della giornata arrivano i secondi giusti — e comunque la pausa
+         vera la fa rispettare il server, non questo conto. */
+      let scadenze = {};
+      let bottoniSollecito = {};
       /* Quel che ho appena risposto, per giornata. Serve solo finche
          il server non conferma la stessa cosa: e la rete di sicurezza
          contro una rilettura che arriva indietro. */
@@ -1222,6 +1231,7 @@
 
       function svuotaGiornata() {
         attivo = null;
+        $('convSolleciti').hidden = true;
         $('convEtichetta').textContent = 'Allenamenti';
         $('convQuando').textContent = 'Nessun allenamento in calendario';
         $('convScelta').hidden = true;
@@ -1293,6 +1303,151 @@
           muti:     elenco.filter(v => !v.stato).length
         });
         disegnaElenco(elenco);
+        mostraSolleciti(r.dati, elenco);
+      }
+
+      /* ---- il colpetto sulla spalla ----
+         In fondo alla tab, e solo per chi convoca: l'elenco di chi non
+         ha ancora detto niente, con un bottone per persona.
+
+         Uno alla volta e non "sollecita tutti", ed e la ragione per cui
+         il richiamo automatico delle 17:00 non c'e piu: una notifica
+         che arriva a venti telefoni si ignora, una persona che ti sta
+         cercando no. La pausa di un quarto d'ora e per persona, non per
+         chi preme: due capitani che sollecitano lo stesso giocatore a
+         un minuto di distanza gli farebbero suonare il telefono due
+         volte, che e la cosa che la pausa deve impedire. */
+
+      function mostraSolleciti(dati, elenco) {
+        const scheda = $('convSolleciti');
+
+        // Niente allenamento o giornata chiusa: non c'e niente da
+        // sollecitare, e la scheda sparisce invece di restare li vuota.
+        if (!io || !io.convoca || !dati.allenamento || !dati.apribile) {
+          scheda.hidden = true;
+          return;
+        }
+        scheda.hidden = false;
+
+        // I secondi del server diventano istanti locali. Si riparte
+        // dalla risposta del server ogni volta: e lui che tiene il
+        // conto, questo e solo il modo di mostrarlo.
+        scadenze = {};
+        Object.entries(dati.solleciti || {}).forEach(([k, s]) => {
+          scadenze[k] = Date.now() + s * 1000;
+        });
+
+        const muti = elenco.filter(v => !v.stato);
+
+        $('solQuanti').textContent = muti.length
+          ? muti.length + (muti.length === 1 ? ' persona' : ' persone')
+          : 'nessuno';
+        $('solNota').textContent = muti.length
+          ? 'Una persona alla volta. Dopo averne sollecitato uno, per quella persona si riparte fra quindici minuti.'
+          : '';
+
+        const box = $('solElenco');
+        box.textContent = '';
+        bottoniSollecito = {};
+
+        if (!muti.length) {
+          const p = document.createElement('p');
+          p.className = 'sol-vuoto';
+          p.textContent = 'Hanno risposto tutti.';
+          box.appendChild(p);
+          esito($('solEsito'), '');
+          return;
+        }
+
+        rosaPronta.then(() => {
+          box.textContent = '';
+
+          muti.forEach(v => {
+            const g = trovaGiocatore(v.idGioco);
+
+            const riga = document.createElement('div');
+            riga.className = 'sol-riga';
+
+            const faccia = document.createElement('div');
+            faccia.className = 'pres-faccia' + (g ? ' con-foto' : '');
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              faccia.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (v.idGioco || '?').charAt(0).toUpperCase();
+            faccia.appendChild(iniziale);
+
+            const nome = document.createElement('div');
+            nome.className = 'sol-nome';
+            nome.textContent = v.idGioco;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sol-btn';
+            btn.addEventListener('click', () => sollecita(v.idGioco, btn));
+
+            bottoniSollecito[idPiatto(v.idGioco)] = btn;
+            riga.append(faccia, nome, btn);
+            box.appendChild(riga);
+          });
+
+          battito();
+        });
+      }
+
+      /* Aggiorna solo le scritte dei bottoni: si chiama ogni dieci
+         secondi e non deve ridisegnare niente, altrimenti la lista
+         sfarfalla sotto le dita. */
+      function battito() {
+        Object.entries(bottoniSollecito).forEach(([k, btn]) => {
+          const manca = scadenze[k] ? scadenze[k] - Date.now() : 0;
+          if (manca > 0) {
+            const min = Math.ceil(manca / 60000);
+            btn.disabled = true;
+            btn.textContent = 'fra ' + min + ' min';
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Sollecita';
+          }
+        });
+      }
+      setInterval(battito, 10000);
+
+      async function sollecita(idGioco, btn) {
+        const k = idPiatto(idGioco);
+        btn.disabled = true;
+        btn.textContent = 'Mando…';
+        esito($('solEsito'), '');
+
+        const r = await apiConv('sollecita', { data: attivo, idGioco });
+
+        if (!r.ok) {
+          // Se il server dice quanto manca, gli si crede: e lui che
+          // tiene il conto vero.
+          if (r.dati.attesa) scadenze[k] = Date.now() + r.dati.attesa * 1000;
+          esito($('solEsito'), r.dati.errore || 'Non sono riuscito a sollecitare.');
+          // Puo aver risposto proprio mentre guardavi l'elenco: allora
+          // l'elenco e vecchio e va riletto.
+          if (r.dati.risposto) caricaGiornata(attivo, true);
+          else battito();
+          return;
+        }
+
+        /* Zero notifiche partite non e un errore: vuol dire che quella
+           persona non le ha accese. Va detto, perche il capitano deve
+           sapere che quel telefono non ha suonato e che deve cercarla
+           in un altro modo. E in quel caso la pausa non parte. */
+        if (!r.dati.partite) {
+          esito($('solEsito'), idGioco + ' non ha acceso le notifiche: il telefono non gli è suonato. Cercalo in un altro modo.');
+          battito();
+          return;
+        }
+
+        scadenze[k] = Date.now() + (r.dati.attesa || 900) * 1000;
+        esito($('solEsito'), 'Fatto: ' + idGioco + ' è stato avvisato.', true);
+        battito();
       }
 
       /* Il conteggio si scrive a mano invece di stare fisso nel markup
@@ -1807,6 +1962,8 @@
         formazione.chiudi();
         $('arOggi').hidden = true;
         $('convPresenze').hidden = true;
+        $('convSolleciti').hidden = true;
+        scadenze = {}; bottoniSollecito = {};
         sopra = null;
         io = null; giorni = []; scelti = new Set(); attivo = null;
         $('convCapitano').hidden = true;

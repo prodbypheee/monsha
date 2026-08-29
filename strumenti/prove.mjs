@@ -15,7 +15,8 @@ import {
   creaGettone, leggiGettone, cookieSessione, leggiCookie,
   incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
-import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo }
+import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo,
+  attesaSollecito, PAUSA_SOLLECITO_MS }
   from '../netlify/lib/convocazioni.mjs';
 import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
 
@@ -343,6 +344,57 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nLa pausa fra un sollecito e l\'altro');
+
+const ADESSO = Date.parse('2026-08-29T15:00:00Z');
+const fa = minuti => new Date(ADESSO - minuti * 60000).toISOString();
+
+prova('chi non e mai stato sollecitato si sollecita subito', () => {
+  assert.equal(attesaSollecito(null, ADESSO), 0);
+  assert.equal(attesaSollecito(undefined, ADESSO), 0);
+  assert.equal(attesaSollecito('', ADESSO), 0);
+});
+
+prova('appena sollecitato si aspetta un quarto d\'ora', () => {
+  assert.equal(attesaSollecito(fa(0), ADESSO), PAUSA_SOLLECITO_MS);
+});
+
+prova('a meta pausa manca la meta', () => {
+  assert.equal(attesaSollecito(fa(7), ADESSO), 8 * 60000);
+});
+
+prova('passati i quindici minuti si puo di nuovo', () => {
+  assert.equal(attesaSollecito(fa(15), ADESSO), 0);
+  assert.equal(attesaSollecito(fa(60), ADESSO), 0);
+});
+
+prova('al quindicesimo minuto esatto e gia libero', () => {
+  /* Il confine conta: a 14:59 si aspetta ancora, a 15:00 spaccati no.
+     Se il conto fosse col maggiore-uguale sbagliato, il bottone
+     resterebbe spento per sempre di un millisecondo. */
+  assert.ok(attesaSollecito(fa(14.99), ADESSO) > 0);
+  assert.equal(attesaSollecito(fa(15), ADESSO), 0);
+});
+
+prova('una data incomprensibile non blocca nessuno', () => {
+  /* Meglio un sollecito di troppo che un bottone spento per sempre
+     per colpa di una riga d'archivio scritta male. */
+  assert.equal(attesaSollecito('domani mattina', ADESSO), 0);
+  assert.equal(attesaSollecito('2026-13-45T99:99:99Z', ADESSO), 0);
+});
+
+prova('una data nel futuro fa aspettare tutta la pausa', () => {
+  /* Orologio sfasato da qualche parte. Fra i due sbagli possibili si
+     sceglie quello che al massimo fa aspettare un quarto d'ora di
+     troppo, invece di quello che fa suonare un telefono a ripetizione. */
+  const fraDieciMinuti = new Date(ADESSO + 10 * 60000).toISOString();
+  assert.equal(attesaSollecito(fraDieciMinuti, ADESSO), PAUSA_SOLLECITO_MS);
+});
+
+prova('la pausa e di quindici minuti', () => {
+  assert.equal(PAUSA_SOLLECITO_MS, 15 * 60 * 1000);
 });
 
 prova('le caselle stanno dentro il campo', () => {

@@ -648,7 +648,7 @@
               </div>
               <span class="conv-stato" id="pushStato">spente</span>
             </div>
-            <p class="wiz-sub" id="pushSpiega" style="margin-top:18px;">Nei giorni di allenamento arriva un avviso alle 14:00 e, se non hai ancora risposto, un secondo alle 17:00. Su Android rispondi dai due bottoni della notifica, senza aprire niente.</p>
+            <p class="wiz-sub" id="pushSpiega" style="margin-top:18px;">Nei giorni di allenamento arriva un avviso alle 14:00. Se poi non rispondi, il capitano può mandartene un altro. Su Android rispondi dai due bottoni della notifica, senza aprire niente.</p>
             <p class="ar-esito" id="pushEsito" role="status" aria-live="polite"></p>
             <div class="ar-azioni">
               <button type="button" class="btn btn-acc" id="pushAccendi">Attiva le notifiche</button>
@@ -668,6 +668,24 @@
               </div>
               <p class="ar-esito" id="riepilogoEsito" role="status" aria-live="polite"></p>
             </div>
+          </div>
+        </div>
+
+        <!-- Chi non ha ancora risposto, con un bottone per persona.
+             Lo vede solo chi convoca, e sta in fondo alla tab: e
+             l'ultima cosa che si fa, dopo aver guardato chi c'e. -->
+        <div class="ar-scheda" id="convSolleciti" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Manca la risposta</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Chi non ha ancora risposto</h3>
+              </div>
+              <span class="conv-stato" id="solQuanti">—</span>
+            </div>
+            <p class="ar-aiuto" id="solNota" style="margin-top:16px;"></p>
+            <p class="ar-esito" id="solEsito" role="status" aria-live="polite"></p>
+            <div class="sol-elenco" id="solElenco"></div>
           </div>
         </div>
       </section>
