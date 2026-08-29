@@ -1019,6 +1019,10 @@
       let scelti = new Set();
       let attivo = null;
       let chiavePush = '';
+      /* Il giorno mostrato dalla scheda in cima. Non e per forza oggi:
+         con le frecce si scorrono tutti gli allenamenti programmati e
+         si puo rispondere in anticipo. */
+      let sopra = null;
       /* Quel che ho appena risposto, per giornata. Serve solo finche
          il server non conferma la stessa cosa: e la rete di sicurezza
          contro una rilettura che arriva indietro. */
@@ -1259,7 +1263,8 @@
 
       function segnaOvunque(data, stato, bloccata) {
         if (attivo === data) segnaScelta(stato, bloccata, $('convScelta'));
-        if (data === oggi && !$('arOggi').hidden) segnaScelta(stato, bloccata, $('oggiScelta'));
+        if (sopra === data && !$('arOggi').hidden)
+          segnaScelta(stato, bloccata, $('oggiScelta'));
       }
 
       /* La griglia delle facce. Le foto vengono dalla rosa pubblica;
@@ -1353,9 +1358,45 @@
 
       $('oggiScelta').addEventListener('click', e => {
         const b = e.target.closest('.conv-btn');
-        if (!b || !oggi || b.disabled) return;
-        rispondi(oggi, b.dataset.risposta, $('oggiEsito'));
+        if (!b || !sopra || b.disabled) return;
+        rispondi(sopra, b.dataset.risposta, $('oggiEsito'));
       });
+
+      /* Le frecce scorrono gli allenamenti programmati. Si fermano ai
+         due capi invece di girare in tondo: tornare al primo dopo
+         l'ultimo fa perdere il filo di dove si e arrivati. */
+      function scorriSopra(passo) {
+        const dove = giorni[giorni.indexOf(sopra) + passo];
+        if (dove) mostraSopra(dove);
+      }
+
+      $('oggiPrima').addEventListener('click', () => scorriSopra(-1));
+      $('oggiDopo').addEventListener('click',  () => scorriSopra(1));
+
+      /* Mostra una giornata nella scheda in cima: etichetta, data,
+         frecce che si spengono ai capi, e la risposta gia data. */
+      async function mostraSopra(data) {
+        sopra = data;
+        const i = giorni.indexOf(data);
+        $('oggiPrima').disabled = i <= 0;
+        $('oggiDopo').disabled  = i < 0 || i >= giorni.length - 1;
+
+        $('oggiEtichetta').textContent = data === oggi
+          ? 'Oggi si allena'
+          : (data === piu(oggi, 1) ? 'Domani si allena' : 'Prossimo allenamento');
+        $('oggiQuando').textContent = maiuscola(inLettere(data));
+        esito($('oggiEsito'), '');
+        segnaScelta(null, true, $('oggiScelta'));
+
+        const r = await apiConv('giorno?data=' + encodeURIComponent(data));
+        if (!r.ok || sopra !== data) return;
+
+        const mia = mieRisposte[data] ||
+                    (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        segnaScelta(mia, !r.dati.apribile, $('oggiScelta'));
+        if (!r.dati.apribile)
+          esito($('oggiEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
+      }
 
       /* ---- notifiche del telefono ----
          Su iPhone Safari consegna le notifiche solo a un sito aggiunto
@@ -1529,12 +1570,87 @@
 
       /* Riempie solo i due bottoni in cima, senza toccare la giornata
          aperta sotto: serve quando le due non coincidono. */
-      async function caricaSoloOggi() {
-        const r = await apiConv('giorno?data=' + encodeURIComponent(oggi));
-        if (!r.ok) return;
-        const mia = mieRisposte[oggi] ||
-                    (r.dati.elenco.find(v => v.io) || {}).stato || null;
-        segnaScelta(mia, !r.dati.apribile, $('oggiScelta'));
+      /* ---- chi c'e stato negli ultimi sette giorni ----
+         Solo per chi convoca: e uno strumento di chi allena, non una
+         graduatoria da appendere in bacheca.
+
+         Se in quella settimana non si e allenato nessun giorno la
+         scheda non compare affatto: "0 su 0" non e un'informazione, e
+         un riquadro vuoto che sembra un guasto. */
+
+      async function caricaPresenze() {
+        if (!io || !io.convoca) { $('convPresenze').hidden = true; return; }
+
+        const r = await apiConv('presenze');
+        if (!r.ok) { $('convPresenze').hidden = true; return; }
+
+        const quanti = (r.dati.allenamenti || []).length;
+        if (!quanti) { $('convPresenze').hidden = true; return; }
+
+        $('convPresenze').hidden = false;
+        $('presQuanti').textContent = quanti + (quanti === 1 ? ' allenamento' : ' allenamenti');
+
+        /* Si nominano i giorni in cui ci si e allenati davvero, non i
+           due capi della finestra: "dal 23 al 29" quando in mezzo c'e
+           stato un solo allenamento dice una cosa falsa. E col giorno
+           della settimana solo quando e uno: "dal sabato 29 al sabato
+           29" non si puo leggere. */
+        const gg = r.dati.allenamenti;
+        const breve = d => Number(d.slice(8)) + ' ' + MESI[Number(d.slice(5, 7)) - 1];
+        $('presPeriodo').textContent = quanti === 1
+          ? 'Un solo allenamento: ' + inLettere(gg[0]) + '.'
+          : quanti + ' allenamenti, dal ' + breve(gg[0]) + ' al ' + breve(gg[gg.length - 1]) + '.';
+
+        const box = $('presElenco');
+        box.textContent = '';
+
+        rosaPronta.then(() => {
+          box.textContent = '';
+
+          (r.dati.righe || []).forEach(v => {
+            const g = trovaGiocatore(v.idGioco);
+
+            const riga = document.createElement('div');
+            riga.className = 'pres-riga' +
+              (v.presenti === quanti ? ' pieno' : '') +
+              (v.presenti === 0 ? ' zero' : '');
+
+            const faccia = document.createElement('div');
+            faccia.className = 'pres-faccia' + (g ? ' con-foto' : '');
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              faccia.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (v.idGioco || '?').charAt(0).toUpperCase();
+            faccia.appendChild(iniziale);
+
+            const nome = document.createElement('div');
+            nome.className = 'pres-nome';
+            nome.textContent = v.idGioco;
+
+            const conto = document.createElement('div');
+            conto.className = 'pres-conto';
+            conto.textContent = v.presenti + ' su ' + quanti;
+
+            /* Assenze e silenzi si distinguono: chi ha detto "non ci
+               sono" ha fatto la sua parte, chi non ha risposto no, e
+               per un capitano sono due cose diverse. */
+            const pezzi = [];
+            if (v.assenti) pezzi.push(v.assenti + (v.assenti === 1 ? ' assenza' : ' assenze'));
+            if (v.muti) pezzi.push(v.muti === 1 ? '1 senza risposta' : v.muti + ' senza risposta');
+            if (pezzi.length) {
+              const sotto = document.createElement('span');
+              sotto.className = 'pres-dettaglio';
+              sotto.textContent = pezzi.join(' · ');
+              conto.appendChild(sotto);
+            }
+
+            riga.append(faccia, nome, conto);
+            box.appendChild(riga);
+          });
+        });
       }
 
       /* ---- avvio e chiusura ---- */
@@ -1573,21 +1689,18 @@
         /* La scheda in cima: c'e solo se oggi si allena, ed e la prima
            cosa che si vede. Chi apre da una notifica ha un gesto solo
            da fare e non deve andarselo a cercare piu in basso. */
-        const oggiSiAllena = giorni.includes(oggi);
-        $('arOggi').hidden = !oggiSiAllena;
-        if (oggiSiAllena) {
-          $('oggiQuando').textContent = maiuscola(inLettere(oggi));
-          esito($('oggiEsito'), '');
-          segnaScelta(null, true, $('oggiScelta'));
-        }
+        /* La scheda in cima c'e appena esiste un allenamento in
+           calendario, non solo se e oggi: si puo rispondere in
+           anticipo per tutti quelli programmati, scorrendoli con le
+           frecce. Si apre su oggi se oggi si allena, altrimenti sul
+           primo che viene. */
+        $('arOggi').hidden = !giorni.length;
 
         if (scelto) mostraGiorno(scelto);
         else svuotaGiornata();
 
-        /* Se la giornata aperta sotto non e oggi — capita arrivando da
-           un link a un altro giorno — la scheda in cima non verrebbe
-           riempita da mostraGiorno, e va chiesta a parte. */
-        if (oggiSiAllena && scelto !== oggi) caricaSoloOggi();
+        if (giorni.length) mostraSopra(giorni.includes(oggi) ? oggi : giorni[0]);
+        else sopra = null;
 
         mostraStatoPush();
 
@@ -1598,11 +1711,15 @@
         // I giorni li passiamo alla formazione invece di farglieli
         // richiedere: e la stessa risposta del server, appena letta.
         formazione.aggiorna(giorni, oggi, io);
+
+        caricaPresenze();
       }
 
       function chiudi() {
         formazione.chiudi();
         $('arOggi').hidden = true;
+        $('convPresenze').hidden = true;
+        sopra = null;
         io = null; giorni = []; scelti = new Set(); attivo = null;
         $('convCapitano').hidden = true;
         $('convGiorni').textContent = '';

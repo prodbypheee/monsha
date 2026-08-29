@@ -510,7 +510,15 @@
       <div class="oggi" id="arOggi" hidden>
         <div class="oggi-testa">
           <div class="eyebrow" id="oggiEtichetta">Oggi si allena</div>
-          <div class="oggi-quando" id="oggiQuando">—</div>
+          <!-- Le frecce scorrono i giorni gia programmati: si puo
+               rispondere in anticipo per tutti, non solo per oggi. -->
+          <div class="oggi-nav">
+            <button type="button" class="oggi-freccia" id="oggiPrima"
+                    aria-label="Allenamento precedente">‹</button>
+            <div class="oggi-quando" id="oggiQuando">—</div>
+            <button type="button" class="oggi-freccia" id="oggiDopo"
+                    aria-label="Allenamento successivo">›</button>
+          </div>
         </div>
         <div class="conv-scelta" id="oggiScelta">
           <button type="button" class="conv-btn si" data-risposta="presente" aria-pressed="false">
@@ -611,6 +619,22 @@
             <div class="conv-conta" id="convConta" hidden></div>
 
             <div class="conv-griglia" id="convElenco"></div>
+          </div>
+        </div>
+
+        <!-- Chi c'e stato: solo per chi convoca. Compare solo se
+             nell'ultima settimana un allenamento c'e stato davvero. -->
+        <div class="ar-scheda" id="convPresenze" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Ultimi sette giorni</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Chi c'è stato</h3>
+              </div>
+              <span class="conv-stato" id="presQuanti">—</span>
+            </div>
+            <p class="ar-aiuto" id="presPeriodo" style="margin-top:16px;"></p>
+            <div class="pres-elenco" id="presElenco"></div>
           </div>
         </div>
 

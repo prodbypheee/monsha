@@ -38,22 +38,48 @@ export async function leggiGiorni(da) {
   return grezzi.filter(g => dataValida(g) && g >= soglia).sort();
 }
 
+/* Quanta storia si tiene. Sei mesi bastano a qualunque statistica che
+   abbia senso guardare, e l'elenco resta corto abbastanza da leggerlo
+   tutto in un colpo. */
+export const MEMORIA_GIORNI = 180;
+
+/* Il capitano sceglie solo il futuro, ma i giorni passati NON si
+   buttano: sono la storia degli allenamenti, e senza di quella non si
+   puo dire chi c'e stato e chi no. Prima venivano cancellati a ogni
+   salvataggio, e ogni volta si perdeva quello che era gia successo. */
 export async function salvaGiorni(giorni, autore) {
   const oggi   = oggiRoma();
   const limite = fraGiorni(oggi, ORIZZONTE_GIORNI);
+  const soglia = fraGiorni(oggi, -MEMORIA_GIORNI);
 
-  const puliti = [...new Set(
+  const futuri = [...new Set(
     (Array.isArray(giorni) ? giorni : [])
       .map(g => String(g).trim())
       .filter(g => dataValida(g) && g >= oggi && g <= limite)
-  )].sort();
+  )];
+
+  // Quel che c'era prima di oggi resta, entro la memoria che teniamo.
+  const passati = (await leggiTuttiIGiorni()).filter(g => g < oggi && g >= soglia);
+
+  const tutti = [...new Set([...passati, ...futuri])].sort();
 
   await convoc().setJSON(GIORNI, {
-    giorni: puliti,
+    giorni: tutti,
     aggiornato: new Date().toISOString(),
     da: autore || null
   });
-  return puliti;
+
+  // A chi salva si risponde con i suoi giorni futuri: la storia non
+  // gli interessa, e vedersela comparire nel calendario sarebbe strano.
+  return futuri.sort();
+}
+
+/* L'elenco grezzo, storia compresa. Serve alle statistiche; il resto
+   del sito usa leggiGiorni, che taglia via il passato. */
+export async function leggiTuttiIGiorni() {
+  const v = await convoc().get(GIORNI, { type: 'json' }).catch(() => null);
+  const grezzi = (v && Array.isArray(v.giorni)) ? v.giorni : [];
+  return grezzi.filter(dataValida).sort();
 }
 
 /* Somma di giorni fatta sul calendario UTC: nessun fuso di mezzo,
@@ -146,4 +172,49 @@ export function destinatariRiepilogo(utenti) {
     email,
     idGioco: (perEmail.get(email) || {}).idGioco || ''
   }));
+}
+
+/* ---------- chi c'e stato negli ultimi giorni ------------------
+   Una finestra che scorre: oggi e i sei giorni prima, e dentro quella
+   si contano solo i giorni in cui c'era davvero allenamento. Se in
+   quella settimana non se ne e tenuto nessuno non si dice niente —
+   "0 su 0" non e un'informazione, e una tabella vuota che sembra un
+   guasto.
+
+   Si contano le presenze, ma si riportano anche assenze e silenzi:
+   chi ha detto "non ci sono" ha fatto la sua parte, chi non ha
+   risposto no, e per un capitano sono due cose diverse. */
+
+export async function presenzeRecenti(utenti, quantiGiorni = 7) {
+  const oggi = oggiRoma();
+  const primo = fraGiorni(oggi, -(quantiGiorni - 1));
+
+  const allenamenti = (await leggiTuttiIGiorni())
+    .filter(g => g >= primo && g <= oggi);
+
+  if (!allenamenti.length) return { da: primo, a: oggi, allenamenti: [], righe: [] };
+
+  const risposte = await Promise.all(allenamenti.map(leggiRisposte));
+
+  const righe = daConvocare(utenti).map(u => {
+    const k = chiave(u.email);
+    let presenti = 0, assenti = 0, muti = 0;
+    risposte.forEach(giorno => {
+      const s = (giorno[k] || {}).stato;
+      if (s === 'presente') presenti++;
+      else if (s === 'assente') assenti++;
+      else muti++;
+    });
+    return { idGioco: u.idGioco, presenti, assenti, muti };
+  });
+
+  /* Prima chi c'e stato di piu; a parita, prima chi almeno ha
+     risposto; a parita ancora, in ordine alfabetico, cosi la classifica
+     non balla da un caricamento all'altro. */
+  righe.sort((a, b) =>
+    b.presenti - a.presenti ||
+    a.muti - b.muti ||
+    a.idGioco.localeCompare(b.idGioco, 'it'));
+
+  return { da: primo, a: oggi, allenamenti, righe };
 }
