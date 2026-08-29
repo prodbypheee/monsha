@@ -130,16 +130,53 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
    questa settimana e le quattro successive. Salva.
 2. Nei giorni segnati, **alle 14:00** parte una notifica a tutti i
    membri approvati, capitano compreso.
-3. **Alle 17:00** parte una seconda notifica, ma solo a chi non ha
-   ancora risposto. Richiamare anche chi ha già detto la sua è il modo
-   più rapido per far spegnere le notifiche a tutta la squadra.
+3. Chi non risponde lo si va a cercare **uno alla volta**: in fondo
+   alla tab, chi convoca trova l'elenco di chi non ha ancora detto
+   niente e un bottone per persona. Quindici minuti di pausa prima di
+   poter risollecitare la stessa persona.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
    amministrazione e amministratore.
+
+C'era anche un richiamo automatico alle 17:00 a tutta la squadra: non
+c'è più. Una notifica che arriva a venti telefoni si ignora, e a
+diciotto di quei venti arrivava per niente perché avevano già
+risposto. Il colpetto sulla spalla di una persona vera funziona meglio,
+e chi ha già risposto non lo riceve affatto.
 
 Gli orari sono ora italiana e restano giusti anche col cambio dell'ora
 legale: la funzione programmata gira ogni ora tonda e ogni volta guarda
 che ore sono a Roma, invece di fidarsi di un orario fisso in UTC che
 sbaglierebbe di un'ora per metà anno.
+
+### Sollecitare chi non risponde
+
+In fondo alla tab **Convocazioni**, e solo per chi può convocare
+(capitano, amministrazione, admin): l'elenco di chi non ha ancora
+segnato niente per la giornata aperta, con la faccia, il nome e un
+bottone **Sollecita** per ciascuno. Chi ha già risposto non compare;
+se hanno risposto tutti la scheda lo dice e basta.
+
+Premendo il bottone parte una notifica a quella persona sola, con
+dentro il nome di chi la sta cercando — un promemoria automatico si
+ignora, una persona che ti aspetta no. Su Android la notifica porta
+con sé i due bottoni Presente e Assente.
+
+**La pausa è di quindici minuti ed è per chi la riceve, non per chi la
+manda.** Se il conto fosse di chi preme, capitano e amministrazione
+potrebbero sollecitare la stessa persona a un minuto di distanza e
+farle suonare il telefono due volte, che è proprio la cosa da evitare.
+A chi guarda, il bottone si spegne e diventa «fra 12 min».
+
+Il conto lo tiene il **server**: il bottone spento è cortesia verso chi
+guarda, non sicurezza. Una richiesta costruita a mano salterebbe il
+bottone, e infatti il server rifiuta lo stesso — così come rifiuta di
+sollecitare per un giorno senza allenamento, per una giornata ormai
+chiusa, o una persona che nel frattempo ha risposto.
+
+Se quella persona non ha acceso le notifiche non parte niente, e lo si
+dice apertamente invece di far finta: in quel caso la pausa non
+comincia nemmeno, perché sarebbe un quarto d'ora di attesa in cambio
+di niente.
 
 ### Rispondere in anticipo
 
@@ -187,7 +224,7 @@ consuma il piano gratuito di EmailJS.
 
 Si può rispondere anche senza notifica, dal sito, e si può cambiare
 idea fino a mezzanotte — anzi, fino alle sei del mattino dopo, perché
-una notifica delle 17:00 toccata a mezzanotte e mezza è comunque una
+una notifica delle 14:00 toccata a mezzanotte e mezza è comunque una
 risposta sincera.
 
 ## 4-bis. La formazione
@@ -287,7 +324,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
-| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00, 17:00, 20:00 |
+| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00 e 20:00 |
 | `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |

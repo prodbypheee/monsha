@@ -122,13 +122,70 @@ export async function salvaRisposta(data, utente, stato) {
 
 /* Fino a quando si accetta una risposta. Il giorno stesso e i giorni
    futuri, ovviamente; ma anche il giorno prima fino alle sei del
-   mattino, perche una notifica delle 17:00 toccata a mezzanotte e
+   mattino, perche una notifica delle 14:00 toccata a mezzanotte e
    mezza e comunque una risposta sincera, e rifiutarla senza spiegare
    perche sarebbe solo scortese. */
 export function rispostaAmmessa(data) {
   const oggi = oggiRoma();
   if (data >= oggi) return true;
   return data === fraGiorni(oggi, -1) && oraRoma() < 6;
+}
+
+/* ---------- solleciti -----------------------------------------
+   Il colpetto sulla spalla: chi convoca sceglie una persona sola fra
+   quelle che non hanno ancora risposto e le fa suonare il telefono.
+
+   Una voce per persona e per giorno, `solleciti/<data>/<chiaveMail>`,
+   per la stessa ragione delle risposte: nessuna scrittura si scontra
+   con un'altra.
+
+   La pausa si conta PER CHI LO RICEVE e non per chi lo manda. Se il
+   conto fosse di chi manda, capitano e amministrazione potrebbero
+   sollecitare la stessa persona a un minuto di distanza e farle
+   suonare il telefono due volte — che e esattamente la cosa che la
+   pausa deve impedire. Chi riceve non gliene importa niente di chi ha
+   premuto il bottone: gli importa di non essere tempestato. */
+
+const SOLLECITI = 'solleciti/';
+
+export const PAUSA_SOLLECITO_MS = 15 * 60 * 1000;
+
+export async function leggiSolleciti(data) {
+  const { blobs } = await convoc().list({ prefix: SOLLECITI + data + '/' });
+  const voci = await Promise.all(
+    blobs.map(b => convoc().get(b.key, { type: 'json' }).catch(() => null))
+  );
+  const mappa = {};
+  voci.filter(Boolean).forEach(v => { if (v.chiave) mappa[v.chiave] = v; });
+  return mappa;
+}
+
+export async function segnaSollecito(data, utente, da) {
+  const k = chiave(utente.email);
+  await convoc().setJSON(SOLLECITI + data + '/' + k, {
+    chiave:  k,
+    idGioco: utente.idGioco,
+    da:      da || null,
+    quando:  new Date().toISOString()
+  });
+}
+
+/* Quanto manca alla prossima volta, in millisecondi. Zero vuol dire
+   "adesso si puo".
+
+   Il caso strano e l'ultimo: se la data segnata e nel futuro
+   l'orologio di qualcuno mente, e allora si aspetta tutta la pausa
+   invece di lasciar passare il sollecito. Fra i due sbagli possibili
+   e il meno peggio: al massimo si aspetta un quarto d'ora di troppo,
+   mentre l'altro sbaglio fa suonare il telefono di qualcuno a
+   ripetizione. */
+export function attesaSollecito(ultimo, adesso = Date.now(), pausa = PAUSA_SOLLECITO_MS) {
+  if (!ultimo) return 0;
+  const t = Date.parse(ultimo);
+  if (!Number.isFinite(t)) return 0;
+  const passato = adesso - t;
+  if (passato < 0) return pausa;
+  return Math.max(0, pausa - passato);
 }
 
 /* ---------- chi va convocato -----------------------------------

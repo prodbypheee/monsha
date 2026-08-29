@@ -22,13 +22,14 @@
 
 import {
   json, errore, esigiMembro, esigiAdmin, tuttiGliUtenti, chiave,
-  incaricoDi, puoConvocare, oggiRoma, dataValida
+  incaricoDi, puoConvocare, oggiRoma, dataValida, dataInLettere, normId
 } from '../lib/comune.mjs';
 
 import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
-  destinatariRiepilogo
+  destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
+  PAUSA_SOLLECITO_MS
 } from '../lib/convocazioni.mjs';
 
 import {
@@ -85,7 +86,9 @@ async function giorno(req, segreto, indirizzo) {
     leggiGiorni(), leggiRisposte(data), tuttiGliUtenti()
   ]);
 
-  const elenco = daConvocare(utenti).map(u => {
+  const membri = daConvocare(utenti);
+
+  const elenco = membri.map(u => {
     const k = chiave(u.email);
     const r = risposte[k];
     return {
@@ -97,6 +100,25 @@ async function giorno(req, segreto, indirizzo) {
     };
   }).sort((a, b) => a.idGioco.localeCompare(b.idGioco, 'it'));
 
+  /* La pausa fra un sollecito e l'altro la vede solo chi puo
+     sollecitare. Agli altri non servirebbe a niente, e sarebbe una
+     lettura d'archivio in piu addosso a ogni rilettura della giornata,
+     che adesso avviene da sola ogni mezzo minuto.
+
+     Si mandano i SECONDI CHE MANCANO e non l'ora dell'ultimo
+     sollecito: il conto lo fa il server, che e l'unico orologio di cui
+     ci si possa fidare. Un telefono col fuso sbagliato non deve poter
+     accorciare la pausa. */
+  let solleciti;
+  if (puoConvocare(g.utente)) {
+    const segnati = await leggiSolleciti(data);
+    solleciti = {};
+    membri.forEach(u => {
+      const manca = attesaSollecito((segnati[chiave(u.email)] || {}).quando);
+      if (manca > 0) solleciti[normId(u.idGioco)] = Math.ceil(manca / 1000);
+    });
+  }
+
   return json({
     data,
     allenamento: giorni.includes(data),
@@ -106,7 +128,8 @@ async function giorno(req, segreto, indirizzo) {
       presenti: elenco.filter(v => v.stato === 'presente').length,
       assenti:  elenco.filter(v => v.stato === 'assente').length,
       muti:     elenco.filter(v => !v.stato).length
-    }
+    },
+    ...(solleciti ? { solleciti } : {})
   });
 }
 
@@ -260,6 +283,85 @@ async function salvaLaFormazione(req, segreto) {
   return json({ ok: true, data, schieramento: esito.schieramento });
 }
 
+/* ---------- il colpetto sulla spalla --------------------------
+   Chi convoca sceglie una persona sola fra quelle che non hanno
+   ancora risposto e le manda una notifica.
+
+   Ogni controllo sta qui e non nel sito. Il sito spegne il bottone e
+   mostra il conto alla rovescia, ma e cortesia verso chi guarda, non
+   sicurezza: una richiesta costruita a mano salterebbe il bottone e
+   arriverebbe lo stesso, quindi la pausa la deve far rispettare il
+   server. Stessa ragione per cui si controlla che sia davvero un
+   giorno di allenamento e che quella persona non abbia gia risposto. */
+
+async function sollecita(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono sollecitare.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+  const data = String(corpo.data || '');
+  const cercato = normId(corpo.idGioco);
+
+  if (!dataValida(data)) return errore('Data non valida.');
+  if (!cercato) return errore('Manca chi sollecitare.');
+
+  const giorni = await leggiGiorni();
+  if (!giorni.includes(data)) return errore('Quel giorno non c’è allenamento.', 409);
+  if (!rispostaAmmessa(data)) return errore('Quella giornata è chiusa.', 409);
+
+  const membri = daConvocare(await tuttiGliUtenti());
+  const chi = membri.find(u => normId(u.idGioco) === cercato);
+  if (!chi) return errore('Non trovo quel membro.', 404);
+
+  // Sollecitare chi ha gia risposto non ha senso: nel frattempo puo
+  // aver risposto proprio mentre il capitano guardava l'elenco.
+  const risposte = await leggiRisposte(data);
+  if (risposte[chiave(chi.email)])
+    return json({ errore: 'Nel frattempo ha risposto: non serve più.', risposto: true }, 409);
+
+  const segnati = await leggiSolleciti(data);
+  const manca = attesaSollecito((segnati[chiave(chi.email)] || {}).quando);
+  if (manca > 0)
+    return json({
+      errore: 'Sollecitato da poco: riprova fra ' + Math.ceil(manca / 60000) + ' minuti.',
+      attesa: Math.ceil(manca / 1000)
+    }, 429);
+
+  if (!pushConfigurato())
+    return errore('Sul server mancano le chiavi VAPID: nessuna notifica puo partire.', 503);
+
+  const quando = dataInLettere(data);
+  const carico = {
+    titolo: 'Ci sei ' + quando + '?',
+    // Si dice chi lo sta cercando: un promemoria automatico si ignora,
+    // una persona che ti sta aspettando no.
+    testo:  g.utente.idGioco + ' ti chiede di segnare presente o assente.',
+    // Con la data dentro, su Android la notifica porta con se i due
+    // bottoni: si risponde senza aprire niente.
+    data,
+    vai: new URL(req.url).origin + '/area-riservata?giorno=' + data
+  };
+
+  const partite = await manda(chiave(chi.email), carico, 3 * 3600);
+
+  /* Se non e partito niente il telefono non ha suonato, e allora la
+     pausa non comincia: sarebbe un quarto d'ora di attesa in cambio di
+     niente. Si dice com'e andata invece di far finta di si. */
+  if (!partite)
+    return json({ ok: true, partite: 0, attesa: 0, idGioco: chi.idGioco });
+
+  await segnaSollecito(data, chi, g.utente.idGioco);
+
+  return json({
+    ok: true,
+    partite,
+    idGioco: chi.idGioco,
+    attesa: Math.ceil(PAUSA_SOLLECITO_MS / 1000)
+  });
+}
+
 /* ---------- notifiche ----------------------------------------- */
 
 async function pushIscrivi(req, segreto) {
@@ -389,6 +491,7 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'formazione')   return await salvaLaFormazione(req, segreto);
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
+    if (req.method === 'POST' && azione === 'sollecita')    return await sollecita(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);
     if (req.method === 'POST' && azione === 'push-esci')    return await pushEsci(req, segreto);
     if (req.method === 'POST' && azione === 'push-prova')   return await pushProva(req, segreto);

@@ -5,10 +5,14 @@
    se oggi e un giorno di allenamento, e solo in tre momenti:
 
      14:00  notifica a tutti i membri: presente o assente?
-     17:00  secondo avviso, a TUTTI: chi non ha ancora risposto lo
-            fa, e chi ha gia risposto si ricorda che si gioca e che
-            puo ancora cambiare idea
      20:00  mail di riepilogo a capitano, amministrazione e admin
+
+   C'era anche un richiamo automatico alle 17:00 a tutta la squadra.
+   Non c'e piu: adesso chi convoca ha in fondo alle convocazioni
+   l'elenco di chi non ha ancora risposto e sollecita chi vuole, uno
+   alla volta. Un colpetto sulla spalla di una persona vera funziona
+   meglio di un promemoria che arriva a venti telefoni, e soprattutto
+   non suona addosso ai diciotto che avevano gia risposto.
 
    Perche ogni ora invece che tre cron alle 14, 17 e 20: il cron di
    Netlify ragiona in UTC, e l'Italia sta un'ora avanti d'inverno e
@@ -44,20 +48,13 @@ async function giaFatto(data, fascia) {
 
 /* ---------- le due notifiche --------------------------------- */
 
-async function avvisa(data, utenti, seconda) {
+async function avvisa(data, utenti) {
   const quando = dataInLettere(data);
   const conMaiuscola = quando.charAt(0).toUpperCase() + quando.slice(1);
 
   const carico = {
-    titolo: seconda ? 'Allenamento fra poco' : 'Allenamento oggi',
-    /* Il richiamo va a tutti, anche a chi ha gia risposto, quindi non
-       puo piu dire "non hai ancora risposto": a meta della squadra
-       direbbe una cosa falsa. Cosi vale per entrambi — chi non ha
-       risposto lo fa, chi ha gia risposto sa che manca poco e che puo
-       ancora cambiare idea. */
-    testo:  seconda
-      ? conMaiuscola + ': manca poco. Se non hai ancora segnato presente o assente, fallo ora.'
-      : conMaiuscola + ': ci sei stasera?',
+    titolo: 'Allenamento oggi',
+    testo:  conMaiuscola + ': ci sei stasera?',
     data,
     // Su iPhone i bottoni non esistono e il tocco apre il sito: questo
     // indirizzo lo porta gia sulla scheda giusta, con i due bottoni
@@ -65,24 +62,19 @@ async function avvisa(data, utenti, seconda) {
     vai: SITO + '/area-riservata?giorno=' + data
   };
 
-  /* A TUTTI, anche a chi ha gia risposto. Prima il richiamo saltava
-     chi si era gia espresso, per non tempestarlo; ma cosi chi rispondeva
-     presto smetteva di ricevere il promemoria proprio nel momento in cui
-     serve ricordarsi che si gioca, e chi cambiava idea non aveva piu un
-     appiglio per dirlo.
+  /* A tutti i membri: e l'annuncio che oggi si gioca, non un
+     promemoria per i ritardatari.
 
      In parallelo e non in fila: venti invii sequenziali, ognuno con la
      sua andata e ritorno verso Google o Apple, sfiorerebbero il tempo
      massimo di una funzione, e chi e in fondo all'elenco riceverebbe
      la notifica un minuto dopo gli altri.
 
-     Tre ore di validita, ed e un numero scelto: la prima notifica
-     scade quando arriva il richiamo delle 17, il richiamo scade quando
-     parte il riepilogo delle 20. Un telefono spento tutto il pomeriggio
-     non deve accendersi la sera con addosso la domanda di un
-     allenamento gia cominciato. */
+     Sei ore di validita: scade quando parte il riepilogo delle 20. Un
+     telefono spento tutto il pomeriggio non deve accendersi la sera
+     con addosso la domanda di un allenamento gia cominciato. */
   const esiti = await Promise.all(
-    utenti.map(u => manda(chiave(u.email), carico, 3 * 3600)));
+    utenti.map(u => manda(chiave(u.email), carico, 6 * 3600)));
 
   return esiti.reduce((a, b) => a + b, 0);
 }
@@ -126,7 +118,7 @@ async function riepiloga(data, utenti, risposte) {
    quella frase finisce nei log di Netlify: quando un giorno non
    arrivera una notifica, la prima cosa da leggere e li. */
 async function giro(oggi, ora) {
-  if (![14, 17, 20].includes(ora))
+  if (![14, 20].includes(ora))
     return 'niente da fare a quest’ora';
 
   const giorni = await leggiGiorni();
@@ -154,15 +146,8 @@ async function giro(oggi, ora) {
   if (!pushConfigurato())
     return 'notifiche saltate: mancano le chiavi VAPID';
 
-  /* Booleano e non stringa, e non e un dettaglio: avvisa() distingue
-     la prima notifica dal richiamo con un si/no, e passandogli
-     'prima' — che in JavaScript e vero — ogni notifica usciva col
-     testo del richiamo. Le due chiamate devono parlare la stessa
-     lingua, e qui la lingua e il si/no. */
-  const richiamo = ora === 17;
-
-  const n = await avvisa(oggi, membri, richiamo);
-  return n + ' notifiche partite (' + (richiamo ? 'richiamo' : 'prima') + ')';
+  const n = await avvisa(oggi, membri);
+  return n + ' notifiche partite';
 }
 
 export default async () => {
