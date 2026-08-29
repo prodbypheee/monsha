@@ -772,6 +772,7 @@
     const PANNELLI = ['convocazioni', 'formazione', 'annunci', 'profilo', 'gestione'];
 
     function pannello(quale) {
+      aperto = quale;
       PANNELLI.forEach(p => {
         const sez = $('pan-' + p);
         if (sez) sez.hidden = p !== quale;
@@ -786,17 +787,52 @@
     document.querySelectorAll('.ar-sotto-voce').forEach(voce => {
       voce.addEventListener('click', () => {
         pannello(voce.dataset.pannello);
-        // La gestione accessi si ricarica ogni volta che la si apre:
-        // le richieste arrivano mentre il pannello e chiuso.
-        if (voce.dataset.pannello === 'gestione') caricaRichieste();
-        // La bacheca si rilegge a ogni apertura: una vecchia di un'ora
-        // non e una bacheca.
-        if (voce.dataset.pannello === 'annunci') annunci.apri();
-        // I presenti cambiano mentre la gente risponde: la panchina va
-        // riletta ogni volta che si apre il campo.
-        if (voce.dataset.pannello === 'formazione') formazione.ricarica();
+        // Ogni pannello si rilegge quando lo si apre: le cose
+        // succedono mentre lo si teneva chiuso.
+        rinfresca();
       });
     });
+
+    /* ---- rinfresco ----------------------------------------------
+       L'area riservata e roba viva: mentre uno la guarda, un altro
+       risponde presente, un terzo scrive in bacheca, un quarto chiede
+       di entrare. Finche non si rilegge, la pagina racconta com'era il
+       mondo nell'istante in cui e stata aperta — ed e per questo che
+       sembrava servisse chiudere e riaprire l'app per vedere le
+       novita.
+
+       Si rilegge in tre momenti: quando si apre un pannello, quando si
+       torna sull'app dopo averla lasciata, e ogni mezzo minuto mentre
+       la si tiene aperta.
+
+       Si rilegge solo il pannello che si sta guardando. Leggerli tutti
+       e quattro sarebbe lavoro buttato: gli altri tre li si rilegge
+       comunque nel momento in cui li si apre.
+
+       Le riletture automatiche sono silenziose — non spengono i
+       bottoni "Aggiorna", non svuotano le liste per poi riempirle —
+       perche una cosa che succede da sola non deve farsi notare. */
+
+    let aperto = 'convocazioni';
+    const OGNI_QUANTO = 30000;
+
+    function rinfresca(zitto) {
+      if (!ioSono) return;                                  // non e entrato nessuno
+      if (document.hidden) return;                          // app in secondo piano
+      if ($('arDentro').hidden) return;                     // non e la schermata di dentro
+      const tab = document.getElementById('tab-area');
+      if (tab && !tab.classList.contains('attiva')) return; // si sta guardando un'altra tab
+
+      if (aperto === 'convocazioni')    convocazioni.ricarica();
+      else if (aperto === 'formazione') formazione.ricarica();
+      else if (aperto === 'annunci')    annunci.apri(zitto);
+      else if (aperto === 'gestione')   caricaRichieste(zitto);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) rinfresca(true);
+    });
+    setInterval(() => rinfresca(true), OGNI_QUANTO);
 
     function entra(utente) {
       ioSono = utente;
@@ -968,11 +1004,11 @@
       utenti.forEach(u => contenitore.appendChild(riga(u, azioni, conIncarico)));
     }
 
-    async function caricaRichieste() {
+    async function caricaRichieste(zitto) {
       const btn = $('arAggiorna');
-      btn.disabled = true;
+      if (!zitto) btn.disabled = true;
       const r = await api('richieste');
-      btn.disabled = false;
+      if (!zitto) btn.disabled = false;
       if (!r.ok) return;
 
       const { attesa, approvati, rifiutati } = r.dati;
@@ -1001,9 +1037,14 @@
       bottone.disabled = false;
       if (!r.ok) { alert(r.dati.errore || 'Operazione non riuscita.'); return; }
       caricaRichieste();
+      /* Un approvato deve comparire subito fra i convocati: e la
+         ragione per cui lo si approva. Le convocazioni le tiene in
+         mano un altro pannello, che non sa niente di quel che e appena
+         successo qui — glielo si dice. */
+      convocazioni.ricarica();
     }
 
-    $('arAggiorna').addEventListener('click', caricaRichieste);
+    $('arAggiorna').addEventListener('click', () => caricaRichieste());
 
     /* ================= CONVOCAZIONI =================
        La prima tab interna dell'area. Tre mestieri in una schermata
@@ -1418,7 +1459,7 @@
 
       /* Mostra una giornata nella scheda in cima: etichetta, data,
          frecce che si spengono ai capi, e la risposta gia data. */
-      async function mostraSopra(data) {
+      async function mostraSopra(data, zitto) {
         sopra = data;
         const i = giorni.indexOf(data);
         $('oggiPrima').disabled = i <= 0;
@@ -1429,7 +1470,11 @@
           : (data === piu(oggi, 1) ? 'Domani si allena' : 'Prossimo allenamento');
         $('oggiQuando').textContent = maiuscola(inLettere(data));
         esito($('oggiEsito'), '');
-        segnaScelta(null, true, $('oggiScelta'));
+        // Cambiando giornata i bottoni si spengono perche di quel
+        // giorno non sappiamo ancora niente. Nella rilettura della
+        // STESSA giornata no: spegnerli ogni volta li farebbe
+        // lampeggiare sotto le dita di chi sta per premerli.
+        if (!zitto) segnaScelta(null, true, $('oggiScelta'));
 
         const r = await apiConv('giorno?data=' + encodeURIComponent(data));
         if (!r.ok || sopra !== data) return;
@@ -1770,18 +1815,49 @@
         $('convConta').hidden = true;
       }
 
-      /* Tornando sul sito dopo aver risposto dalla notifica, la pagina
-         ha in mano dati vecchi: si ricarica la giornata da sola. */
-      document.addEventListener('visibilitychange', () => {
-        // Si rilegge, ma senza spegnere i bottoni nell'attesa: chi
-        // torna sul sito dopo aver risposto dalla notifica deve
-        // vedere la sua risposta, non un lampeggio.
-        if (!document.hidden && io && attivo) caricaGiornata(attivo, true);
-        // E se si stava guardando il campo, anche quello.
-        if (!document.hidden && !$('pan-formazione').hidden) formazione.ricarica();
-      });
+      /* ---- rilettura ----
+         Tutto quello che avvia() legge dal server puo essere cambiato
+         mentre si guardava altro: un nuovo membro approvato, un
+         allenamento aggiunto dal capitano, dieci risposte arrivate.
+         Qui si rilegge, ma restando dov'eravamo: stessa giornata
+         aperta, stessa scheda in cima, e nessun bottone che si spegne
+         per un istante. Un aggiornamento che si fa notare e peggio di
+         uno in ritardo. */
+      async function ricarica() {
+        if (!io) return;
+        const r = await apiConv('stato');
+        if (!r.ok) return;
 
-      return { avvia, chiudi };
+        /* Il capitano puo avere giorni segnati e non ancora salvati:
+           ridisegnargli il calendario glieli cancellerebbe sotto le
+           dita. Si guarda prima di sovrascrivere `giorni`. */
+        const staScegliendo = io.convoca &&
+          (scelti.size !== giorni.length || giorni.some(g => !scelti.has(g)));
+
+        io = r.dati.io;
+        oggi = r.dati.oggi;
+        giorni = r.dati.giorni;
+
+        $('convCapitano').hidden = !io.convoca;
+        if (io.convoca && !staScegliendo) { scelti = new Set(giorni); disegnaCalendario(); }
+
+        disegnaGiorni();
+        $('arOggi').hidden = !giorni.length;
+
+        // Se la giornata aperta esiste ancora si rilegge e basta; solo
+        // se e sparita si va da un'altra parte.
+        if (attivo && giorni.includes(attivo)) caricaGiornata(attivo, true);
+        else if (r.dati.prossimo) mostraGiorno(r.dati.prossimo);
+        else svuotaGiornata();
+
+        if (sopra && giorni.includes(sopra)) mostraSopra(sopra, true);
+        else if (giorni.length) mostraSopra(giorni.includes(oggi) ? oggi : giorni[0]);
+        else sopra = null;
+
+        caricaPresenze();
+      }
+
+      return { avvia, chiudi, ricarica };
     })();
 
 
@@ -2500,11 +2576,11 @@
         carica();
       }
 
-      async function carica() {
+      async function carica(zitto) {
         const btn = $('annAggiorna');
-        btn.disabled = true;
+        if (!zitto) btn.disabled = true;
         const r = await apiAnn('elenco');
-        btn.disabled = false;
+        if (!zitto) btn.disabled = false;
 
         if (!r.ok) {
           esito($('annEsito'), r.dati.errore || 'Non riesco a leggere la bacheca.');
@@ -2561,11 +2637,11 @@
         carica();
       });
 
-      $('annAggiorna').addEventListener('click', carica);
+      $('annAggiorna').addEventListener('click', () => carica());
 
       /* Si carica alla prima apertura della tab e poi quando si torna:
          una bacheca vecchia di un'ora non e una bacheca. */
-      function apri() { carica(); }
+      function apri(zitto) { carica(zitto); }
       function chiudi() { caricati = false; $('annElenco').textContent = ''; $('annTesto').value = ''; }
 
       return { apri, chiudi, caricati: () => caricati };
@@ -2574,7 +2650,10 @@
     /* ---- avvio pigro ---- */
 
     document.addEventListener('area:aperta', async () => {
-      if (avviata) return;
+      /* Gia dentro: non si rifa l'accesso, si rilegge quel che si sta
+         guardando. Tornare sulla tab e a tutti gli effetti riaprire
+         l'app, e deve mostrare le cose come stanno adesso. */
+      if (avviata) { rinfresca(); return; }
       avviata = true;
       if (modoAdmin()) vestiDaAdmin();
       const r = await api('sessione');
