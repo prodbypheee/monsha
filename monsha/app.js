@@ -861,6 +861,46 @@
       const gruppo = document.createElement('div');
       gruppo.className = 'ar-voce-azioni';
 
+      /* Correggere l'ID di gioco. Lo scrive la persona quando si
+         registra, e chi sbaglia una lettera se la porta dietro
+         dappertutto: rosa, convocazioni, campo, mail.
+
+         Chi e connesso NON viene buttato fuori: il gettone di sessione
+         contiene l'email, non l'ID, e l'utente si rilegge per email a
+         ogni richiesta. L'ID serve a entrare, non a restare dentro. */
+      const idBtn = document.createElement('button');
+      idBtn.type = 'button';
+      idBtn.className = 'ar-mini';
+      idBtn.textContent = 'Cambia ID';
+      idBtn.addEventListener('click', async () => {
+        const nuovo = prompt(
+          'ID di gioco di ' + utente.email + '\n\n' +
+          'Chi è connesso resta connesso: userà quello nuovo al prossimo accesso.',
+          utente.idGioco);
+        if (nuovo === null) return;
+
+        const pulito = nuovo.trim();
+        if (pulito === utente.idGioco) return;
+
+        idBtn.disabled = true;
+        const r = await api('id', { email: utente.email, idGioco: pulito });
+        idBtn.disabled = false;
+
+        if (!r.ok) { alert(r.dati.errore || 'Non sono riuscito a cambiarlo.'); return; }
+
+        utente.idGioco = r.dati.utente.idGioco;
+        meta.textContent = utente.piattaforma + ' · ' + utente.idGioco + ' · ' + quando;
+
+        // Se l'admin ha corretto il proprio ID, la sua scheda di
+        // bentornato e la sua foto devono aggiornarsi subito.
+        if (ioSono && utente.email === ioSono.email) {
+          ioSono.idGioco = utente.idGioco;
+          $('arProfId').textContent = utente.idGioco;
+          vestiBentornato(ioSono);
+        }
+      });
+      gruppo.appendChild(idBtn);
+
       /* L'incarico si cambia da un menu invece che da tre bottoni: le
          voci sono poche ma si escludono a vicenda, e un menu dice da
          solo qual e quella in vigore. Compare solo sugli approvati:

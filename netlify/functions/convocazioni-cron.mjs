@@ -5,9 +5,9 @@
    se oggi e un giorno di allenamento, e solo in tre momenti:
 
      14:00  notifica a tutti i membri: presente o assente?
-     17:00  seconda notifica, ma SOLO a chi non ha ancora risposto —
-            richiamare anche chi ha gia detto la sua e il modo piu
-            rapido per far spegnere le notifiche a tutta la squadra
+     17:00  secondo avviso, a TUTTI: chi non ha ancora risposto lo
+            fa, e chi ha gia risposto si ricorda che si gioca e che
+            puo ancora cambiare idea
      20:00  mail di riepilogo a capitano, amministrazione e admin
 
    Perche ogni ora invece che tre cron alle 14, 17 e 20: il cron di
@@ -44,14 +44,20 @@ async function giaFatto(data, fascia) {
 
 /* ---------- le due notifiche --------------------------------- */
 
-async function avvisa(data, utenti, risposte, seconda) {
+async function avvisa(data, utenti, seconda) {
   const quando = dataInLettere(data);
+  const conMaiuscola = quando.charAt(0).toUpperCase() + quando.slice(1);
 
   const carico = {
     titolo: seconda ? 'Allenamento fra poco' : 'Allenamento oggi',
+    /* Il richiamo va a tutti, anche a chi ha gia risposto, quindi non
+       puo piu dire "non hai ancora risposto": a meta della squadra
+       direbbe una cosa falsa. Cosi vale per entrambi — chi non ha
+       risposto lo fa, chi ha gia risposto sa che manca poco e che puo
+       ancora cambiare idea. */
     testo:  seconda
-      ? 'Non hai ancora risposto per ' + quando + '. Ci sei?'
-      : quando.charAt(0).toUpperCase() + quando.slice(1) + ': ci sei stasera?',
+      ? conMaiuscola + ': manca poco. Se non hai ancora segnato presente o assente, fallo ora.'
+      : conMaiuscola + ': ci sei stasera?',
     data,
     // Su iPhone i bottoni non esistono e il tocco apre il sito: questo
     // indirizzo lo porta gia sulla scheda giusta, con i due bottoni
@@ -59,20 +65,24 @@ async function avvisa(data, utenti, risposte, seconda) {
     vai: SITO + '/area-riservata?giorno=' + data
   };
 
-  // In parallelo e non in fila: venti invii sequenziali, ognuno con la
-  // sua andata e ritorno verso Google o Apple, arriverebbero a sfiorare
-  // il tempo massimo di una funzione. E chi e in fondo all'elenco non
-  // deve ricevere la notifica un minuto dopo gli altri.
-  // Tre ore di validita in entrambi i casi, ed e un numero scelto, non
-  // tondo per caso: la prima notifica scade quando arriva il richiamo
-  // delle 17, il richiamo scade quando parte il riepilogo delle 20. Un
-  // telefono spento tutto il pomeriggio non deve accendersi la sera con
-  // addosso la domanda di un allenamento gia cominciato.
-  const esiti = await Promise.all(utenti.map(u => {
-    const k = chiave(u.email);
-    if (seconda && risposte[k]) return 0;   // ha gia risposto: lasciamolo in pace
-    return manda(k, carico, 3 * 3600);
-  }));
+  /* A TUTTI, anche a chi ha gia risposto. Prima il richiamo saltava
+     chi si era gia espresso, per non tempestarlo; ma cosi chi rispondeva
+     presto smetteva di ricevere il promemoria proprio nel momento in cui
+     serve ricordarsi che si gioca, e chi cambiava idea non aveva piu un
+     appiglio per dirlo.
+
+     In parallelo e non in fila: venti invii sequenziali, ognuno con la
+     sua andata e ritorno verso Google o Apple, sfiorerebbero il tempo
+     massimo di una funzione, e chi e in fondo all'elenco riceverebbe
+     la notifica un minuto dopo gli altri.
+
+     Tre ore di validita, ed e un numero scelto: la prima notifica
+     scade quando arriva il richiamo delle 17, il richiamo scade quando
+     parte il riepilogo delle 20. Un telefono spento tutto il pomeriggio
+     non deve accendersi la sera con addosso la domanda di un
+     allenamento gia cominciato. */
+  const esiti = await Promise.all(
+    utenti.map(u => manda(chiave(u.email), carico, 3 * 3600)));
 
   return esiti.reduce((a, b) => a + b, 0);
 }
@@ -151,7 +161,7 @@ async function giro(oggi, ora) {
      lingua, e qui la lingua e il si/no. */
   const richiamo = ora === 17;
 
-  const n = await avvisa(oggi, membri, risposte, richiamo);
+  const n = await avvisa(oggi, membri, richiamo);
   return n + ' notifiche partite (' + (richiamo ? 'richiamo' : 'prima') + ')';
 }
 
