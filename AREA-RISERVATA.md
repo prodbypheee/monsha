@@ -92,7 +92,12 @@ apri per sbaglio `/area-riservata` e provi a entrare col tuo account, il
 campo password compare da solo — non resti fuori.
 
 - **Registrazione** → l'account nasce con stato `in-attesa`. Non fa
-  entrare nessuno finché non decidi tu.
+  entrare nessuno finché non decidi tu, ma il cookie di sessione viene
+  dato **subito**: non apre niente — ogni richiesta esige stato
+  "approvato" — e serve a far sì che il giorno che approvi la persona
+  sia già riconosciuta e **non debba rifare l'accesso**. Finché è in
+  attesa, aprendo l'area vede «richiesta ancora in attesa» invece del
+  modulo. Se la rifiuti o la revochi, il cookie viene buttato.
 - **Tu approvi o rifiuti** dal pannello. `Revoca` rimette fuori un
   membro già approvato, e chi è connesso in quel momento cade fuori al
   primo caricamento: la sessione viene ricontrollata contro il database

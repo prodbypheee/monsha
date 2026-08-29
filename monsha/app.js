@@ -713,7 +713,7 @@
       if (r.dati.utente && r.dati.utente.stato === 'approvato') return entra(r.dati.utente);
 
       avviso('📨', 'Richiesta inviata',
-        'Un amministratore ha ricevuto la tua richiesta. Appena viene approvata potrai entrare con la tua email e il tuo ID di gioco.');
+        'Un amministratore ha ricevuto la tua richiesta. Da qui in poi ti riconosciamo: appena viene approvata entri da solo, senza rifare l’accesso.');
     });
 
     /* ---- dentro ---- */
@@ -2552,8 +2552,18 @@
       avviata = true;
       if (modoAdmin()) vestiDaAdmin();
       const r = await api('sessione');
-      if (r.ok && r.dati.utente) entra(r.dati.utente);
-      else schermata('arOspite');
+
+      if (r.ok && r.dati.utente) return entra(r.dati.utente);
+
+      /* Chi si e registrato ha gia una sessione, anche se non e ancora
+         approvato: invece del modulo di accesso gli si dice a che
+         punto e. Il giorno che l'admin approva, la stessa sessione
+         diventa buona e la volta dopo entra senza rifare niente. */
+      if (r.ok && r.dati.stato === 'in-attesa')
+        return avviso('⏳', 'Richiesta ancora in attesa',
+          'Ti riconosciamo già: appena un amministratore approva la tua richiesta entri da solo, senza rifare l’accesso.');
+
+      schermata('arOspite');
     });
   })();
 
