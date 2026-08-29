@@ -159,6 +159,28 @@ che lo verifica, in `strumenti/prove.mjs`.
 Resta ovvio il caso del telefono sbloccato prestato a qualcuno: quello
 non lo può impedire nessun sito.
 
+## 4-quater. Correggere l'ID di gioco
+
+Nel pannello **Gestione**, accanto a ogni membro, c'è **Cambia ID**:
+serve perché l'ID lo scrive la persona quando si registra, e chi
+sbaglia una lettera se la porta dietro dappertutto — rosa,
+convocazioni, campo, mail.
+
+**Chi è connesso non viene buttato fuori**, ed è voluto. Verrebbe da
+pensare il contrario, visto che l'ID è metà delle credenziali: non
+succede perché il gettone di sessione contiene solo l'email, e a ogni
+richiesta l'utente si rilegge dall'archivio per email. **L'ID serve a
+entrare, non a restare dentro.** Chi era già connesso continua senza
+accorgersi di niente; al prossimo accesso userà quello nuovo.
+
+Due ID uguali vengono rifiutati: non impedirebbero l'accesso — quello
+va per email — ma renderebbero impossibile capire chi è chi in campo e
+negli elenchi, dove si legge solo l'ID.
+
+Presenze, elenchi, statistiche e riepiloghi seguono da soli, perché
+leggono il nome dall'account. Restano com'erano solo gli annunci già
+pubblicati e le formazioni già salvate: sono istantanee di un momento.
+
 ## 5. Dove sta il codice
 
 | File | Cosa fa |

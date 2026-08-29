@@ -346,6 +346,53 @@ async function incarico(req, segreto) {
   return json({ ok: true, utente: pubblico(utente) });
 }
 
+/* Correggere l'ID di gioco di qualcuno. Serve perche l'ID lo scrive
+   la persona quando si registra, e chi sbaglia una lettera resta con
+   quella per sempre: compare nella rosa, nelle convocazioni, in campo
+   e nelle mail.
+
+   CHI E CONNESSO NON VIENE BUTTATO FUORI, ed e voluto. L'ID e meta
+   delle credenziali, quindi verrebbe da pensare che cambiarlo debba
+   invalidare la sessione: non succede perche il gettone contiene solo
+   l'email, e a ogni richiesta l'utente si rilegge dall'archivio per
+   email. L'ID serve a ENTRARE, non a restare dentro. Chi era gia
+   connesso continua senza accorgersi di niente; al prossimo accesso
+   usera quello nuovo.
+
+   Tutto il resto del sito segue da solo: presenze, elenchi,
+   statistiche e riepiloghi leggono il nome dall'account, non da una
+   copia. Restano com'erano solo due cose gia scritte — gli annunci
+   pubblicati e le formazioni gia salvate — che sono istantanee di un
+   momento, e nel caso d'uso vero (una lettera sbagliata, corretta
+   subito) non esistono ancora. */
+async function cambiaId(req, segreto) {
+  const g = await esigiAdmin(req, segreto);
+  if (g.errore) return g.errore;
+
+  const corpo   = await req.json().catch(() => ({}));
+  const email   = normEmail(corpo.email);
+  const idGioco = String(corpo.idGioco || '').trim();
+
+  if (idGioco.length < 2 || idGioco.length > 40)
+    return errore('L’ID di gioco deve avere fra 2 e 40 caratteri.');
+
+  const utente = await leggiUtente(email);
+  if (!utente) return errore('Utente non trovato.', 404);
+
+  /* Due persone con lo stesso ID non impediscono l'accesso — quello
+     va per email — ma renderebbero impossibile capire chi e chi in
+     campo e negli elenchi, dove si legge solo l'ID. */
+  const tutti = await tuttiGliUtenti();
+  if (tutti.some(u => normEmail(u.email) !== email && normId(u.idGioco) === normId(idGioco)))
+    return errore('Questo ID di gioco e gia di un altro membro.', 409);
+
+  utente.idGioco     = idGioco;
+  utente.idConfronto = normId(idGioco);
+  await salvaUtente(utente);
+
+  return json({ ok: true, utente: pubblico(utente) });
+}
+
 /* ---------- ingresso ------------------------------------------ */
 
 export default async (req) => {
@@ -367,6 +414,7 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'esci')       return esci();
     if (req.method === 'POST' && azione === 'decidi')     return await decidi(req, segreto);
     if (req.method === 'POST' && azione === 'incarico')   return await incarico(req, segreto);
+    if (req.method === 'POST' && azione === 'id')         return await cambiaId(req, segreto);
     return errore('Azione sconosciuta.', 404);
   } catch (e) {
     console.error('area riservata:', e);
