@@ -131,6 +131,24 @@ export function rispostaAmmessa(data) {
   return data === fraGiorni(oggi, -1) && oraRoma() < 6;
 }
 
+/* ---------- gli appuntamenti della giornata --------------------
+   Che cosa va fatto a quest'ora, o niente. Sta qui e non dentro
+   l'orologio perche e una regola, e le regole si provano.
+
+   Il confronto sui minuti e "prima o dopo la mezz'ora" e non "esatto":
+   Netlify fa partire una funzione programmata all'orario giusto o
+   qualche istante dopo, mai prima, e con l'uguaglianza secca
+   un'esecuzione arrivata alle 8:31 non farebbe piu niente. Mezz'ora di
+   tolleranza in avanti costa niente, e il segno di spunta contro il
+   doppio invio impedisce comunque che la stessa fascia parta due
+   volte. */
+export function fasciaDi(ora, minuto) {
+  if (ora === 8  && minuto >= 30) return 'mattina';
+  if (ora === 14 && minuto <  30) return 'pomeriggio';
+  if (ora === 20 && minuto <  30) return 'riepilogo';
+  return null;
+}
+
 /* ---------- solleciti -----------------------------------------
    Il colpetto sulla spalla: chi convoca sceglie una persona sola fra
    quelle che non hanno ancora risposto e le fa suonare il telefono.

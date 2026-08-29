@@ -128,8 +128,9 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
 
 1. Il capitano apre **Convocazioni** e tocca i giorni sul calendario:
    questa settimana e le quattro successive. Salva.
-2. Nei giorni segnati, **alle 14:00** parte una notifica a tutti i
-   membri approvati, capitano compreso.
+2. Nei giorni segnati, **alle 8:30** arriva il buongiorno: oggi c’è
+   allenamento, tocca qui e segna se ci sei. **Alle 14:00** un secondo
+   avviso a tutti i membri approvati, capitano compreso.
 3. Chi non risponde lo si va a cercare **uno alla volta**: in fondo
    alla tab, chi convoca trova l'elenco di chi non ha ancora detto
    niente e un bottone per persona. Quindici minuti di pausa prima di
@@ -144,9 +145,10 @@ risposto. Il colpetto sulla spalla di una persona vera funziona meglio,
 e chi ha già risposto non lo riceve affatto.
 
 Gli orari sono ora italiana e restano giusti anche col cambio dell'ora
-legale: la funzione programmata gira ogni ora tonda e ogni volta guarda
+legale: la funzione programmata gira ogni mezz'ora e ogni volta guarda
 che ore sono a Roma, invece di fidarsi di un orario fisso in UTC che
-sbaglierebbe di un'ora per metà anno.
+sbaglierebbe di un'ora per metà anno. Ogni mezz'ora e non ogni ora da
+quando c'è un appuntamento alle 8:30.
 
 ### Sollecitare chi non risponde
 
@@ -324,7 +326,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
-| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 14:00 e 20:00 |
+| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 8:30, 14:00 e 20:00 |
 | `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |
