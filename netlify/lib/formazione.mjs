@@ -118,3 +118,46 @@ export function verificaSchieramento(grezzo, presenti) {
 
   return { schieramento: pulito };
 }
+
+/* ---------- chi si sfila esce dal campo ------------------------
+   Se uno segna ASSENTE dopo essere stato schierato, va tolto dalle
+   caselle: una formazione con dentro chi ha detto che non viene e
+   peggio di una casella vuota, perche il capitano la legge come
+   buona e scopre il buco all'ultimo.
+
+   Sta qui e non nel sito perche la risposta puo arrivare da tre
+   posti — i bottoni della pagina, quelli dentro la notifica su
+   Android, il tocco sulla notifica su iPhone — e in due di quei tre
+   casi il sito non e nemmeno aperto. */
+
+export async function togliDalCampo(data, idGioco) {
+  const cercato = normId(idGioco);
+  if (!cercato) return false;
+
+  const f = await leggiFormazione(data);
+  const caselle = Object.entries(f.schieramento)
+    .filter(([, chi]) => normId(chi) === cercato)
+    .map(([casella]) => casella);
+
+  if (!caselle.length) return false;
+
+  caselle.forEach(c => { delete f.schieramento[c]; });
+
+  /* Si tiene la firma di chi aveva schierato: e ancora la sua
+     formazione, semplicemente con un buco in meno di quanti credeva.
+     Cambia solo il momento dell'ultima modifica, che e vero. */
+  await salvaFormazione(data, f.schieramento, f.da);
+  return true;
+}
+
+/* Lo schieramento ripulito: restano solo le caselle occupate da chi e
+   presente adesso. E il filtro che rende la regola vera comunque
+   vadano le cose, senza fidarsi di cio che c'e scritto nell'archivio.
+   Non scrive niente: e una lettura onesta, non una correzione. */
+export function soloPresenti(schieramento, presenti) {
+  const ammessi = new Set((presenti || []).map(normId));
+  const pulito = {};
+  for (const [casella, chi] of Object.entries(schieramento || {}))
+    if (chi && ammessi.has(normId(chi))) pulito[casella] = chi;
+  return pulito;
+}

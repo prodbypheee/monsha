@@ -40,7 +40,8 @@ import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
 import { preparaRiepilogo, leggiRosa } from '../lib/mail-riepilogo.mjs';
 
 import {
-  CASELLE, leggiFormazione, salvaFormazione, verificaSchieramento
+  CASELLE, leggiFormazione, salvaFormazione, verificaSchieramento,
+  togliDalCampo, soloPresenti
 } from '../lib/formazione.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
@@ -153,7 +154,20 @@ async function rispondi(req, segreto) {
     return errore('Troppo tardi per rispondere a quella giornata.', 409);
 
   await salvaRisposta(data, g.utente, scelta);
-  return json({ ok: true, data, stato: scelta });
+
+  /* Chi si sfila esce dal campo. Una formazione con dentro qualcuno
+     che ha appena detto "non vengo" e peggio di una casella vuota: il
+     capitano la legge come buona e scopre il buco all'ultimo momento.
+
+     Sta sul server e non nel sito perche la risposta puo arrivare da
+     tre posti — la pagina, i bottoni dentro la notifica su Android, il
+     tocco sulla notifica su iPhone — e in due di quei tre il sito non
+     e nemmeno aperto. */
+  const sfilato = scelta === 'assente'
+    ? await togliDalCampo(data, g.utente.idGioco)
+    : false;
+
+  return json({ ok: true, data, stato: scelta, toltoDalCampo: sfilato });
 }
 
 /* ---------- chi c'e stato -------------------------------------
@@ -195,11 +209,24 @@ async function formazione(req, segreto, indirizzo) {
     .map(u => u.idGioco)
     .sort((a, b) => a.localeCompare(b, 'it'));
 
+  /* LA REGOLA, resa vera per costruzione: in campo si vede solo chi
+     e presente adesso. Chi ha segnato assente viene tolto quando
+     risponde, ma quella e una pulizia che si puo perdere — un errore
+     di rete, una formazione salvata prima che uno cambiasse idea, una
+     risposta arrivata da un bottone dentro una notifica. Filtrando
+     anche in lettura, un assente non puo comparire in campo nemmeno
+     se l'archivio dicesse il contrario.
+
+     L'altra meta della regola viene da se: la panchina e "i presenti
+     meno quelli in campo", quindi chi e presente sta sempre da una
+     delle due parti e non sparisce mai. */
+  const schieramento = soloPresenti(salvata.schieramento, presenti);
+
   return json({
     data,
     modulo: salvata.modulo,
     caselle: CASELLE,
-    schieramento: salvata.schieramento,
+    schieramento,
     aggiornato: salvata.aggiornato,
     da: salvata.da,
     presenti,
