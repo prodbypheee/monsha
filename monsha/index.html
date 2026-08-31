@@ -528,6 +528,14 @@
             <b>Assente</b><span>non ci sono</span>
           </button>
         </div>
+          <!-- A che ora arrivi. Parte dalle 21:30, che e l'ora di quasi
+               tutti: chi non tocca le frecce ha gia risposto bene. -->
+          <div class="oraz" id="oggiOra">
+            <span class="oraz-eti">Arrivo</span>
+            <button type="button" class="oraz-fr" data-passo="-1" aria-label="Mezz'ora prima">‹</button>
+            <b class="oraz-num" id="oggiOraNum">21:30</b>
+            <button type="button" class="oraz-fr" data-passo="1" aria-label="Mezz'ora dopo">›</button>
+          </div>
         <p class="ar-esito" id="oggiEsito" role="status" aria-live="polite"></p>
       </div>
 
@@ -611,6 +619,14 @@
                 <b>Assente</b><span>non ci sono</span>
               </button>
             </div>
+          <!-- A che ora arrivi. Parte dalle 21:30, che e l'ora di quasi
+               tutti: chi non tocca le frecce ha gia risposto bene. -->
+          <div class="oraz" id="convOra">
+            <span class="oraz-eti">Arrivo</span>
+            <button type="button" class="oraz-fr" data-passo="-1" aria-label="Mezz'ora prima">‹</button>
+            <b class="oraz-num" id="convOraNum">21:30</b>
+            <button type="button" class="oraz-fr" data-passo="1" aria-label="Mezz'ora dopo">›</button>
+          </div>
 
             <p class="ar-esito" id="convEsito" role="status" aria-live="polite"></p>
 
@@ -648,7 +664,7 @@
               </div>
               <span class="conv-stato" id="pushStato">spente</span>
             </div>
-            <p class="wiz-sub" id="pushSpiega" style="margin-top:18px;">Nei giorni di allenamento arriva il buongiorno alle 8:30 e un secondo avviso alle 14:00. Se poi non rispondi, il capitano può mandartene un altro. Su Android rispondi dai due bottoni della notifica, senza aprire niente.</p>
+            <p class="wiz-sub" id="pushSpiega" style="margin-top:18px;">Nei giorni di allenamento arrivano tre avvisi: il buongiorno alle 8:30, uno alle 14:00 e l'ultima chiamata alle 18:00. Se non rispondi, il capitano può mandartene un altro. Su Android rispondi dai due bottoni della notifica, senza aprire niente.</p>
             <p class="ar-esito" id="pushEsito" role="status" aria-live="polite"></p>
             <div class="ar-azioni">
               <button type="button" class="btn btn-acc" id="pushAccendi">Attiva le notifiche</button>

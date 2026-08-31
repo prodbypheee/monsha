@@ -1116,6 +1116,89 @@
          vera la fa rispettare il server, non questo conto. */
       let scadenze = {};
       let bottoniSollecito = {};
+
+      /* ---- a che ora arrivi ----
+         L'ora scelta per ciascuna giornata, e la risposta che ho gia
+         dato per ciascuna. La seconda serve perche cambiare l'ora dopo
+         aver gia detto "ci sono" deve ri-registrarla subito: altrimenti
+         il numero direbbe una cosa e l'archivio un'altra, e nell'elenco
+         gli altri leggerebbero l'ora vecchia.
+
+         Le regole per muovere le frecce sono le stesse del server,
+         ripetute qui solo per far muovere i numeri. A decidere e il
+         server: qualunque cosa gli arrivi, la riporta dentro i limiti. */
+      const ORA_DEFAULT = '21:30';
+      const ORA_PRIMA  = 21 * 60 + 30;
+      const ORA_ULTIMA = 23 * 60 + 30;
+
+      let oreScelte = {};
+      let mioStato  = {};
+
+      const OROLOGI = { convScelta: ['convOra', 'convOraNum'],
+                        oggiScelta: ['oggiOra', 'oggiOraNum'] };
+
+      const inMinuti = v => {
+        const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || ''));
+        if (!m) return null;
+        const ore = Number(m[1]), min = Number(m[2]);
+        if (ore < 0 || ore > 23 || (min !== 0 && min !== 30)) return null;
+        return ore * 60 + min;
+      };
+      const inOra = m =>
+        String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+
+      const oraDi = data => oreScelte[data] || ORA_DEFAULT;
+
+      /* Ridipinge l'orologio di un contenitore: il numero e le due
+         frecce, spente ai capi o quando la giornata e chiusa. */
+      function pittaOrologio(idScelta) {
+        const par = OROLOGI[idScelta];
+        if (!par) return;
+        const box = $(par[0]);
+        const data = idScelta === 'convScelta' ? attivo : sopra;
+        if (!data) return;
+
+        const ora = oraDi(data);
+        $(par[1]).textContent = ora;
+
+        const m = inMinuti(ora);
+        const chiusa = box.dataset.bloccata === '1';
+        box.querySelectorAll('.oraz-fr').forEach(b => {
+          const passo = Number(b.dataset.passo);
+          b.disabled = chiusa ||
+            (passo < 0 && m <= ORA_PRIMA) ||
+            (passo > 0 && m >= ORA_ULTIMA);
+        });
+      }
+
+      function vestiOra(data) {
+        if (attivo === data) pittaOrologio('convScelta');
+        if (sopra === data && !$('arOggi').hidden) pittaOrologio('oggiScelta');
+      }
+
+      function scorriOra(data, passo, cassetta) {
+        const nuova = inOra(Math.min(ORA_ULTIMA,
+          Math.max(ORA_PRIMA, inMinuti(oraDi(data)) + passo * 30)));
+        if (nuova === oraDi(data)) return;
+
+        oreScelte[data] = nuova;
+        vestiOra(data);
+
+        // Gia detto che ci sono: la nuova ora va registrata adesso.
+        if (mioStato[data] === 'presente') rispondi(data, 'presente', cassetta);
+      }
+
+      $('convOra').addEventListener('click', e => {
+        const b = e.target.closest('.oraz-fr');
+        if (!b || b.disabled || !attivo) return;
+        scorriOra(attivo, Number(b.dataset.passo), $('convEsito'));
+      });
+
+      $('oggiOra').addEventListener('click', e => {
+        const b = e.target.closest('.oraz-fr');
+        if (!b || b.disabled || !sopra) return;
+        scorriOra(sopra, Number(b.dataset.passo), $('oggiEsito'));
+      });
       /* Quel che ho appena risposto, per giornata. Serve solo finche
          il server non conferma la stessa cosa: e la rete di sicurezza
          contro una rilettura che arriva indietro. */
@@ -1278,8 +1361,14 @@
            precedente per un istante, e si vedeva il bottone ASSENTE
            acceso e la propria faccia ancora con la spunta verde nella
            lista sotto. Appena il server concorda, l'eccezione cade. */
+        const mia = r.dati.elenco.find(v => v.io) || {};
+        mioStato[data] = mia.stato || null;
+        // L'ora gia registrata vince su quella di partenza: chi torna
+        // sulla pagina deve ritrovare l'ora che ha scelto, non le 21:30.
+        if (mia.stato === 'presente' && mia.ora) oreScelte[data] = mia.ora;
+
         const miaSalvata = mieRisposte[data];
-        const suaVersione = (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        const suaVersione = mia.stato || null;
         if (miaSalvata && suaVersione === miaSalvata) delete mieRisposte[data];
 
         const elenco = miaSalvata
@@ -1303,6 +1392,7 @@
           muti:     elenco.filter(v => !v.stato).length
         });
         disegnaElenco(elenco);
+        vestiOra(data);
         mostraSolleciti(r.dati, elenco);
       }
 
@@ -1494,10 +1584,20 @@
          si sta guardando. Quando sono la stessa giornata devono dire
          la stessa cosa, altrimenti uno dei due mente. */
       function segnaScelta(stato, bloccata, dove) {
-        (dove || $('convScelta')).querySelectorAll('.conv-btn').forEach(b => {
+        const box = dove || $('convScelta');
+        box.querySelectorAll('.conv-btn').forEach(b => {
           b.setAttribute('aria-pressed', String(b.dataset.risposta === stato));
           b.disabled = !!bloccata;
         });
+
+        /* L'orologio segue i due bottoni: se la giornata e chiusa si
+           spegne con loro. Spento e non nascosto — sparire mentre si
+           carica farebbe saltare la pagina sotto le dita. */
+        const par = OROLOGI[box.id];
+        if (par) {
+          $(par[0]).dataset.bloccata = bloccata ? '1' : '';
+          pittaOrologio(box.id);
+        }
       }
 
       function segnaOvunque(data, stato, bloccata) {
@@ -1548,6 +1648,16 @@
             nome.className = 'conv-nome';
             nome.textContent = v.idGioco;
 
+            /* L'ora solo per chi c'e: "assente alle 21:30" non vuol
+               dire niente. E sotto il nome, non accanto: la notizia e
+               che c'e, l'ora e il dettaglio. */
+            if (v.stato === 'presente' && v.ora) {
+              const q = document.createElement('em');
+              q.className = 'conv-ora';
+              q.textContent = v.ora;
+              nome.appendChild(q);
+            }
+
             tessera.append(avatar, nome);
 
             if (v.incarico && v.incarico !== 'giocatore') {
@@ -1573,7 +1683,11 @@
         segnaOvunque(data, scelta, false);
         esito(cassetta, '');
 
-        const r = await apiConv('rispondi', { data, stato: scelta });
+        const r = await apiConv('rispondi', {
+          data, stato: scelta,
+          // Solo quando serve: a un assente l'ora di arrivo non si chiede.
+          ...(scelta === 'presente' ? { ora: oraDi(data) } : {})
+        });
         if (!r.ok) {
           esito(cassetta, r.dati.errore || 'Non sono riuscito a registrare la risposta.');
           segnaOvunque(data, null, false);
@@ -1581,7 +1695,15 @@
         }
 
         mieRisposte[data] = scelta;
-        esito(cassetta, scelta === 'presente' ? 'Segnato presente.' : 'Segnato assente.', true);
+        mioStato[data] = scelta;
+
+        // L'ora buona e quella che risponde il server, non quella che
+        // gli abbiamo mandato: e lui che la riporta dentro i limiti.
+        if (scelta === 'presente') { oreScelte[data] = r.dati.ora || oraDi(data); vestiOra(data); }
+
+        esito(cassetta, scelta === 'presente'
+          ? 'Segnato presente, arrivo alle ' + oraDi(data) + '.'
+          : 'Segnato assente.', true);
 
         // Elenco e conteggi si aggiornano quando arrivano, senza
         // aspettarli e senza toccare i due bottoni: la risposta e gia
@@ -1634,9 +1756,13 @@
         const r = await apiConv('giorno?data=' + encodeURIComponent(data));
         if (!r.ok || sopra !== data) return;
 
-        const mia = mieRisposte[data] ||
-                    (r.dati.elenco.find(v => v.io) || {}).stato || null;
+        const mio = r.dati.elenco.find(v => v.io) || {};
+        mioStato[data] = mio.stato || null;
+        if (mio.stato === 'presente' && mio.ora) oreScelte[data] = mio.ora;
+
+        const mia = mieRisposte[data] || mio.stato || null;
         segnaScelta(mia, !r.dati.apribile, $('oggiScelta'));
+        vestiOra(data);
         if (!r.dati.apribile)
           esito($('oggiEsito'), 'Questa giornata è chiusa: non si può più cambiare.');
       }
@@ -1964,6 +2090,7 @@
         $('convPresenze').hidden = true;
         $('convSolleciti').hidden = true;
         scadenze = {}; bottoniSollecito = {};
+        oreScelte = {}; mioStato = {};
         sopra = null;
         io = null; giorni = []; scelti = new Set(); attivo = null;
         $('convCapitano').hidden = true;

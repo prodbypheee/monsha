@@ -83,10 +83,20 @@ function avatar(voce, rosa, sito, colore) {
       'background:' + RIGA + ';color:' + colore + ';font-size:24px;text-align:center;">' +
       esc((voce.id || '?').charAt(0).toUpperCase()) + '</div>';
 
+  /* Sotto il nome, per chi c'e, l'ora a cui arriva: e la cosa che il
+     capitano cerca leggendo questa mail alle 20:00, e cercarla altrove
+     vorrebbe dire aprire il sito. Per assenti e silenziosi non c'e
+     niente da scrivere. */
+  const quando = (voce.stato === 'presente' && voce.ora)
+    ? '<div style="margin-top:3px;font:600 10.5px/1.3 ' + FONT + ';color:' + colore + ';">' +
+      esc(voce.ora) + '</div>'
+    : '';
+
   return '<td align="center" valign="top" style="padding:0 6px 18px;width:96px;">' +
     faccia +
     '<div style="margin-top:8px;font:600 11px/1.35 ' + FONT + ';color:' + TESTO + ';' +
     'word-break:break-word;max-width:88px;">' + nome + '</div>' +
+    quando +
     '</td>';
 }
 
@@ -210,10 +220,14 @@ export function costruisciRiepilogo({ titolo, data, voci, rosa, sito }) {
 export async function preparaRiepilogo({ data, utenti, risposte, sito }) {
   const voci = daConvocare(utenti).map(u => ({
     id: u.idGioco,
-    stato: (risposte[chiave(u.email)] || {}).stato || null
+    stato: (risposte[chiave(u.email)] || {}).stato || null,
+    ora:   (risposte[chiave(u.email)] || {}).ora || null
   })).sort((a, b) => a.id.localeCompare(b.id, 'it'));
 
-  const presenti = voci.filter(v => v.stato === 'presente').map(v => v.id);
+  // Nell'elenco scritto l'ora sta fra parentesi accanto al nome: e la
+  // riga che si legge nell'anteprima della posta, senza aprire niente.
+  const presenti = voci.filter(v => v.stato === 'presente')
+    .map(v => v.ora ? v.id + ' (' + v.ora + ')' : v.id);
   const assenti  = voci.filter(v => v.stato === 'assente').map(v => v.id);
   const muti     = voci.filter(v => !v.stato).map(v => v.id);
 

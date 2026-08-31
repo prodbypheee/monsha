@@ -1460,6 +1460,42 @@ body.sta-trascinando { user-select: none; -webkit-user-select: none; }
 .pres-riga.zero .pres-nome { color: var(--txt-4); }
 .pres-riga.zero .pres-faccia { opacity: .45; filter: grayscale(1); }
 
+/* ---------- a che ora arrivi ----------
+   Sta sotto i due bottoni e non dentro: la scelta e presente o
+   assente, l'ora e un dettaglio della prima. Piccolo di proposito —
+   quasi nessuno lo tocca, e chi lo tocca sa gia cosa cerca. */
+.oraz {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: max-content; margin: 14px auto 0; padding: 7px 12px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--bg-3);
+}
+.oraz-eti {
+  font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--txt-5); padding-right: 2px;
+}
+.oraz-fr {
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer; padding: 0;
+  border: 1px solid var(--line-2); background: var(--bg-2); color: var(--txt);
+  font-size: 17px; line-height: 1; display: grid; place-items: center;
+  transition: border-color .2s, color .2s;
+}
+.oraz-fr:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); }
+/* Spenta e non sparita ai due capi: si vede che la fila finisce li,
+   invece di un bottone che scompare e fa saltare l'impaginazione. */
+.oraz-fr:disabled { opacity: .28; cursor: default; }
+.oraz-num {
+  font-size: 16px; font-weight: 600; min-width: 54px; text-align: center;
+  /* Cifre a larghezza fissa: passando da 9:30 a 21:30 il numero non
+     deve far ballare le due frecce. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* L'ora di arrivo sotto la faccia, nell'elenco della giornata. */
+.conv-ora {
+  display: block; font-size: 10.5px; font-weight: 600; color: var(--txt-4);
+  font-variant-numeric: tabular-nums; margin-top: 2px;
+}
+
 /* ---------- chi non ha ancora risposto ----------
    Stessa riga della classifica delle presenze — faccia, nome, roba a
    destra — perche sono due elenchi della stessa squadra guardati a
