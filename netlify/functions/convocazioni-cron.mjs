@@ -6,6 +6,7 @@
 
      08:30  il buongiorno: oggi si allena, segna se ci sei
      14:00  secondo avviso a tutti i membri: presente o assente?
+     18:00  ultima chiamata, che manca poco
      20:00  mail di riepilogo a capitano, amministrazione e admin
 
    C'era anche un richiamo automatico alle 17:00 a tutta la squadra.
@@ -70,8 +71,16 @@ const MOMENTI = {
   pomeriggio: {
     titolo: 'Allenamento oggi',
     testo:  quando => quando + ': ci sei stasera?',
-    // Sei ore: scade quando parte il riepilogo delle 20:00.
-    vale: 6 * 3600
+    // Quattro ore: scade alle 18:00, quando parte l'ultima chiamata.
+    vale: 4 * 3600
+  },
+  sera: {
+    titolo: 'Fra poco si gioca',
+    testo:  () => 'Stasera allenamento. Se non hai ancora segnato presente o assente, fallo adesso.',
+    // Due ore: scade alle 20:00, con il riepilogo. Le tre notifiche
+    // della giornata non si sovrappongono mai — un telefono riacceso
+    // a sera ne trova una sola, quella giusta per l'ora che e.
+    vale: 2 * 3600
   }
 };
 

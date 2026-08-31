@@ -39,10 +39,12 @@ const nick = Object.values(rosa).map(g => g.nick);
    la mail regge. L'ultimo ID non sta nella rosa apposta, per vedere
    il ripiego con l'iniziale accanto ai ritratti veri. */
 const voci = [
-  ...nick.slice(0, 7).map(id => ({ id, stato: 'presente' })),
+  // Le ore sono finte ma plausibili: l'anteprima deve mostrare anche
+  // quelle, altrimenti si controlla una mail diversa da quella che arriva.
+  ...nick.slice(0, 7).map((id, i) => ({ id, stato: 'presente', ora: ['21:30','21:30','22:00','21:30','22:30','21:30','23:00'][i] })),
   ...nick.slice(7, 10).map(id => ({ id, stato: 'assente' })),
   ...nick.slice(10, 16).map(id => ({ id, stato: null })),
-  { id: 'UnoNonInRosa77', stato: 'presente' }
+  { id: 'UnoNonInRosa77', stato: 'presente', ora: '22:00' }
 ].sort((a, b) => a.id.localeCompare(b.id, 'it'));
 
 const html = costruisciRiepilogo({

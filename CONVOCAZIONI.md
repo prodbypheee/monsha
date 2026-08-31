@@ -128,9 +128,10 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
 
 1. Il capitano apre **Convocazioni** e tocca i giorni sul calendario:
    questa settimana e le quattro successive. Salva.
-2. Nei giorni segnati, **alle 8:30** arriva il buongiorno: oggi c’è
-   allenamento, tocca qui e segna se ci sei. **Alle 14:00** un secondo
-   avviso a tutti i membri approvati, capitano compreso.
+2. Nei giorni segnati arrivano tre avvisi a tutti i membri approvati,
+   capitano compreso: **alle 8:30** il buongiorno (oggi c’è
+   allenamento, tocca qui e segna se ci sei), **alle 14:00** il secondo
+   avviso, **alle 18:00** l’ultima chiamata.
 3. Chi non risponde lo si va a cercare **uno alla volta**: in fondo
    alla tab, chi convoca trova l'elenco di chi non ha ancora detto
    niente e un bottone per persona. Quindici minuti di pausa prima di
@@ -149,6 +150,29 @@ legale: la funzione programmata gira ogni mezz'ora e ogni volta guarda
 che ore sono a Roma, invece di fidarsi di un orario fisso in UTC che
 sbaglierebbe di un'ora per metà anno. Ogni mezz'ora e non ogni ora da
 quando c'è un appuntamento alle 8:30.
+
+### A che ora arrivi
+
+Chi dice **Presente** dice anche a che ora, con un orologino sotto i due
+bottoni: parte dalle **21:30**, che è l'ora in cui si comincia, e le due
+freccette lo spostano di mezz'ora alla volta fino alle **23:30**. Sotto
+le 21:30 non si scende — non esiste un arrivo prima dell'inizio, e la
+freccia che scende resta spenta finché non si è saliti. Chi non tocca
+niente ha già risposto bene.
+
+L'ora si può cambiare anche dopo: toccando una freccia quando si è già
+segnati presenti, la nuova ora viene registrata subito, senza dover
+ripremere Presente. Rispondendo dai bottoni dentro la notifica, dove un
+orologio non ci sta, vale quella di partenza.
+
+A un assente l'ora non si chiede, e nell'elenco della giornata compare
+solo sotto chi c'è: «assente alle 21:30» non vorrebbe dire niente.
+
+I due capi e i passi di mezz'ora li fa rispettare il **server**: le
+frecce del sito sono comodità, non regola. Quel che arriva fuori dai
+capi viene riportato dentro invece di essere rifiutato — una risposta
+con l'ora storta resta una risposta, e perderla per colpa di un numero
+sarebbe il modo peggiore di trattarla.
 
 ### Sollecitare chi non risponde
 
@@ -326,7 +350,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
-| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 8:30, 14:00 e 20:00 |
+| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 8:30, 14:00, 18:00 e 20:00 |
 | `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |

@@ -16,7 +16,7 @@ import {
   incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo,
-  attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi }
+  attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi, oraArrivo, scorriOra, ORA_DEFAULT }
   from '../netlify/lib/convocazioni.mjs';
 import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
 
@@ -346,6 +346,80 @@ prova('chi e presente resta sempre da qualche parte', () => {
                    presenti.map(p => p.toLowerCase()).sort());
 });
 
+console.log('\nL\'ora di arrivo');
+
+prova('chi non tocca niente arriva alle 21:30', () => {
+  assert.equal(ORA_DEFAULT, '21:30');
+  assert.equal(oraArrivo(undefined), '21:30');
+  assert.equal(oraArrivo(''), '21:30');
+  assert.equal(oraArrivo(null), '21:30');
+});
+
+prova('un\'ora scritta bene passa com\'e', () => {
+  assert.equal(oraArrivo('21:30'), '21:30');
+  assert.equal(oraArrivo('22:30'), '22:30');
+  assert.equal(oraArrivo('23:30'), '23:30');
+  assert.equal(oraArrivo('22:00'), '22:00');
+});
+
+prova('si accettano solo le mezz\'ore', () => {
+  /* Le frecce si muovono di mezz'ora: un 21:17 puo arrivare solo da
+     una richiesta costruita a mano, e non deve finire in archivio. */
+  assert.equal(oraArrivo('21:17'), '21:30');
+  assert.equal(oraArrivo('21:45'), '21:30');
+});
+
+prova('fuori dai due capi si torna dentro invece di rifiutare', () => {
+  /* Una risposta con l'ora storta resta una risposta: perderla per
+     colpa di un numero sarebbe il modo peggiore di trattarla. */
+  assert.equal(oraArrivo('04:00'), '21:30');
+  assert.equal(oraArrivo('18:00'), '21:30');
+  assert.equal(oraArrivo('23:00'), '23:00');
+});
+
+prova('prima delle 21:30 non si scende', () => {
+  /* L'ora in cui si comincia e anche la prima che si puo dire: non
+     esiste un arrivo prima dell'inizio. */
+  assert.equal(ORA_DEFAULT, '21:30');
+  assert.equal(scorriOra('21:30', -1), '21:30');
+  assert.equal(oraArrivo('21:00'), '21:30');
+  assert.equal(oraArrivo('09:30'), '21:30');
+});
+
+prova('roba che non e un\'ora vale come non toccata', () => {
+  assert.equal(oraArrivo('domani'), '21:30');
+  assert.equal(oraArrivo('99:99'), '21:30');
+  assert.equal(oraArrivo({}), '21:30');
+});
+
+prova('le frecce si muovono di mezz\'ora', () => {
+  assert.equal(scorriOra('21:30', 1), '22:00');
+  assert.equal(scorriOra('22:30', -1), '22:00');
+  assert.equal(scorriOra('22:00', 1), '22:30');
+});
+
+prova('le frecce si fermano ai due capi', () => {
+  /* Ferme e non in tondo: dalle 23:30 si deve poter tornare
+     indietro, non ricominciare da capo. */
+  assert.equal(scorriOra('23:30', 1), '23:30');
+  assert.equal(scorriOra('21:30', -1), '21:30');
+  assert.equal(scorriOra('23:00', 1), '23:30');
+  assert.equal(scorriOra('22:00', -1), '21:30');
+});
+
+prova('dalle 21:30 alle 23:30 ci sono quattro mezz\'ore e poi ci si ferma', () => {
+  /* Nessun buco e nessun giro in tondo: quattro passi coprono tutta
+     la fascia, e dal quinto in poi non si muove piu. */
+  const passi = [];
+  let ora = ORA_DEFAULT;
+  for (let i = 0; i < 6; i++) { ora = scorriOra(ora, 1); passi.push(ora); }
+  assert.deepEqual(passi, ['22:00', '22:30', '23:00', '23:30', '23:30', '23:30']);
+
+  let giu = ORA_DEFAULT;
+  for (let i = 0; i < 10; i++) giu = scorriOra(giu, -1);
+  assert.equal(giu, '21:30');
+});
+
 console.log('\nGli appuntamenti della giornata');
 
 prova('alle 8:30 si da il buongiorno', () => {
@@ -374,6 +448,12 @@ prova('alle 14:00 il secondo avviso, alle 14:30 no', () => {
   assert.equal(fasciaDi(14, 30), null);
 });
 
+prova('alle 18:00 l\'ultima chiamata, alle 18:30 no', () => {
+  assert.equal(fasciaDi(18, 0), 'sera');
+  assert.equal(fasciaDi(18, 29), 'sera');
+  assert.equal(fasciaDi(18, 30), null);
+});
+
 prova('alle 20:00 il riepilogo, alle 20:30 no', () => {
   assert.equal(fasciaDi(20, 0), 'riepilogo');
   assert.equal(fasciaDi(20, 30), null);
@@ -385,18 +465,19 @@ prova('nelle altre ore non succede niente', () => {
       const f = fasciaDi(o, m);
       if (o === 8 && m === 30) continue;
       if (o === 14 && m === 0) continue;
+      if (o === 18 && m === 0) continue;
       if (o === 20 && m === 0) continue;
       assert.equal(f, null, 'le ' + o + ':' + m + ' non dovrebbero fare niente');
     }
   }
 });
 
-prova('le tre fasce sono tre nomi diversi', () => {
+prova('le quattro fasce sono quattro nomi diversi', () => {
   /* Il segno di spunta contro il doppio invio usa il nome della
      fascia come chiave: due fasce che si chiamassero uguale si
      spegnerebbero a vicenda, e una delle due non partirebbe mai. */
-  const nomi = [fasciaDi(8, 30), fasciaDi(14, 0), fasciaDi(20, 0)];
-  assert.equal(new Set(nomi).size, 3);
+  const nomi = [fasciaDi(8, 30), fasciaDi(14, 0), fasciaDi(18, 0), fasciaDi(20, 0)];
+  assert.equal(new Set(nomi).size, 4);
 });
 
 console.log('\nLa pausa fra un sollecito e l\'altro');

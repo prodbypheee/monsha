@@ -109,15 +109,72 @@ export async function leggiRisposte(data) {
   return mappa;
 }
 
-export async function salvaRisposta(data, utente, stato) {
+export async function salvaRisposta(data, utente, stato, ora) {
   const k = chiave(utente.email);
   await convoc().setJSON(RISPOSTE + data + '/' + k, {
     chiave:  k,
     email:   utente.email,
     idGioco: utente.idGioco,
     stato,                      // 'presente' oppure 'assente'
+    ora:     ora || null,       // a che ora arriva; solo per i presenti
     quando:  new Date().toISOString()
   });
+}
+
+/* ---------- a che ora arrivi ----------------------------------
+   Chi dice "ci sono" dice anche a che ora, a passi di mezz'ora. Chi
+   non tocca niente arriva all'ora solita, che e il caso di quasi
+   tutti: il valore di partenza deve essere quello giusto per la
+   maggioranza, altrimenti diventa un bottone in piu da premere ogni
+   volta.
+
+   Dalle 21:30 si sale e basta: e l'ora in cui si comincia, e prima di
+   quella non c'e niente a cui arrivare. La freccia che scende resta
+   spenta finche non si e saliti, e il tetto e mezzanotte meno mezza —
+   oltre quell'ora l'allenamento e finito.
+
+   I due capi esistono anche per non ritrovarsi orari senza senso in
+   archivio: un'ora sballata sballerebbe il riepilogo che il capitano
+   legge alle 20:00.
+
+   Il sito ha le sue frecce e i suoi limiti, ma non e lui a decidere:
+   qualunque cosa arrivi passa di qui, e quel che non torna viene
+   riportato dentro i limiti invece di essere rifiutato. Una risposta
+   con l'ora storta resta una risposta, e perderla per colpa di un
+   numero sarebbe il modo peggiore di trattarla. */
+
+export const ORA_DEFAULT = '21:30';
+export const ORA_PRIMA   = '21:30';
+export const ORA_ULTIMA  = '23:30';
+
+const inMinuti = v => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim());
+  if (!m) return null;
+  const ore = Number(m[1]), min = Number(m[2]);
+  if (ore < 0 || ore > 23) return null;
+  if (min !== 0 && min !== 30) return null;   // solo mezz'ore
+  return ore * 60 + min;
+};
+
+const inOra = m =>
+  String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+
+const PRIMA  = 21 * 60 + 30;
+const ULTIMA = 23 * 60 + 30;
+
+export function oraArrivo(v) {
+  const m = inMinuti(v);
+  if (m === null) return ORA_DEFAULT;
+  return inOra(Math.min(ULTIMA, Math.max(PRIMA, m)));
+}
+
+/* Una mezz'ora avanti o indietro, fermandosi ai due capi invece di
+   girare in tondo: dalle 23:30 si deve poter tornare indietro, non
+   ricominciare dal mattino. */
+export function scorriOra(v, passo) {
+  const m = inMinuti(v);
+  const base = m === null ? inMinuti(ORA_DEFAULT) : m;
+  return inOra(Math.min(ULTIMA, Math.max(PRIMA, base + passo * 30)));
 }
 
 /* Fino a quando si accetta una risposta. Il giorno stesso e i giorni
@@ -145,6 +202,7 @@ export function rispostaAmmessa(data) {
 export function fasciaDi(ora, minuto) {
   if (ora === 8  && minuto >= 30) return 'mattina';
   if (ora === 14 && minuto <  30) return 'pomeriggio';
+  if (ora === 18 && minuto <  30) return 'sera';
   if (ora === 20 && minuto <  30) return 'riepilogo';
   return null;
 }

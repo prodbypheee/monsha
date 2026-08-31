@@ -29,7 +29,7 @@ import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
   destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
-  PAUSA_SOLLECITO_MS
+  PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT
 } from '../lib/convocazioni.mjs';
 
 import {
@@ -95,6 +95,9 @@ async function giorno(req, segreto, indirizzo) {
       idGioco:  u.idGioco,
       incarico: incaricoDi(u),
       stato:    r ? r.stato : null,
+      // Solo i presenti hanno un'ora: "assente alle 21:30" non vuol
+      // dire niente, e mostrarla confonderebbe l'elenco.
+      ora:      (r && r.stato === 'presente') ? (r.ora || ORA_DEFAULT) : null,
       quando:   r ? r.quando : null,
       io:       u.email === g.utente.email
     };
@@ -176,7 +179,13 @@ async function rispondi(req, segreto) {
   if (!rispostaAmmessa(data))
     return errore('Troppo tardi per rispondere a quella giornata.', 409);
 
-  await salvaRisposta(data, g.utente, scelta);
+  /* L'ora la si tiene solo per chi c'e. E se non arriva — succede
+     rispondendo dai bottoni dentro la notifica, dove un orologio non
+     ci sta — vale quella solita: e esattamente il comportamento che
+     deve avere chi non tocca niente. */
+  const ora = scelta === 'presente' ? oraArrivo(corpo.ora) : null;
+
+  await salvaRisposta(data, g.utente, scelta, ora);
 
   /* Chi si sfila esce dal campo. Una formazione con dentro qualcuno
      che ha appena detto "non vengo" e peggio di una casella vuota: il
@@ -190,7 +199,7 @@ async function rispondi(req, segreto) {
     ? await togliDalCampo(data, g.utente.idGioco)
     : false;
 
-  return json({ ok: true, data, stato: scelta, toltoDalCampo: sfilato });
+  return json({ ok: true, data, stato: scelta, ora, toltoDalCampo: sfilato });
 }
 
 /* ---------- chi c'e stato -------------------------------------
