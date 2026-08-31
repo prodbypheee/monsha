@@ -274,7 +274,13 @@
   const idPiatto = v => String(v || '').trim().toLowerCase();
   const trovaGiocatore = id => {
     const k = idPiatto(id);
-    return k ? (giocatori.find(g => idPiatto(g.nick) === k) || null) : null;
+    if (!k) return null;
+    /* Prima il nick, poi i nomi vecchi. L'ordine conta: se due schede
+       si contendessero lo stesso nome, quella che ce l'ha come nick e
+       quella giusta. */
+    return giocatori.find(g => idPiatto(g.nick) === k)
+        || giocatori.find(g => (g.altriId || []).some(a => idPiatto(a) === k))
+        || null;
   };
 
   /* ---------- FOGLIO DETTAGLIO (telefono) ---------------------- */
@@ -3102,7 +3108,11 @@
 
             const nome = document.createElement('div');
             nome.className = 'camp-nome';
-            nome.textContent = (p.posto ? p.posto + '. ' : '') + p.nome;
+            /* Chi ha una scheda lo si chiama come lo chiamiamo noi: su
+               eLudo puo essere rimasto un nome vecchio, e nel nostro
+               sito le persone hanno un nome solo. Gli avversari
+               restano com'e scritto li, che e l'unico che abbiamo. */
+            nome.textContent = (p.posto ? p.posto + '. ' : '') + (g ? g.nick : p.nome);
             const sotto = document.createElement('span');
             sotto.className = 'camp-sotto';
             sotto.textContent = conSquadra
