@@ -19,6 +19,8 @@ import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatari
   attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi, oraArrivo, scorriOra, ORA_DEFAULT }
   from '../netlify/lib/convocazioni.mjs';
 import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
+import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
+  from '../netlify/lib/campionato.mjs';
 
 let fatte = 0, rotte = 0;
 function prova(nome, fn) {
@@ -344,6 +346,112 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nIl campionato letto da eLudo');
+
+prova('fra i campionati si sceglie quello in corso', () => {
+  /* Il club resta iscritto anche agli anni passati: se si prendesse
+     il primo della lista, la pagina resterebbe ferma alla stagione
+     vecchia senza dirlo a nessuno. */
+  assert.equal(scegliEvento([
+    { eventId: 31, eventStatus: 'ended' },
+    { eventId: 99, eventStatus: 'running' }
+  ]).eventId, 99);
+});
+
+prova('se sono tutti finiti si tiene l\'ultimo', () => {
+  /* Fra una stagione e l'altra la pagina racconta com'e andata,
+     invece di restare vuota per mesi. */
+  assert.equal(scegliEvento([
+    { eventId: 12, eventStatus: 'ended' },
+    { eventId: 31, eventStatus: 'ended' }
+  ]).eventId, 31);
+});
+
+prova('senza campionati non si inventa niente', () => {
+  assert.equal(scegliEvento([]), null);
+  assert.equal(scegliEvento(null), null);
+});
+
+prova('la squadra si trova dall\'identita permanente, non dal nome', () => {
+  /* Ogni stagione crea una squadra nuova con un id nuovo; quella del
+     club non cambia mai. E il nome puo essere scritto diverso. */
+  const ev = {
+    teams: [{ teamId: 900, originalTeam: 265 }, { teamId: 901, originalTeam: 12 }],
+    subEvents: [{
+      name: 'Serie B',
+      phases: [
+        { id: 5, eventType: 'bracket', teams: [{ teamId: 900, group: 'A' }] },
+        { id: 7, eventType: 'roundRobin', teams: [{ teamId: 901, group: 'A' }, { teamId: 900, group: 'B' }] }
+      ]
+    }]
+  };
+  const noi = trovaNoi(ev, 265);
+  assert.equal(noi.serie, 'Serie B');
+  assert.equal(noi.girone, 'B');
+  assert.equal(noi.idStagione, 900);
+  assert.equal(noi.fase.id, 7, 'deve prendere il campionato, non il tabellone');
+});
+
+prova('se il club non e nell\'evento non si tira a indovinare', () => {
+  assert.equal(trovaNoi({ teams: [], subEvents: [] }, 265), null);
+});
+
+prova('uno spazio in fondo al nome non fa due giocatori', () => {
+  /* Su eLudo lo stesso giocatore compare a volte come "rageevii " e a
+     volte come "rageevii". Contando per nome, il capitano risultava
+     due persone con i gol divisi a meta. */
+  const partite = [
+    { matchGroup: 'A', playerStats: [{ playerId: 7, teamId: 1, gamerTag: 'rageevii ', goal: 2, assists: 1, vote: 8 }] },
+    { matchGroup: 'A', playerStats: [{ playerId: 7, teamId: 1, gamerTag: 'rageevii',  goal: 3, assists: 0, vote: 7 }] }
+  ];
+  const r = raccogliStatistiche(partite, { 1: 'Monaci' }, 'A', 1);
+  assert.equal(r.length, 1, 'deve restare una persona sola');
+  assert.equal(r[0].gol, 5);
+  assert.equal(r[0].assist, 1);
+  assert.equal(r[0].partite, 2);
+  assert.equal(r[0].nome, 'rageevii', 'il nome si mostra pulito');
+});
+
+prova('si contano solo le partite del nostro girone', () => {
+  /* Una classifica marcatori che mescola girone A e girone B
+     racconta un campionato che nessuno ha giocato. */
+  const partite = [
+    { matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 1, gamerTag: 'nostro', goal: 1 }] },
+    { matchGroup: 'B', playerStats: [{ playerId: 2, teamId: 2, gamerTag: 'altrove', goal: 9 }] }
+  ];
+  const r = raccogliStatistiche(partite, { 1: 'Monaci', 2: 'Altri' }, 'A', null);
+  assert.equal(r.length, 1);
+  assert.equal(r[0].nome, 'nostro');
+});
+
+prova('il voto medio esce dalle partite in cui c\'e un voto', () => {
+  /* Chi non ha voto in una partita non deve abbassare la media: una
+     partita senza voto e un dato mancante, non uno zero. */
+  const partite = [
+    { matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 1, gamerTag: 'x', goal: 0, vote: 8 }] },
+    { matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 1, gamerTag: 'x', goal: 0 }] },
+    { matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 1, gamerTag: 'x', goal: 0, vote: 7 }] }
+  ];
+  const r = raccogliStatistiche(partite, { 1: 'Monaci' }, 'A', 1);
+  assert.equal(r[0].voto, 7.5);
+  assert.equal(r[0].partite, 3);
+});
+
+prova('chi non ha mai un voto non ne prende uno finto', () => {
+  const partite = [{ matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 1, gamerTag: 'x', goal: 1 }] }];
+  assert.equal(raccogliStatistiche(partite, { 1: 'M' }, 'A', 1)[0].voto, null);
+});
+
+prova('una squadra sparita non lascia un numero al posto del nome', () => {
+  const partite = [{ matchGroup: 'A', playerStats: [{ playerId: 1, teamId: 99, gamerTag: 'x', goal: 1 }] }];
+  assert.equal(raccogliStatistiche(partite, {}, 'A', null)[0].squadra, 'squadra ritirata');
+});
+
+prova('i nomi si appiattiscono come fa il resto del sito', () => {
+  assert.equal(piatto('  RageeVII '), 'rageevii');
+  assert.equal(piatto(null), '');
 });
 
 console.log('\nL\'ora di arrivo');
