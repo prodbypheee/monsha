@@ -769,7 +769,7 @@
 
     /* ---- tab interne ---- */
 
-    const PANNELLI = ['convocazioni', 'formazione', 'annunci', 'profilo', 'gestione'];
+    const PANNELLI = ['convocazioni', 'formazione', 'campionato', 'annunci', 'profilo', 'gestione'];
 
     function pannello(quale) {
       aperto = quale;
@@ -825,6 +825,7 @@
 
       if (aperto === 'convocazioni')    convocazioni.ricarica();
       else if (aperto === 'formazione') formazione.ricarica();
+      else if (aperto === 'campionato') campionato.apri(zitto);
       else if (aperto === 'annunci')    annunci.apri(zitto);
       else if (aperto === 'gestione')   caricaRichieste(zitto);
     }
@@ -871,6 +872,7 @@
       $('arIntro').hidden = false;
       convocazioni.chiudi();
       annunci.chiudi();
+      campionato.chiudi();
       $('arFormAccedi').reset();
       schermata('arOspite');
     });
@@ -2929,6 +2931,207 @@
       function chiudi() { caricati = false; $('annElenco').textContent = ''; $('annTesto').value = ''; }
 
       return { apri, chiudi, caricati: () => caricati };
+    })();
+
+    /* ================= CAMPIONATO =================
+       La classifica e le statistiche del campionato vero, quello che
+       si gioca su eLudo. Qui non si scrive niente: si legge e si
+       mostra.
+
+       Tutto il lavoro sta sul server — cinque megabyte da eLudo che
+       diventano otto chilobyte — e questa parte si limita a
+       disegnare quello che arriva. Se il server serve dati vecchi
+       perche eLudo non risponde, lo si dice invece di far finta che
+       siano di adesso: una classifica di ieri e utile, una classifica
+       di ieri spacciata per quella di oggi no. */
+
+    const campionato = (function () {
+
+      const apiCamp = (azione, corpo) => chiama('/api/campionato/' + azione, corpo);
+
+      const ORDINI = [['gol', 'Gol'], ['assist', 'Assist'],
+                      ['voto', 'Voto'], ['partite', 'Presenze']];
+      const QUALI  = [['marcatori', 'Marcatori'], ['assistman', 'Assist'],
+                      ['voti', 'Voto medio']];
+
+      let dati = null, ordine = 'gol', quale = 'marcatori';
+
+      async function apri(zitto) {
+        if (!zitto) esito($('campEsito'), 'Leggo il campionato…');
+
+        const r = await apiCamp('stato');
+        if (!r.ok) {
+          esito($('campEsito'), r.dati.errore || 'Non riesco a leggere il campionato.');
+          return;
+        }
+
+        dati = r.dati;
+        esito($('campEsito'), '');
+        disegna();
+      }
+
+      function chiudi() {
+        dati = null;
+        ['campTesta', 'campSchedaCls', 'campSchedaNostri', 'campSchedaLega'].forEach(id => {
+          $(id).hidden = true;
+        });
+        $('campNota').hidden = true;
+        $('campEsito').textContent = '';
+      }
+
+      function disegna() {
+        if (!dati) return;
+        const s = dati.noi.squadra;
+
+        $('campTesta').hidden = false;
+        $('campPos').textContent = s.posizione ? s.posizione + '°' : '—';
+        $('campDove').innerHTML = 'su ' + s.squadre + ' squadre<br>' +
+          esc(dati.noi.serie) + ' · girone ' + esc(dati.noi.girone);
+
+        $('campCifre').innerHTML =
+          cifra(s.punti, 'punti') +
+          cifra(s.v + '–' + s.n + '–' + s.p, 'V N P') +
+          cifra(s.gf + ':' + s.gs, 'gol') +
+          cifra(s.giocate, 'giocate');
+
+        $('campSchedaCls').hidden = false;
+        $('campClsTit').textContent = dati.noi.serie + ' — girone ' + dati.noi.girone;
+        $('campLetto').textContent = quando(dati.letto);
+        classifica();
+
+        $('campSchedaNostri').hidden = !dati.nostri.length;
+        if (dati.nostri.length) {
+          righello($('campOrdina'), ORDINI, ordine, k => { ordine = k; disegna(); });
+          elenco($('campNostri'), [...dati.nostri].sort(
+            (a, b) => ((b[ordine] || 0) - (a[ordine] || 0)) || b.gol - a.gol), false);
+        }
+
+        $('campSchedaLega').hidden = !dati.marcatori.length;
+        if (dati.marcatori.length) {
+          righello($('campQuale'), QUALI, quale, k => { quale = k; disegna(); });
+          elenco($('campLega'), dati[quale], true);
+        }
+
+        /* Da dove arrivano questi numeri va detto, e va detto se sono
+           vecchi: il giorno che eLudo non risponde, chi guarda deve
+           capire perche la classifica non si muove. */
+        $('campNota').hidden = false;
+        $('campNota').textContent = dati.fresco === false
+          ? 'eLudo non risponde: questi sono gli ultimi dati buoni, letti ' + quando(dati.letto) + '.'
+          : 'Letto da eLudo ' + quando(dati.letto) + '. Nessun numero è scritto a mano: se lì manca un risultato, manca anche qui.';
+      }
+
+      const cifra = (v, e) =>
+        '<div class="camp-cifra"><b>' + esc(String(v)) + '</b><span>' + esc(e) + '</span></div>';
+
+      /* "poco fa" invece dell'ora esatta: di una classifica interessa
+         quanto e fresca, non a che minuto e stata letta. */
+      function quando(iso) {
+        const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+        if (!Number.isFinite(min)) return 'chissà quando';
+        if (min < 2) return 'adesso';
+        if (min < 60) return min + ' minuti fa';
+        const ore = Math.round(min / 60);
+        if (ore < 24) return ore === 1 ? 'un\'ora fa' : ore + ' ore fa';
+        const gg = Math.round(ore / 24);
+        return gg === 1 ? 'ieri' : gg + ' giorni fa';
+      }
+
+      function righello(box, voci, acceso, quandoTocca) {
+        box.textContent = '';
+        voci.forEach(([k, eti]) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'conv-chip';
+          b.textContent = eti;
+          b.setAttribute('aria-pressed', String(k === acceso));
+          b.addEventListener('click', () => quandoTocca(k));
+          box.appendChild(b);
+        });
+      }
+
+      function classifica() {
+        const box = $('campCls');
+        box.textContent = '';
+
+        const t = document.createElement('table');
+        const testa = document.createElement('thead');
+        testa.innerHTML = '<tr><th></th><th>Squadra</th><th>G</th>' +
+          '<th class="via">V</th><th class="via">N</th><th class="via">P</th>' +
+          '<th class="via">GF</th><th class="via">GS</th><th>DR</th><th>Pt</th></tr>';
+        const corpo = document.createElement('tbody');
+
+        dati.classifica.forEach(r => {
+          const tr = document.createElement('tr');
+          if (r.noi) tr.className = 'noi';
+          [[r.pos, ''], [r.squadra, ''], [r.giocate, ''],
+           [r.v, 'via'], [r.n, 'via'], [r.p, 'via'], [r.gf, 'via'], [r.gs, 'via'],
+           [(r.dr > 0 ? '+' : '') + r.dr, ''], [r.punti, 'pt']].forEach(([v, c]) => {
+            const td = document.createElement('td');
+            if (c) td.className = c;
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          corpo.appendChild(tr);
+        });
+
+        t.append(testa, corpo);
+        box.appendChild(t);
+      }
+
+      function elenco(box, voci, conSquadra) {
+        box.textContent = '';
+        rosaPronta.then(() => {
+          box.textContent = '';
+          voci.forEach(p => {
+            const g = trovaGiocatore(p.nome);
+
+            const riga = document.createElement('div');
+            riga.className = 'camp-riga' + (conSquadra && p.nostro ? ' nostro' : '');
+
+            const faccia = document.createElement('div');
+            faccia.className = 'pres-faccia' + (g ? ' con-foto' : '');
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              faccia.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (p.nome || '?').charAt(0).toUpperCase();
+            faccia.appendChild(iniziale);
+
+            const nome = document.createElement('div');
+            nome.className = 'camp-nome';
+            nome.textContent = (p.posto ? p.posto + '. ' : '') + p.nome;
+            const sotto = document.createElement('span');
+            sotto.className = 'camp-sotto';
+            sotto.textContent = conSquadra
+              ? p.squadra
+              : p.partite + (p.partite === 1 ? ' partita' : ' partite');
+            nome.appendChild(sotto);
+
+            const dati2 = document.createElement('div');
+            dati2.className = 'camp-dati';
+            [[p.gol, 'gol', p.gol ? 'oro' : ''],
+             [p.assist, 'ass', ''],
+             [p.voto, 'voto', p.voto >= 7.5 ? 'verde' : '']].forEach(([v, e, cl]) => {
+              const d = document.createElement('div');
+              d.className = 'camp-dato' + (cl ? ' ' + cl : '');
+              const b = document.createElement('b');
+              b.textContent = (v === null || v === undefined) ? '—' : v;
+              const i = document.createElement('i');
+              i.textContent = e;
+              d.append(b, i);
+              dati2.appendChild(d);
+            });
+
+            riga.append(faccia, nome, dati2);
+            box.appendChild(riga);
+          });
+        });
+      }
+
+      return { apri, chiudi };
     })();
 
     /* ---- avvio pigro ---- */

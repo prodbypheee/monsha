@@ -571,6 +571,8 @@
                 role="tab" aria-selected="true">Convocazioni</button>
         <button type="button" class="ar-sotto-voce" data-pannello="formazione"
                 role="tab" aria-selected="false">Formazione</button>
+        <button type="button" class="ar-sotto-voce" data-pannello="campionato"
+                role="tab" aria-selected="false">Campionato</button>
         <button type="button" class="ar-sotto-voce" data-pannello="annunci"
                 role="tab" aria-selected="false">Annunci</button>
         <button type="button" class="ar-sotto-voce" data-pannello="profilo"
@@ -770,6 +772,63 @@
           <div class="conv-griglia" id="sceltaElenco"></div>
         </div>
       </aside>
+
+      <!-- ===================== CAMPIONATO =====================
+           Non e roba nostra: la scrive eLudo, dove il campionato si
+           gioca davvero. Qui si legge e basta, e la pagina lo dice
+           apertamente — nessun numero e battuto a mano. -->
+      <section id="pan-campionato" hidden>
+
+        <div class="camp-testa" id="campTesta" hidden>
+          <div class="camp-posto"><b id="campPos">—</b><span id="campDove"></span></div>
+          <div class="camp-cifre" id="campCifre"></div>
+        </div>
+
+        <p class="ar-esito" id="campEsito" role="status" aria-live="polite"></p>
+
+        <div class="ar-scheda" id="campSchedaCls" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Classifica</div>
+                <h3 class="wiz-tit" id="campClsTit" style="margin-top:14px;">—</h3>
+              </div>
+              <span class="conv-stato" id="campLetto">—</span>
+            </div>
+            <div class="camp-tabella" id="campCls"></div>
+          </div>
+        </div>
+
+        <div class="ar-scheda" id="campSchedaNostri" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Statistiche</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">I nostri</h3>
+              </div>
+            </div>
+            <p class="ar-aiuto" style="margin-top:16px;">Gol, assist e voto medio nel campionato, sommati partita per partita.</p>
+            <div class="conv-giorni" id="campOrdina"></div>
+            <div class="camp-elenco" id="campNostri"></div>
+          </div>
+        </div>
+
+        <div class="ar-scheda" id="campSchedaLega" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Statistiche</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Nel girone</h3>
+              </div>
+            </div>
+            <p class="ar-aiuto" style="margin-top:16px;">I primi dieci del girone: i nostri sono accesi.</p>
+            <div class="conv-giorni" id="campQuale"></div>
+            <div class="camp-elenco" id="campLega"></div>
+          </div>
+        </div>
+
+        <p class="ar-aiuto" id="campNota" style="margin-top:22px;" hidden></p>
+      </section>
 
       <!-- ===================== ANNUNCI ===================== -->
       <section id="pan-annunci" hidden>
