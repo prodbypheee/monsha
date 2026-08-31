@@ -1,5 +1,6 @@
 {
   "_nota": "Dati della rosa usati dalle schede giocatore. Epiteto e tre punti brevi sostituiscono il paragrafo lungo: il testo integrale resta in descrizione_estesa, cosi non si perde nulla.",
+  "_nota_altriId": "altriId elenca i nomi con cui la stessa persona compare altrove: l'ID vecchio dopo un cambio, o il nome che ha su eLudo. Serve solo per accostare la scheda: quello che si legge sul sito e sempre nick. Senza, cambiare nick farebbe sparire la faccia dalle statistiche del campionato, dove eLudo continua a chiamarlo come prima.",
   "giocatori": [
     {
       "nick": "tommy-bond-0045", "img": "tho.jpeg", "ruolo": "Portiere", "reparto": "portieri",
@@ -92,7 +93,7 @@
       "descrizione_estesa": "MARIAN ZAHARIA 🔪💥 Il nostro Bomber storico di razza! Con il suo protocollo scivolata-cartellino rosso non è mai arrivato al lvl 100. Onore al Vichingo Rumeno ⚔️ IL DEMONE DI BARICELLA 👺🇷🇴🦶🏻"
     },
     {
-      "nick": "FRANCESC000SSS", "img": "cigno.jpeg", "ruolo": "Attaccante", "reparto": "attaccanti",
+      "nick": "Il_Cigno-_-", "altriId": ["FRANCESC000SSS"], "img": "cigno.jpeg", "ruolo": "Attaccante", "reparto": "attaccanti",
       "epiteto": "Il Cigno 🦢",
       "punti": ["Arrivato a metà 2025, subito devastante", "Foga, fame, driven e intelligenza tattica", "Scarpa d'oro FVPA Serie A 🔥"],
       "descrizione_estesa": "IL CIGNO 🦢💥 Arrivato a metà stagione nel 2025 ha subito voluto far capire di che pasta fosse fatto. Con la sua foga, la sua fame, i suoi driven, la sua intelligenza tattica e la sua ambizione, non c'è stato verso per le difese avversarie. Arriva e si prende la scarpa d'oro di FVPA Serie A! Con lui nasce il trio ARMAGEDDON 🔥"

@@ -21,6 +21,7 @@ import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatari
 import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
+import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
 
 let fatte = 0, rotte = 0;
 function prova(nome, fn) {
@@ -346,6 +347,52 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nChi e chi nella rosa');
+
+const ROSA = [
+  { nick: 'Il_Cigno-_-', altriId: ['FRANCESC000SSS'], img: 'cigno.jpeg' },
+  { nick: 'RageeVII', img: 'rage.jpeg' },
+  { nick: 'mimjcc', img: 'mim.jpeg' }
+];
+
+prova('si trova col nome nuovo', () => {
+  assert.equal(indicizzaRosa(ROSA)['il_cigno-_-'].img, 'cigno.jpeg');
+});
+
+prova('si trova ancora col nome vecchio', () => {
+  /* Serve davvero: su eLudo continua a chiamarsi come prima, e senza
+     questo la sua faccia sparirebbe dalle statistiche del campionato
+     il giorno stesso del cambio di nome. */
+  assert.equal(indicizzaRosa(ROSA)['francesc000sss'].img, 'cigno.jpeg');
+});
+
+prova('maiuscole e spazi non contano, come ovunque nel sito', () => {
+  const r = indicizzaRosa(ROSA);
+  assert.equal(r[piatto('  FRANCESC000SSS ')].img, 'cigno.jpeg');
+  assert.equal(r[piatto('rageevii')].img, 'rage.jpeg');
+});
+
+prova('chi non ha nomi vecchi funziona come prima', () => {
+  const r = indicizzaRosa(ROSA);
+  assert.equal(r['mimjcc'].img, 'mim.jpeg');
+  assert.equal(r['nessuno'], undefined);
+});
+
+prova('il nick vince sul nome vecchio di un altro', () => {
+  /* Se qualcuno prendesse un ID che era di un altro, la scheda giusta
+     e quella di chi ce l'ha adesso come nick. */
+  const contesa = [
+    { nick: 'vecchio-di-uno', img: 'nuovo.jpeg' },
+    { nick: 'altro', altriId: ['vecchio-di-uno'], img: 'passato.jpeg' }
+  ];
+  assert.equal(indicizzaRosa(contesa)['vecchio-di-uno'].img, 'nuovo.jpeg');
+});
+
+prova('una rosa vuota non fa saltare niente', () => {
+  assert.deepEqual(indicizzaRosa([]), {});
+  assert.deepEqual(indicizzaRosa(null), {});
 });
 
 console.log('\nIl campionato letto da eLudo');

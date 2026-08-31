@@ -55,16 +55,27 @@ const esc = s => String(s == null ? '' : s)
    peggio di nessuna foto. Se non si riesce a leggerla la mail parte
    lo stesso, con le iniziali al posto dei ritratti. */
 
+/* Una persona si puo chiamare in piu modi: l'ID vecchio dopo un
+   cambio, o il nome che ha su eLudo, che non e detto coincida. Si
+   indicizza per tutti — `nick` piu `altriId` — cosi la faccia si
+   trova comunque. Il nick vince: se due schede si contendessero lo
+   stesso nome, quella che ce l'ha come nick e quella giusta. */
+export function indicizzaRosa(giocatori) {
+  const piatto = v => String(v || '').trim().toLowerCase();
+  const per = {};
+  (giocatori || []).forEach(g => {
+    (g.altriId || []).forEach(alt => { if (piatto(alt)) per[piatto(alt)] = g; });
+  });
+  (giocatori || []).forEach(g => { if (piatto(g.nick)) per[piatto(g.nick)] = g; });
+  return per;
+}
+
 export async function leggiRosa(sito) {
   try {
     const r = await fetch(sito + '/rosa.json');
     if (!r.ok) return {};
     const d = await r.json();
-    const per = {};
-    (d.giocatori || []).forEach(g => {
-      per[String(g.nick || '').trim().toLowerCase()] = g;
-    });
-    return per;
+    return indicizzaRosa(d.giocatori);
   } catch {
     return {};
   }
