@@ -1433,6 +1433,18 @@ button, input, select, textarea { font: inherit; }
 }
 .ann-cancella:hover { border-color: var(--acc); color: var(--acc); }
 
+/* ---------- niente zoom ----------
+   pan-x pan-y dice al browser: di gesti a due dita qui non ce ne
+   sono, questa pagina si scorre e basta. Toglie il pizzico dove il
+   touch-action viene rispettato e, cosa che si sente di piu, toglie
+   il doppio tocco che ingrandisce — quello scattava per sbaglio ogni
+   volta che si toccavano due cose di fila in fretta, ed e proprio
+   come si schiera.
+
+   Non si scrive "none": quello toglierebbe anche lo scorrimento, e
+   lo scorrimento serve. */
+html { touch-action: pan-x pan-y; }
+
 /* ---------- prendere e mettere ----------
    Si tocca chi, si tocca dove. Niente touch-action: none e niente
    pointer capture — sono click normali, e la pagina sotto continua a
@@ -1503,6 +1515,11 @@ button, input, select, textarea { font: inherit; }
   letter-spacing: .1em; text-transform: uppercase; color: var(--txt-5);
 }
 .presa-azioni { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Lo spazio che la barra si prende, restituito al campo. In fondo al
+   campo c'è la porta: senza questo, tenendo qualcuno in mano la
+   casella del portiere resta sotto la barra e non la si tocca. */
+body.con-presa #pan-formazione { padding-bottom: 124px; }
 @media (max-width: 460px) {
   .presa-azioni { width: 100%; }
   .presa-azioni .ar-mini { flex: 1; }

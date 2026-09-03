@@ -10,6 +10,34 @@
   const MOBILE = 768;
   const stretto = () => window.innerWidth <= MOBILE;
 
+  /* ---------- niente zoom -------------------------------------
+     La pagina non si ingrandisce: resta com'e disegnata, e si scorre
+     e basta. Il meta viewport lo dice gia, ma iOS lo ignora dal 2016
+     — Safari decise che vietare lo zoom era una cattiveria verso chi
+     ci vede poco, e in generale ha ragione. Qui il conto e diverso:
+     con undici caselle da toccare in un campo, il pizzico partiva per
+     sbaglio in continuazione e lasciava il sito storto, e rimetterlo
+     dritto voleva dire un altro pizzico fatto bene.
+
+     Questi tre eventi sono di Safari e di nessun altro. Fermare
+     gesturestart basta a fermare tutto il gesto, gli altri due sono
+     la cintura per quando il pizzico e gia partito.
+
+     Resta lo zoom del browser da computer, quello con Ctrl e la
+     rotellina: non e un gesto della pagina, e chi ne ha bisogno per
+     leggere deve poterlo usare. */
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(quale =>
+    document.addEventListener(quale, e => e.preventDefault(), { passive: false }));
+
+  /* Del doppio tocco non c'e niente qui, e non e una dimenticanza:
+     lo toglie touch-action nel foglio di stile, che iOS rispetta.
+     La strada dell'annullare a mano il secondo tocco quando arriva
+     entro trecento millisecondi dal primo — che e come si faceva
+     prima che touch-action esistesse — qui sarebbe un difetto:
+     annullare quel tocco annulla anche il click che ne nasce, e due
+     tocchi in fretta su due bottoni diversi sono esattamente come si
+     schiera. Si guadagnava una cosa gia fatta e si perdeva il campo. */
+
   /* ---------- TAB E INDIRIZZI ---------------------------------- */
 
   const PERCORSI = {
@@ -3103,6 +3131,13 @@
       function disegnaPresa() {
         const barra = $('formPresa');
         barra.textContent = '';
+
+        /* La barra sta sopra la pagina, e in fondo al campo c'e la
+           porta: senza questo, tenendo qualcuno in mano la casella
+           del portiere finisce sotto la barra e non la si tocca piu.
+           Lo spazio in fondo si aggiunge solo mentre serve, cosi il
+           campo si scorre di quel tanto e torna tutto raggiungibile. */
+        document.body.classList.toggle('con-presa', !!preso && modificabile);
 
         if (!preso || !modificabile) { barra.hidden = true; return; }
         barra.hidden = false;

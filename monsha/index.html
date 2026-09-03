@@ -9,7 +9,14 @@
        barra di stato lo riserva il sistema e non c'e piu niente da
        compensare. Si perde il bordo a bordo in orizzontale sui telefoni
        col notch: uno scambio che conviene. -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Niente zoom: la pagina resta com'è disegnata, e si scorre e
+       basta. Lo dice qui e lo ridice in due altri posti, perché
+       nessuno dei tre da solo basta: questo meta lo rispettano
+       Android e i browser da computer, ma iOS lo ignora da anni; il
+       touch-action nel foglio di stile toglie il doppio tocco; e i
+       gesture events in app.js sono l'unico modo di fermare le due
+       dita su iPhone. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Monaci Shaolin — eSports Club</title>
 
   <!-- Anteprime di condivisione: valori della home. Sugli altri percorsi
