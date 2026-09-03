@@ -1265,10 +1265,34 @@
             return;
           }
 
+          /* Il messaggio si apre gia scritto, e il capitano puo
+             cambiarlo prima di premere invio: non e una mail
+             automatica, e la prima riga che uno sconosciuto legge dal
+             club. Percio dice il suo ruolo e la sua piattaforma —
+             cose che ha scritto lui e che dimostrano che qualcuno ha
+             letto davvero, invece di un ciao uguale per tutti.
+
+             Corto di proposito: su WhatsApp un messaggio lungo da un
+             numero sconosciuto sembra spam, e il link in fondo su una
+             riga sua diventa toccabile con l'anteprima del gruppo. */
+          const ruoli = v.ruoli && v.ruoli.length
+            ? (v.ruoli.length > 1
+                ? v.ruoli.slice(0, -1).join(', ') + ' e ' + v.ruoli[v.ruoli.length - 1]
+                : v.ruoli[0]).toLowerCase()
+            : null;
+
+          const chiSei = ruoli
+            ? ' — ' + ruoli + (v.piattaforma ? ' su ' + v.piattaforma : '') + ' —'
+            : '';
+
           const testo =
-            'Ciao ' + v.id + '! Siamo i Monaci Shaolin: abbiamo letto la tua ' +
-            'candidatura. Questo è il gruppo dei provini, entra quando vuoi:\n' +
-            invitoProvini;
+            'Ciao ' + v.id + ' 👋\n\n' +
+            'Siamo i Monaci Shaolin. Abbiamo letto la tua candidatura' + chiSei +
+            ' e ci piacerebbe vederti giocare.\n\n' +
+            'Questo è il gruppo dei provini: entra quando vuoi, è lì che ci ' +
+            'organizziamo per le partite di prova.\n' +
+            invitoProvini + '\n\n' +
+            'Ci vediamo dentro ⛩';
 
           /* wa.me e l'indirizzo ufficiale: apre l'app sul telefono e
              WhatsApp Web sul computer, senza doverli distinguere. */
