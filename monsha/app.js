@@ -904,6 +904,23 @@
       vestiBentornato(utente);
       schermata('arDentro');
 
+      /* Una spinta all’orologio, di nascosto.
+
+         Le funzioni programmate di Netlify risultano registrate ma
+         non vengono mai chiamate, e per cinque giorni non e partita
+         una notifica. La sveglia vera e un’azione su GitHub; questa e
+         la rete sotto: chi apre l’area riservata sveglia l’orologio
+         senza accorgersene.
+
+         Non e affidabile — se alle 8:30 nessuno apre il sito, nessuno
+         lo sveglia — ma copre da subito il momento in cui l’app la
+         aprono tutti, cioe la sera. E non puo mandare niente due
+         volte: il segno di spunta e per giornata e per fascia.
+
+         Si ignora l’esito di proposito: chi e appena entrato non ha
+         chiesto un rapporto sull’orologio. */
+      chiama('/api/orologio/batti', {}).catch(() => {});
+
       /* La notifica di un annuncio porta a ?tab=annunci: chi la tocca
          deve trovarsi davanti quello che ha appena letto, non le
          convocazioni. E solo un suggerimento su quale pannello aprire —
