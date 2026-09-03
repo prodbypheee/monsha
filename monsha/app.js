@@ -468,6 +468,33 @@
 
     if (window.emailjs) emailjs.init('gYs-un27FZbB_6GZc');
 
+    /* Il modulo ha finito il suo lavoro: sparisce, e resta il grazie.
+       Lasciare i passi e i bottoni li sotto inviterebbe a rimandare la
+       stessa candidatura una seconda volta. */
+    function ringrazia() {
+      $('passi').hidden = true;
+      document.querySelector('.barra').hidden = true;
+      document.querySelector('.wiz-corpo').hidden = true;
+      document.querySelector('.wiz-piede').hidden = true;
+
+      const dove = dati.tel && dati.tel.trim()
+        ? 'al numero che ci hai lasciato'
+        : 'sui social, visto che non ci hai lasciato un numero';
+
+      const t = $('grazieTesto');
+      t.textContent = '';
+      t.append(
+        'Ce l’abbiamo, ',
+        Object.assign(document.createElement('b'), { textContent: dati.id.trim() }),
+        '. La leggiamo davvero, una per una: se c’è spazio nel tuo ruolo ti scriviamo noi ' +
+        dove + '. Se non lo facciamo subito non vuol dire di no — vuol dire che in quel ' +
+        'ruolo adesso siamo pieni.'
+      );
+
+      $('grazie').hidden = false;
+      $('grazie').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     $('invia').addEventListener('click', async () => {
       const btn = $('invia'), esito = $('esito');
 
@@ -517,12 +544,9 @@
       if (!window.emailjs) {
         btn.disabled = false;
         btn.textContent = testo;
-        if (salvata) {
-          esito.textContent = 'Candidatura inviata. Ti ricontattiamo noi.';
-          esito.style.color = '#7fd6a0';
-          btn.hidden = true;
-        } else {
-          esito.textContent = 'Invio non disponibile. Scrivici sui social.';
+        if (salvata) { ringrazia(); }
+        else {
+          esito.textContent = 'Invio non riuscito. Riprova fra un minuto, o scrivici sui social: ti rispondiamo lo stesso.';
           esito.style.color = '#ff9a4d';
         }
         return;
@@ -540,18 +564,16 @@
           phone: dati.tel || 'Non specificato',
           additional_info: dati.note || 'Nessuna informazione aggiuntiva'
         });
-        esito.textContent = 'Candidatura inviata. Ti ricontattiamo noi.';
-        esito.style.color = '#7fd6a0';
-        btn.hidden = true;
+        ringrazia();
       } catch (err) {
         // La mail non e partita, ma se la candidatura e nel nostro
         // archivio la persona non e persa: non la si manda via.
-        if (salvata) {
-          esito.textContent = 'Candidatura inviata. Ti ricontattiamo noi.';
-          esito.style.color = '#7fd6a0';
-          btn.hidden = true;
-        } else {
-          esito.textContent = 'Invio non riuscito. Riprova, o scrivici sui social.';
+        // La mail non e partita, ma se la candidatura e nel nostro
+        // archivio la persona non e persa: si ringrazia lo stesso,
+        // perche e vero che l'abbiamo ricevuta.
+        if (salvata) { ringrazia(); }
+        else {
+          esito.textContent = 'Invio non riuscito. Riprova fra un minuto, o scrivici sui social: ti rispondiamo lo stesso.';
           esito.style.color = '#ff9a4d';
         }
       } finally {
