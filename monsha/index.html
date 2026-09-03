@@ -789,7 +789,28 @@
             <div class="ar-azioni" id="formAzioni" hidden>
               <button type="button" class="btn btn-acc" id="formSalva">Salva la formazione</button>
               <button type="button" class="btn" id="formSvuota">Svuota il campo</button>
+              <button type="button" class="btn" id="provAggiungi">Aggiungi provinante</button>
             </div>
+
+            <!-- Un provinante: chi viene a fare una prova e non ha un
+                 account. Un nome e un ruolo, e da quel momento si
+                 schiera come tutti. Dura due giorni e sparisce da se. -->
+            <div class="prov" id="provRiquadro" hidden>
+              <div class="prov-tit">Aggiungi un provinante</div>
+              <p class="ar-aiuto" style="margin:0 0 14px;">Serve solo per schierarlo: niente account, niente notifiche. Resta due giorni e poi sparisce da solo.</p>
+              <div class="prov-riga">
+                <input type="text" class="wiz-input" id="provId" placeholder="ID di gioco" autocomplete="off" maxlength="60">
+                <select class="ar-incarico" id="provRuolo" aria-label="Ruolo del provinante"></select>
+              </div>
+              <p class="ar-esito" id="provEsito" role="status" aria-live="polite"></p>
+              <div class="ar-azioni">
+                <button type="button" class="btn btn-acc" id="provSalva">Aggiungi</button>
+                <button type="button" class="btn" id="provAnnulla">Annulla</button>
+              </div>
+            </div>
+
+            <!-- Chi e di prova, e per quanto ancora. -->
+            <div class="prov-elenco" id="provElenco"></div>
 
             <div class="form-firma" id="formFirma" hidden></div>
           </div>

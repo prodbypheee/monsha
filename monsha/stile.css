@@ -1523,6 +1523,46 @@ body.sta-trascinando { user-select: none; -webkit-user-select: none; }
   white-space: pre-wrap; overflow-x: auto;
 }
 
+/* ---------- provinanti ----------
+   Il riquadro per aggiungerne uno, e l'elenco di chi e di prova.
+   Tratteggiato e non pieno: e roba che scade, e si vede che e di
+   passaggio. */
+.prov {
+  margin-top: 18px; padding: 18px;
+  border: 1px dashed var(--line-2); border-radius: var(--r-md);
+  background: var(--bg-3);
+}
+.prov-tit {
+  font-size: 11px; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--acc); margin-bottom: 10px;
+}
+.prov-riga { display: grid; gap: 10px; }
+@media (min-width: 520px) { .prov-riga { grid-template-columns: 1fr 200px; } }
+
+.prov-elenco { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.prov-voce {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 7px 8px 7px 13px; border-radius: 999px;
+  border: 1px dashed var(--acc-line); background: var(--acc-soft);
+  font-size: 12.5px; color: var(--txt);
+}
+.prov-voce i {
+  font-style: normal; font-size: 10px; color: var(--txt-5);
+  font-variant-numeric: tabular-nums;
+}
+.prov-via {
+  width: 22px; height: 22px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--bg-2); color: var(--txt-4);
+  font-size: 13px; line-height: 1; display: grid; place-items: center;
+}
+.prov-via:hover { border-color: var(--acc); color: var(--acc); }
+
+/* Sul campo e in panchina, chi e di prova lo dice. */
+.prova-segno {
+  display: block; font-size: 8.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--acc); margin-top: 2px;
+}
+
 /* ---------- chi arriva tardi ----------
    Un orario piccolo attaccato alla faccia, in campo e in panchina.
    Compare solo per chi arriva dopo le 21:30: l'ora di tutti gli altri
