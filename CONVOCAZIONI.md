@@ -263,6 +263,36 @@ centrocampo, un trequartista, due punte.
 amministratore. Tutti gli altri la vedono e basta: le caselle non si
 toccano e i bottoni non ci sono proprio.
 
+### Solo oggi, e fino a tre partite
+
+La formazione è **sempre e solo quella di oggi**. Prima si potevano
+preparare anche i giorni successivi, e non serviva a nessuno: chi c'è lo
+si sa la sera stessa, e un campo riempito tre giorni prima era lavoro
+buttato. Se oggi non si allena, la tab lo dice e basta.
+
+In compenso una serata sono più partite, e ognuna vuole la sua: ci sono
+**tre formazioni**, «Partita 1 / 2 / 3», indipendenti fra loro. Cambiare
+undici caselle fra un fischio e l'altro, e perdere quella di prima, non è
+un modo di lavorare.
+
+**Durano quanto la serata.** Non c'è nessuna scadenza da far scattare: la
+chiave dell'archivio comincia con la data, quindi al prossimo allenamento
+sono tre caselle nuove e vuote.
+
+Chi segna assente esce **da tutte e tre**, non solo da quella aperta:
+lasciarlo schierato nella seconda perché il capitano stava guardando la
+prima sarebbe proprio il buco che quella pulizia esiste per chiudere. E
+cambiare partita con del lavoro non salvato lo chiede prima, invece di
+farlo scoprire dopo.
+
+### Chi arriva tardi
+
+Accanto alla faccia, in campo e in panchina, compare l'ora di chi arriva
+**dopo le 21:30** — 21:30 escluse. L'ora di tutti gli altri non è una
+notizia, e scriverla accanto a undici facce su undici sarebbe rumore.
+Sopra il campo c'è anche la frase per esteso, perché prima di schierare
+la cosa da sapere è chi manca all'inizio.
+
 Due regole, e sono di natura diversa:
 
 - **In campo va solo chi ha segnato presente** quel giorno, e vale in

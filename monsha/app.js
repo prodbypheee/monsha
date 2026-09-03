@@ -2359,25 +2359,45 @@
         attaccanti: 'un attaccante'
       };
 
-      /* ---- la striscia dei giorni ---- */
+      /* ---- le partite della serata ----
+         La formazione e sempre e solo quella di OGGI: preparare in
+         anticipo il campo di giovedi non serviva a nessuno, perche chi
+         c'e lo si sa la sera stessa.
 
-      function disegnaGiorni() {
-        const box = $('formGiorni');
+         In compenso una serata sono piu partite, e ognuna vuole la
+         sua formazione: tre caselle, che si azzerano da sole al
+         prossimo allenamento perche vivono dentro la data. */
+
+      let partita = 1;
+      let quantePartite = 3;
+      let orari = {};
+
+      function disegnaPartite() {
+        const box = $('formPartite');
         box.textContent = '';
-        giorni.slice(0, 10).forEach(d => {
+        for (let n = 1; n <= quantePartite; n++) {
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'conv-chip';
-          b.setAttribute('aria-pressed', String(d === attivo));
-          b.textContent = d === oggi ? 'oggi' : (d === piu(oggi, 1) ? 'domani' : cortissima(d));
-          b.addEventListener('click', () => mostra(d));
+          b.setAttribute('aria-pressed', String(n === partita));
+          b.textContent = 'Partita ' + n;
+          b.addEventListener('click', () => vaiAlla(n));
           box.appendChild(b);
-        });
+        }
       }
 
       function segnaChip() {
-        [...$('formGiorni').children].forEach((b, i) =>
-          b.setAttribute('aria-pressed', String(giorni[i] === attivo)));
+        [...$('formPartite').children].forEach((b, i) =>
+          b.setAttribute('aria-pressed', String(i + 1 === partita)));
+      }
+
+      /* Cambiare partita butta via quello che non e stato salvato:
+         meglio chiederlo prima che scoprirlo dopo. */
+      function vaiAlla(n) {
+        if (n === partita) return;
+        if (sporco && !confirm('La formazione della partita ' + partita +
+            ' non è salvata: cambiando la perdi. Continuare?')) return;
+        mostra(n);
       }
 
       /* ---- il campo ---- */
@@ -2428,6 +2448,17 @@
               const ruolo = document.createElement('b');
               ruolo.textContent = c.eti;
               nome.append(ruolo, document.createTextNode(chi));
+
+              /* Chi entra tardi lo si vede sulla casella: quel posto,
+                 per la prima mezz'ora, e scoperto, ed e una cosa da
+                 sapere guardando il campo, non aprendo un elenco. */
+              const tardi = orari[idPiatto(chi)];
+              if (tardi) {
+                const q = document.createElement('em');
+                q.className = 'casella-tardi';
+                q.textContent = 'dalle ' + tardi;
+                nome.appendChild(q);
+              }
             }
 
             el.append(cerchio, nome);
@@ -2489,6 +2520,17 @@
           const nome = document.createElement('span');
           nome.className = 'conv-nome';
           nome.textContent = id;
+
+          // L'ora serve gia qui: si sceglie chi schierare prima di
+          // schierarlo, e sapere che uno arriva alle 22:30 cambia la
+          // scelta.
+          const tardi = orari[idPiatto(id)];
+          if (tardi) {
+            const q = document.createElement('em');
+            q.className = 'tardi';
+            q.textContent = tardi;
+            nome.appendChild(q);
+          }
 
           t.append(avatar, nome);
 
@@ -2787,7 +2829,7 @@
         const testo = btn.textContent;
         btn.textContent = 'Salvo…';
 
-        const r = await apiConv('formazione', { data: attivo, schieramento });
+        const r = await apiConv('formazione', { data: attivo, partita, schieramento });
 
         btn.disabled = false;
         btn.textContent = testo;
@@ -2832,15 +2874,16 @@
 
       /* ---- caricamento di una giornata ---- */
 
-      async function mostra(data) {
-        attivo = data;
+      async function mostra(quale) {
+        partita = quale;
         segnaChip();
-        $('formQuando').textContent = maiuscola(inLettere(data));
-        $('formEtichetta').textContent = data === oggi ? 'Formazione di oggi' : 'Formazione';
+        $('formQuando').textContent = maiuscola(inLettere(attivo));
+        $('formEtichetta').textContent = 'Partita ' + partita + ' di oggi';
         esito($('formEsito'), '');
 
-        const r = await apiConv('formazione?data=' + encodeURIComponent(data));
-        if (!r.ok || attivo !== data) {
+        const r = await apiConv('formazione?data=' + encodeURIComponent(attivo) +
+          '&partita=' + partita);
+        if (!r.ok || partita !== quale) {
           if (!r.ok) esito($('formEsito'), r.dati.errore || 'Non riesco a leggere la formazione.');
           return;
         }
@@ -2848,8 +2891,21 @@
         caselle = r.dati.caselle || [];
         schieramento = r.dati.schieramento || {};
         presenti = r.dati.presenti || [];
+        orari = r.dati.orari || {};
+        quantePartite = r.dati.partite || 3;
         modificabile = !!r.dati.modificabile;
         sporco = false;                       // appena letta dal server
+
+        /* Chi arriva tardi si dice anche a parole, sopra il campo: sul
+           disegno l'orario e piccolo, e la prima cosa da sapere prima
+           di schierare e quanti mancano all'inizio. */
+        const inRitardo = presenti.filter(id => orari[idPiatto(id)]);
+        $('formTardi').hidden = !inRitardo.length;
+        if (inRitardo.length)
+          $('formTardi').textContent = inRitardo.length === 1
+            ? inRitardo[0] + ' arriva alle ' + orari[idPiatto(inRitardo[0])] + '.'
+            : 'Arrivano più tardi: ' + inRitardo
+                .map(id => id + ' alle ' + orari[idPiatto(id)]).join(', ') + '.';
 
         $('formModulo').textContent = r.dati.modulo;
         $('formAzioni').hidden = !modificabile;
@@ -2864,17 +2920,22 @@
         disegnaCampo();
       }
 
-      function svuota() {
+      function svuota(perche) {
         attivo = null;
         caselle = [];
         schieramento = {};
         presenti = [];
-        $('formQuando').textContent = 'Nessun allenamento in calendario';
-        $('formGiorni').textContent = '';
+        orari = {};
+        $('formQuando').textContent = 'Oggi non si allena';
+        $('formEtichetta').textContent = 'Formazione';
+        $('formPartite').textContent = '';
         $('formCaselle').textContent = '';
+        $('formPanchina').hidden = true;
+        $('formTardi').hidden = true;
         $('formAzioni').hidden = true;
         $('formFirma').hidden = true;
-        esito($('formEsito'), 'Quando il capitano fissa un allenamento, qui compare il campo.');
+        esito($('formEsito'), perche ||
+          'La formazione si mette la sera stessa: quando c’è allenamento, qui compare il campo.');
       }
 
       /* ---- ingresso ----
@@ -2887,20 +2948,20 @@
         oggi = dataOggi;
         io = utente;
 
-        if (!giorni.length) { svuota(); return; }
+        /* Solo oggi. La formazione di un allenamento fra tre giorni
+           non si puo fare — non si sa ancora chi ci sara — e poterla
+           aprire lo stesso invitava solo a lavorare a vuoto. */
+        if (!giorni.includes(oggi)) { svuota(); return; }
 
-        const daLink = new URLSearchParams(location.search).get('giorno');
-        const scelto = (daLink && giorni.includes(daLink)) ? daLink
-                     : (giorni.includes(attivo) ? attivo : giorni[0]);
-
-        disegnaGiorni();
-        mostra(scelto);
+        attivo = oggi;
+        disegnaPartite();
+        mostra(giorni.includes(oggi) && partita >= 1 && partita <= quantePartite ? partita : 1);
       }
 
       function chiudi() {
         chiudiScelta();
         svuota();
-        io = null; giorni = [];
+        io = null; giorni = []; partita = 1; orari = {};
       }
 
       /* Rilettura della giornata aperta. La chiamano l'apertura della
@@ -2912,7 +2973,7 @@
          mettendo in piedi, ed e molto peggio di una panchina vecchia. */
       function ricarica() {
         if (!io || !attivo || sporco) return;
-        mostra(attivo);
+        mostra(partita);
       }
 
       return { aggiorna, chiudi, ricarica };
