@@ -338,6 +338,39 @@ prima sarebbe proprio il buco che quella pulizia esiste per chiudere. E
 cambiare partita con del lavoro non salvato lo chiede prima, invece di
 farlo scoprire dopo.
 
+### I provinanti
+
+Chi viene a fare una prova non ha un account, non riceve notifiche e
+non segna presente: c’è perché il capitano lo ha invitato. Fino a ieri
+non si poteva schierare.
+
+Ora nella tab **Formazione** c’è **Aggiungi provinante** — per chi può
+convocare, cioè capitano, amministrazione e admin. Si scrive un ID e si
+scegle un ruolo, e da quel momento è in panchina come tutti gli altri.
+
+Il ruolo non è una scritta: da lì si ricava il reparto, quindi un
+portiere in prova compare **fra i consigliati della porta** e non
+sotto «da altri reparti». Ed è il motivo per cui lo si chiede.
+
+In campo e in panchina porta scritto **in prova**: guardando l’undici si
+deve capire subito chi è della squadra e chi sta facendo un provino.
+
+**Dura due giorni e sparisce da solo.** Non c’è nessuna pulizia da far
+girare: la scadenza si guarda quando si legge, e chi è scaduto viene
+buttato quando si scrive. Due giorni coprono la sera della prova e
+quella dopo, che è il tempo in cui si decide; oltre, se uno resta, si
+registra come tutti e diventa un membro con la sua scheda.
+
+Si può togliere prima, dalla ✕ accanto al nome — e se era in campo,
+esce: la regola «in campo va solo chi c’è» vale anche per chi non c’è
+più perché lo abbiamo cancellato noi.
+
+Due nomi uguali non si accettano: in campo sarebbero indistinguibili e
+la formazione li tratterebbe come una sola persona.
+
+Di quella persona si tiene **solo un nome e un reparto**: niente email,
+niente telefono, niente di personale.
+
 ### Chi arriva tardi
 
 Accanto alla faccia, in campo e in panchina, compare l'ora di chi arriva
@@ -427,6 +460,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/comune.mjs` | sessione, cookie, utenti, date italiane — condiviso |
 | `netlify/lib/convocazioni.mjs` | giorni e risposte nell'archivio |
 | `netlify/lib/formazione.mjs` | il 3-4-1-2, le undici caselle e le loro regole |
+| `netlify/lib/provinanti.mjs` | chi viene a fare una prova, e per due giorni |
 | `netlify/lib/annunci.mjs` | la bacheca: testo, freno di un minuto, cancellazioni |
 | `netlify/functions/annunci.mjs` | le API `/api/annunci/:azione` |
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |

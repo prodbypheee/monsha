@@ -23,6 +23,8 @@ import { CASELLE, verificaSchieramento, soloPresenti, partitaValida, PARTITE }
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
+import { validaProvinante, restaDaVivere, viviSoltanto, VIVE_MS, RUOLI as RUOLI_PROVINO }
+  from '../netlify/lib/provinanti.mjs';
 import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS, numeroWhatsApp }
   from '../netlify/lib/candidature.mjs';
 
@@ -350,6 +352,89 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nI provinanti');
+
+prova('un provinante vuole un nome e un ruolo vero', () => {
+  const v = validaProvinante({ id: 'ProvaTizio', ruolo: 'Attaccante' }).voce;
+  assert.equal(v.id, 'ProvaTizio');
+  assert.equal(v.ruolo, 'Attaccante');
+  assert.equal(v.reparto, 'attaccanti', 'il reparto lo ricava dal ruolo');
+});
+
+prova('senza nome non si aggiunge', () => {
+  assert.ok(validaProvinante({ id: '   ', ruolo: 'Attaccante' }).errore);
+  assert.ok(validaProvinante({ ruolo: 'Attaccante' }).errore);
+  assert.ok(validaProvinante(null).errore);
+});
+
+prova('un ruolo inventato non passa', () => {
+  /* Il ruolo non e decorazione: da lui si ricava il reparto, e un
+     reparto che non esiste manderebbe il campo fuori strada. */
+  assert.ok(validaProvinante({ id: 'X', ruolo: 'Libero' }).errore);
+  assert.ok(validaProvinante({ id: 'X', ruolo: '' }).errore);
+});
+
+prova('ogni ruolo ha un reparto fra quelli del campo', () => {
+  const buoni = ['portieri', 'difensori', 'centrocampisti', 'attaccanti'];
+  RUOLI_PROVINO.forEach(([nome, reparto]) =>
+    assert.ok(buoni.includes(reparto), nome + ' ha il reparto ' + reparto));
+});
+
+prova('due persone non possono avere lo stesso nome in campo', () => {
+  /* In campo sarebbero indistinguibili, e la formazione le
+     tratterebbe come una sola. */
+  assert.ok(validaProvinante({ id: 'RageeVII', ruolo: 'Attaccante' }, ['RageeVII']).errore);
+  assert.ok(validaProvinante({ id: '  rageevii ', ruolo: 'Attaccante' }, ['RageeVII']).errore,
+    'maiuscole e spazi non aiutano a intrufolarsi');
+});
+
+prova('un nome lunghissimo si taglia invece di far fallire', () => {
+  const v = validaProvinante({ id: 'x'.repeat(500), ruolo: 'Portiere' }).voce;
+  assert.equal(v.id.length, 60);
+});
+
+console.log('\nQuanto vive un provinante');
+
+const SERA = Date.parse('2026-09-03T21:00:00Z');
+const oreFa = ore => new Date(SERA - ore * 3600000).toISOString();
+
+prova('appena aggiunto ha due giorni davanti', () => {
+  assert.equal(restaDaVivere(oreFa(0), SERA), VIVE_MS);
+  assert.equal(VIVE_MS, 2 * 24 * 60 * 60 * 1000);
+});
+
+prova('a un\'ora dalla fine e ancora vivo', () => {
+  assert.equal(restaDaVivere(oreFa(47), SERA), 3600000);
+});
+
+prova('passate le quarantotto ore e finito', () => {
+  assert.equal(restaDaVivere(oreFa(48), SERA), 0);
+  assert.equal(restaDaVivere(oreFa(100), SERA), 0);
+});
+
+prova('una data illeggibile conta come scaduta', () => {
+  /* Meglio far sparire un provinante che tenerne uno per sempre
+     perche una riga d'archivio era scritta male. */
+  assert.equal(restaDaVivere('ieri', SERA), 0);
+  assert.equal(restaDaVivere(null, SERA), 0);
+});
+
+prova('una data nel futuro non lo fa sparire', () => {
+  /* Sara l'orologio di qualcuno a mentire: buttare via il lavoro del
+     capitano per quello sarebbe peggio. */
+  assert.equal(restaDaVivere(new Date(SERA + 3600000).toISOString(), SERA), VIVE_MS);
+});
+
+prova('nell\'elenco restano solo i vivi', () => {
+  const lista = [
+    { id: 'Fresco', creato: oreFa(1) },
+    { id: 'Vecchio', creato: oreFa(70) },
+    { id: 'Rotto', creato: 'chissa' },
+    { id: 'AlLimite', creato: oreFa(47.5) }
+  ];
+  assert.deepEqual(viviSoltanto(lista, SERA).map(p => p.id), ['Fresco', 'AlLimite']);
 });
 
 console.log('\nLe tre partite della serata');

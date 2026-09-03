@@ -2695,6 +2695,13 @@
       let quantePartite = 3;
       let orari = {};
 
+      /* I provinanti della serata: chi viene a fare una prova e non ha
+         un account. Arrivano dal server insieme alla formazione, con
+         le ore che restano da vivere. */
+      let provinanti = [];
+      const provinanteDi = id =>
+        provinanti.find(p => idPiatto(p.id) === idPiatto(id)) || null;
+
       function disegnaPartite() {
         const box = $('formPartite');
         box.textContent = '';
@@ -2782,6 +2789,16 @@
                 q.textContent = 'dalle ' + tardi;
                 nome.appendChild(q);
               }
+
+              /* Chi e di prova lo si dice sul campo: guardando
+                 l'undici, il capitano deve sapere subito chi e della
+                 squadra e chi sta facendo un provino. */
+              if (provinanteDi(chi)) {
+                const p = document.createElement('em');
+                p.className = 'prova-segno';
+                p.textContent = 'in prova';
+                nome.appendChild(p);
+              }
             }
 
             el.append(cerchio, nome);
@@ -2855,6 +2872,14 @@
             nome.appendChild(q);
           }
 
+          const prova = provinanteDi(id);
+          if (prova) {
+            const p = document.createElement('em');
+            p.className = 'prova-segno';
+            p.textContent = 'in prova · ' + prova.ruolo;
+            nome.appendChild(p);
+          }
+
           t.append(avatar, nome);
 
           if (g) {
@@ -2894,9 +2919,18 @@
         const occupati = occupatiTranne(c);
         const liberi = presenti.filter(id => !occupati.has(String(id).toLowerCase()));
 
+        /* Il reparto vale per chi ce l'ha: dalla rosa per i membri,
+           dal ruolo scelto dal capitano per i provinanti. E per questo
+           che quel ruolo si chiede — altrimenti sarebbe una scritta e
+           niente piu. Chi non ha ne l'uno ne l'altro si accetta
+           ovunque: non poterlo schierare sarebbe peggio che
+           schierarlo nel posto sbagliato. */
         const suo = id => {
           const g = trovaGiocatore(id);
-          return !g || g.reparto === c.reparto;
+          if (g) return g.reparto === c.reparto;
+          const p = provinanteDi(id);
+          if (p) return p.reparto === c.reparto;
+          return true;
         };
 
         return { consigliati: liberi.filter(suo), altri: liberi.filter(id => !suo(id)) };
@@ -3111,10 +3145,11 @@
 
         t.append(avatar, nome);
 
-        if (g) {
+        const suoRuolo = g ? g.ruolo : (provinanteDi(id) || {}).ruolo;
+        if (suoRuolo) {
           const r = document.createElement('span');
           r.className = 'conv-ruolo';
-          r.textContent = g.ruolo;
+          r.textContent = suoRuolo + (g ? '' : ' · in prova');
           t.appendChild(r);
         }
 
@@ -3141,6 +3176,111 @@
       $('sceltaBg').addEventListener('click', chiudiScelta);
       document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && apertaSu) chiudiScelta();
+      });
+
+      /* ---- provinanti ----
+         Chi viene a fare una prova non ha un account, non riceve
+         notifiche e non segna presente: c'e perche il capitano lo ha
+         invitato. Qui gli si da un nome e un ruolo, e da quel momento
+         si schiera come tutti gli altri.
+
+         Dura due giorni e sparisce da solo. Non c'e niente da
+         ricordarsi di cancellare, ed e voluto: una lista di provini di
+         tre mesi fa nel mezzo della panchina non serve a nessuno. */
+
+      function riempiRuoliProvino(elenco) {
+        const menu = $('provRuolo');
+        if (!elenco || !elenco.length || menu.children.length) return;
+        elenco.forEach(r => {
+          const o = document.createElement('option');
+          o.value = r;
+          o.textContent = r;
+          menu.appendChild(o);
+        });
+      }
+
+      function disegnaProvinanti() {
+        const box = $('provElenco');
+        box.textContent = '';
+        if (!modificabile || !provinanti.length) return;
+
+        provinanti.forEach(p => {
+          const v = document.createElement('span');
+          v.className = 'prov-voce';
+
+          const nome = document.createElement('b');
+          nome.textContent = p.id;
+
+          const quanto = document.createElement('i');
+          // Le ore e non la data: "ancora 31 ore" si capisce al volo,
+          // "scade il 5 settembre alle 21:14" va interpretato.
+          quanto.textContent = p.ruolo + ' · ancora ' +
+            (p.ore >= 24 ? Math.round(p.ore / 24) + (p.ore >= 48 ? ' giorni' : ' giorno')
+                         : p.ore + (p.ore === 1 ? ' ora' : ' ore'));
+
+          const via = document.createElement('button');
+          via.type = 'button';
+          via.className = 'prov-via';
+          via.textContent = '✕';
+          via.setAttribute('aria-label', 'Togli ' + p.id);
+          via.addEventListener('click', async () => {
+            if (!confirm('Togliere ' + p.id + ' dai provinanti?')) return;
+            via.disabled = true;
+            const r = await apiConv('provinante-via', { id: p.id });
+            if (!r.ok) { via.disabled = false; alert(r.dati.errore || 'Non riuscito.'); return; }
+            mostra(partita);
+          });
+
+          v.append(nome, quanto, via);
+          box.appendChild(v);
+        });
+      }
+
+      $('provAggiungi').addEventListener('click', () => {
+        $('provRiquadro').hidden = false;
+        esito($('provEsito'), '');
+        $('provId').value = '';
+        $('provId').focus();
+      });
+
+      $('provAnnulla').addEventListener('click', () => {
+        $('provRiquadro').hidden = true;
+        esito($('provEsito'), '');
+      });
+
+      $('provId').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); $('provSalva').click(); }
+      });
+
+      $('provSalva').addEventListener('click', async () => {
+        const btn = $('provSalva');
+        const id = $('provId').value.trim();
+        const ruolo = $('provRuolo').value;
+
+        if (!id) { esito($('provEsito'), 'Serve l’ID di gioco.'); $('provId').focus(); return; }
+
+        btn.disabled = true;
+        const testo = btn.textContent;
+        btn.textContent = 'Aggiungo…';
+
+        const r = await apiConv('provinante', { id, ruolo });
+
+        btn.disabled = false;
+        btn.textContent = testo;
+
+        if (!r.ok) { esito($('provEsito'), r.dati.errore || 'Non riuscito.'); return; }
+
+        $('provRiquadro').hidden = true;
+        $('provId').value = '';
+        /* Si rilegge la giornata invece di aggiungerlo a mano
+           all'elenco: cosi compare in panchina con le stesse regole di
+           tutti gli altri, e non c'e un secondo posto dove sbagliare.
+
+           Il messaggio si scrive DOPO la rilettura: mostra() pulisce la
+           cassetta appena parte, e scrivendolo prima si cancellava da
+           solo mezzo secondo dopo. */
+        await mostra(partita);
+        esito($('formEsito'), id + ' è in panchina: ora puoi schierarlo.', true);
       });
 
       /* ---- salvataggio ---- */
@@ -3215,6 +3355,9 @@
         schieramento = r.dati.schieramento || {};
         presenti = r.dati.presenti || [];
         orari = r.dati.orari || {};
+        provinanti = r.dati.provinanti || [];
+        riempiRuoliProvino(r.dati.ruoliProvino);
+        disegnaProvinanti();
         quantePartite = r.dati.partite || 3;
         modificabile = !!r.dati.modificabile;
         sporco = false;                       // appena letta dal server
@@ -3232,6 +3375,7 @@
 
         $('formModulo').textContent = r.dati.modulo;
         $('formAzioni').hidden = !modificabile;
+        if (!modificabile) { $('provRiquadro').hidden = true; }
 
         $('formNota').textContent = modificabile
           ? (presenti.length
@@ -3249,6 +3393,9 @@
         schieramento = {};
         presenti = [];
         orari = {};
+        provinanti = [];
+        $('provRiquadro').hidden = true;
+        $('provElenco').textContent = '';
         $('formQuando').textContent = 'Oggi non si allena';
         $('formEtichetta').textContent = 'Formazione';
         $('formPartite').textContent = '';

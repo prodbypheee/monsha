@@ -47,6 +47,11 @@ import {
   togliDalCampo, soloPresenti, PARTITE, partitaValida
 } from '../lib/formazione.mjs';
 
+import {
+  leggiProvinanti, salvaProvinante, eliminaProvinante,
+  validaProvinante, restaDaVivere, RUOLI as RUOLI_PROVINO
+} from '../lib/provinanti.mjs';
+
 /* ---------- chi sono e cosa vedo ------------------------------ */
 
 async function stato(req, segreto) {
@@ -233,8 +238,9 @@ async function formazione(req, segreto, indirizzo) {
   if (!dataValida(data)) return errore('Data non valida.');
   const partita = partitaValida(indirizzo.searchParams.get('partita'));
 
-  const [salvata, risposte, utenti] = await Promise.all([
-    leggiFormazione(data, partita), leggiRisposte(data), tuttiGliUtenti()
+  const [salvata, risposte, utenti, provinanti] = await Promise.all([
+    leggiFormazione(data, partita), leggiRisposte(data), tuttiGliUtenti(),
+    leggiProvinanti()
   ]);
 
   // Chi c'e davvero quel giorno: sono gli unici schierabili, e il
@@ -243,7 +249,12 @@ async function formazione(req, segreto, indirizzo) {
     .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
     .sort((a, b) => a.idGioco.localeCompare(b.idGioco, 'it'));
 
-  const presenti = eccoli.map(u => u.idGioco);
+  /* I provinanti sono schierabili senza aver segnato niente: non
+     hanno un account con cui rispondere, e ci sono perche il capitano
+     li ha invitati. Entrano fra i presenti — cosi passano i controlli
+     come tutti — e viaggiano anche a parte, perche il sito deve poter
+     dire che sono di prova e per quanto restano. */
+  const presenti = eccoli.map(u => u.idGioco).concat(provinanti.map(p => p.id));
 
   /* Chi arriva tardi, e a che ora. Solo dopo le 21:30 — l'ora di
      tutti non e una notizia — e solo per chi c'e: e il dato che
@@ -279,6 +290,15 @@ async function formazione(req, segreto, indirizzo) {
     da: salvata.da,
     presenti,
     orari,
+    provinanti: provinanti.map(p => ({
+      id: p.id,
+      ruolo: p.ruolo,
+      reparto: p.reparto,
+      // Ore che restano: un numero da mostrare, non una data da
+      // interpretare sul telefono di chi guarda.
+      ore: Math.max(1, Math.round(restaDaVivere(p.creato) / 3600000))
+    })),
+    ruoliProvino: RUOLI_PROVINO.map(r => r[0]),
     modificabile: puoConvocare(g.utente)
   });
 }
@@ -294,10 +314,17 @@ async function salvaLaFormazione(req, segreto) {
   if (!dataValida(data)) return errore('Data non valida.');
   const partita = partitaValida(corpo.partita);
 
-  const [risposte, utenti] = await Promise.all([leggiRisposte(data), tuttiGliUtenti()]);
+  const [risposte, utenti, provinanti] = await Promise.all([
+    leggiRisposte(data), tuttiGliUtenti(), leggiProvinanti()
+  ]);
+
+  // Gli stessi schierabili che il sito ha visto: membri presenti piu
+  // provinanti. Se qui mancassero, salvare una formazione con dentro
+  // un provinante verrebbe rifiutato.
   const presenti = daConvocare(utenti)
     .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
-    .map(u => u.idGioco);
+    .map(u => u.idGioco)
+    .concat(provinanti.map(p => p.id));
 
   /* Niente controllo sul reparto: il capitano puo schierare chi
      vuole dove vuole. Restano le regole sui dati — presente, non
@@ -308,6 +335,55 @@ async function salvaLaFormazione(req, segreto) {
 
   await salvaFormazione(data, partita, esito.schieramento, g.utente.idGioco);
   return json({ ok: true, data, partita, schieramento: esito.schieramento });
+}
+
+/* ---------- i provinanti -------------------------------------
+   Chi convoca aggiunge uno che viene a fare una prova: un nome e un
+   ruolo, e da quel momento e schierabile come tutti gli altri.
+
+   Non e un account e non diventa niente: dura due giorni e sparisce
+   da solo. Se quella persona resta, si registra come tutti.
+
+   Lo puo fare chi puo convocare — capitano, amministrazione, admin —
+   perche e la stessa mano che mette in campo. */
+
+async function aggiungiProvinante(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono aggiungere un provinante.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+
+  /* Gli ID gia in uso, membri compresi: due persone con lo stesso
+     nome in campo sono indistinguibili, e la formazione le
+     tratterebbe come una sola. */
+  const [utenti, provinanti] = await Promise.all([tuttiGliUtenti(), leggiProvinanti()]);
+  const presi = daConvocare(utenti).map(u => u.idGioco).concat(provinanti.map(p => p.id));
+
+  const esito = validaProvinante(corpo, presi);
+  if (esito.errore) return errore(esito.errore);
+
+  const messo = await salvaProvinante(esito.voce, g.utente.idGioco);
+  return json({ ok: true, provinante: { id: messo.id, ruolo: messo.ruolo, reparto: messo.reparto } });
+}
+
+async function togliProvinante(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono togliere un provinante.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+  const via = await eliminaProvinante(corpo.id);
+  if (!via) return errore('Non trovo quel provinante.', 404);
+
+  /* Se era in campo, esce: la regola "in campo va solo chi c'e" vale
+     anche per chi non c'e piu perche l'abbiamo cancellato noi. Tutte
+     le giornate future no — solo oggi, che e l'unica schierabile. */
+  await togliDalCampo(oggiRoma(), corpo.id).catch(() => null);
+
+  return json({ ok: true });
 }
 
 /* ---------- il colpetto sulla spalla --------------------------
@@ -601,6 +677,8 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
     if (req.method === 'POST' && azione === 'sollecita')    return await sollecita(req, segreto);
+    if (req.method === 'POST' && azione === 'provinante')   return await aggiungiProvinante(req, segreto);
+    if (req.method === 'POST' && azione === 'provinante-via') return await togliProvinante(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);
     if (req.method === 'POST' && azione === 'push-esci')    return await pushEsci(req, segreto);
     if (req.method === 'POST' && azione === 'push-prova')   return await pushProva(req, segreto);
