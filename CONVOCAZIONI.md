@@ -146,10 +146,31 @@ risposto. Il colpetto sulla spalla di una persona vera funziona meglio,
 e chi ha già risposto non lo riceve affatto.
 
 Gli orari sono ora italiana e restano giusti anche col cambio dell'ora
-legale: la funzione programmata gira ogni mezz'ora e ogni volta guarda
-che ore sono a Roma, invece di fidarsi di un orario fisso in UTC che
-sbaglierebbe di un'ora per metà anno. Ogni mezz'ora e non ogni ora da
-quando c'è un appuntamento alle 8:30.
+legale: l'orologio gira ogni mezz'ora e ogni volta guarda che ore sono
+a Roma, invece di fidarsi di un orario fisso in UTC che sbaglierebbe di
+un'ora per metà anno.
+
+### Perché gli orologi sono due file
+
+Un colpo ogni mezz'ora si scriverebbe naturalmente con una funzione
+sola e `'0,30 * * * *'`. **Netlify quell'espressione non la onora**: dal
+29 agosto al 3 settembre la funzione non è stata chiamata nemmeno una
+volta, e non è arrivata più una notifica. Nessun errore, nessun log:
+solo silenzio, che è il modo peggiore in cui una cosa può rompersi.
+
+Ora sono **due funzioni programmate** — `'0 * * * *'` e `'30 * * * *'`
+— che chiamano lo stesso codice in `netlify/lib/orologio.mjs`. Due
+espressioni a valore singolo sono la stessa forma di quella che
+funzionava prima e non chiedono niente al parser. Che capitino nello
+stesso minuto non è un problema: il segno di spunta contro il doppio
+invio è per giornata e per fascia, quindi la seconda trova già fatto e
+se ne va.
+
+E a ogni giro, anche quando non c'è niente da fare, l'orologio lascia
+un segno di passaggio. È la cosa che è mancata per cinque giorni:
+senza, «non è arrivata la notifica» è indistinguibile da «non era
+giorno di allenamento». Si legge dal bottone **«Perché non è
+arrivata?»** nel pannello prove.
 
 ### A che ora arrivi
 
@@ -380,7 +401,9 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/posta.mjs` | invio delle mail via EmailJS |
 | `netlify/lib/mail-riepilogo.mjs` | la grafica della mail: testata, numeri, facce |
 | `netlify/functions/convocazioni.mjs` | le API `/api/convocazioni/:azione` |
-| `netlify/functions/convocazioni-cron.mjs` | l'orologio: 8:30, 14:00, 18:00 e 20:00 |
+| `netlify/lib/orologio.mjs` | il lavoro dell'orologio: 8:30, 14:00, 18:00 e 20:00 |
+| `netlify/functions/convocazioni-cron.mjs` | lo chiama allo scoccare dell'ora |
+| `netlify/functions/convocazioni-cron-mezza.mjs` | lo chiama alla mezza |
 | `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |
