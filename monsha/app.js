@@ -909,13 +909,17 @@
          convocazioni. E solo un suggerimento su quale pannello aprire —
          non autentica niente e non salta nessun controllo. */
       const chiesta = new URLSearchParams(location.search).get('tab');
-      const dove = PANNELLI.includes(chiesta) && chiesta !== 'gestione'
-        ? chiesta : 'convocazioni';
+      /* La gestione si apre da un link solo a chi la puo vedere: la
+         notifica di una candidatura ci porta dentro, ma a un
+         giocatore quel pannello non esiste e mandarcelo lo
+         lascerebbe davanti a una pagina vuota. */
+      const ammessa = PANNELLI.includes(chiesta) && (chiesta !== 'gestione' || gestisce);
+      const dove = ammessa ? chiesta : 'convocazioni';
 
       pannello(dove);
       if (dove === 'annunci') annunci.apri();
 
-      if (utente.ruolo === 'admin') caricaRichieste();
+      if (gestisce) { caricaRichieste(); caricaCandidature(true); }
       convocazioni.avvia(utente);
     }
 
@@ -2105,6 +2109,69 @@
           ? 'Partito a ' + r.dati.partite + ' di ' + r.dati.destinatari + ': ' + r.dati.indirizzi.join(', ')
           : 'EmailJS ha rifiutato. Risposta testuale: ' + (r.dati.motivo || 'nessuna'),
           !!r.dati.partite);
+      });
+
+      /* ---- perche non e arrivata ----
+         Quando una notifica non arriva le domande sono sempre le
+         stesse quattro: oggi si allena? l'orologio ha girato? le
+         chiavi ci sono? qualcuno le ha davvero accese? Questo bottone
+         risponde a tutte e quattro invece di far tirare a indovinare.
+         Non manda niente: guarda e riferisce. */
+
+      $('diagnosi').addEventListener('click', async () => {
+        const btn = $('diagnosi'), box = $('diagnosiEsito');
+        btn.disabled = true;
+        box.hidden = false;
+        box.textContent = 'Guardo…';
+
+        const r = await apiConv('diagnosi');
+        btn.disabled = false;
+
+        if (!r.ok) { box.textContent = r.dati.errore || 'Non riesco a leggere.'; return; }
+
+        const d = r.dati;
+        const si = v => v ? 'sì' : 'NO';
+        const fasce = {
+          mattina: 'buongiorno 8:30', pomeriggio: 'avviso 14:00',
+          sera: 'ultima chiamata 18:00', riepilogo: 'mail 20:00'
+        };
+
+        const righe = [
+          'Sul server sono le ' + String(d.adesso.ora).padStart(2, '0') + ':' +
+            String(d.adesso.minuto).padStart(2, '0') + ' di ' + d.adesso.data + '.',
+          '',
+          'Oggi si allena:        ' + si(d.allenamentoOggi),
+          'Prossimi allenamenti:  ' + (d.prossimiGiorni.length ? d.prossimiGiorni.join(', ') : 'nessuno in calendario'),
+          '',
+          'Oggi è partito:'
+        ];
+
+        Object.entries(fasce).forEach(([k, eti]) => {
+          const q = d.inviate[k];
+          righe.push('  ' + eti.padEnd(22) +
+            (q ? 'sì, alle ' + new Date(q).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+               : 'no'));
+        });
+
+        righe.push('',
+          'Membri approvati:      ' + d.membri,
+          'Con notifiche accese:  ' + d.conNotifiche + ' (su ' + d.telefoni + ' dispositivi)',
+          '',
+          'Chiavi notifiche:      ' + si(d.configurato.push),
+          'Posta:                 ' + si(d.configurato.posta),
+          'Modello riepilogo:     ' + si(d.configurato.modelloRiepilogo));
+
+        /* La riga che conta: invece di lasciare interpretare
+           l'elenco, si dice qual e la causa piu probabile. */
+        let verdetto;
+        if (!d.allenamentoOggi) verdetto = 'Oggi non è giorno di allenamento: è normale che non sia arrivato niente.';
+        else if (!d.configurato.push) verdetto = 'Mancano le chiavi VAPID sul server: nessuna notifica può partire.';
+        else if (!d.conNotifiche) verdetto = 'Nessuno ha acceso le notifiche: non c’è nessun telefono da raggiungere.';
+        else if (d.adesso.ora >= 9 && !d.inviate.mattina) verdetto = 'Le 8:30 sono passate e il buongiorno non risulta partito: l’orologio non ha girato.';
+        else verdetto = 'Le fasce già passate risultano partite: se un telefono non ha suonato, il problema è su quel telefono.';
+
+        righe.push('', verdetto);
+        box.textContent = righe.join('\n');
       });
 
       /* Riempie solo i due bottoni in cima, senza toccare la giornata

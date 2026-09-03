@@ -15,7 +15,9 @@
                     lasciare a chiunque abbia un accesso.
    ============================================================= */
 
-import { json, errore, esigiGestione } from '../lib/comune.mjs';
+import { json, errore, esigiGestione, tuttiGliUtenti, chiave } from '../lib/comune.mjs';
+import { riceveIlRiepilogo } from '../lib/convocazioni.mjs';
+import { manda, pushConfigurato } from '../lib/push.mjs';
 import {
   validaCandidatura, salvaCandidatura, leggiCandidature,
   quantoAspettare, segnaPassaggio, potaVecchie, eliminaCandidatura
@@ -28,6 +30,35 @@ const daDove = req =>
   req.headers.get('x-nf-client-connection-ip') ||
   (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
   'ignoto';
+
+/* Chi va avvisato quando arriva una candidatura: amministratore,
+   capitano e amministrazione. E lo stesso elenco che riceve il
+   riepilogo delle 20:00, e non e un caso — sono le persone che
+   rispondono di chi entra nel club.
+
+   Due giorni di validita: una candidatura non e urgente come un
+   allenamento fra due ore, ma non deve nemmeno svanire perche il
+   telefono era spento un pomeriggio. */
+async function avvisaChiGestisce(voce, origine) {
+  if (!pushConfigurato()) return 0;
+
+  const chi = riceveIlRiepilogo(await tuttiGliUtenti());
+  if (!chi.length) return 0;
+
+  const carico = {
+    titolo: 'Nuova candidatura',
+    // Chi e, su cosa gioca e in che ruolo: il minimo per decidere se
+    // vale la pena aprire il sito adesso o dopo cena.
+    testo: voce.id + ' · ' + voce.piattaforma + ' · ' + voce.ruoli.join(', '),
+    /* Niente campo `data`, e di proposito: e quello che fa comparire
+       i bottoni Presente e Assente dentro la notifica, e su una
+       candidatura non vorrebbero dire niente. */
+    vai: origine + '/area-riservata?tab=gestione'
+  };
+
+  const esiti = await Promise.all(chi.map(u => manda(chiave(u.email), carico, 48 * 3600)));
+  return esiti.reduce((a, b) => a + b, 0);
+}
 
 async function invia(req) {
   const corpo = await req.json().catch(() => ({}));
@@ -45,12 +76,22 @@ async function invia(req) {
   await salvaCandidatura(esito.voce);
   await segnaPassaggio(daDove(req));
 
+  /* La notifica non deve poter far fallire una candidatura gia
+     salvata: se il telefono di qualcuno non si raggiunge, la persona
+     che si e candidata non c'entra niente. */
+  let avvisati = 0;
+  try {
+    avvisati = await avvisaChiGestisce(esito.voce, new URL(req.url).origin);
+  } catch (e) {
+    console.error('candidature: avviso —', e && e.message);
+  }
+
   // La potatura non deve poter far fallire un invio riuscito: se va
   // storta si riprova al prossimo, e nel frattempo la candidatura e
   // gia al sicuro.
   potaVecchie().catch(e => console.error('candidature: potatura —', e && e.message));
 
-  return json({ ok: true });
+  return json({ ok: true, avvisati });
 }
 
 async function elenco(req, segreto) {

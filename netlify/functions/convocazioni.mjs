@@ -22,14 +22,15 @@
 
 import {
   json, errore, esigiMembro, esigiAdmin, tuttiGliUtenti, chiave,
-  incaricoDi, puoConvocare, oggiRoma, dataValida, dataInLettere, normId
+  incaricoDi, puoConvocare, oggiRoma, dataValida, dataInLettere, normId,
+  oraRoma, minutoRoma, convoc
 } from '../lib/comune.mjs';
 
 import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
   destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
-  PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT, oraTardi
+  PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT, oraTardi, fasciaDi
 } from '../lib/convocazioni.mjs';
 
 import {
@@ -387,6 +388,65 @@ async function sollecita(req, segreto) {
   });
 }
 
+/* ---------- perche non e arrivata --------------------------------
+   Quando una notifica non arriva, le domande sono sempre le stesse
+   quattro: oggi si allena? l'orologio ha girato? le chiavi ci sono?
+   e qualcuno le ha davvero accese? Senza un posto dove guardare si
+   finisce a tirare a indovinare, e le supposizioni su un sistema che
+   parte da solo tre volte al giorno sono quasi sempre sbagliate.
+
+   Non manda niente e non cambia niente: guarda e riferisce. Solo
+   l'amministratore, perche dice quante persone hanno le notifiche
+   accese e com'e configurato il server. */
+
+async function diagnosi(req, segreto) {
+  const g = await esigiAdmin(req, segreto);
+  if (g.errore) return g.errore;
+
+  const oggi = oggiRoma();
+  const ora = oraRoma();
+  const minuto = minutoRoma();
+
+  const [giorni, utenti] = await Promise.all([leggiGiorni(), tuttiGliUtenti()]);
+  const membri = daConvocare(utenti);
+
+  /* I segni di spunta di oggi: uno per fascia, scritti dall'orologio
+     appena prima di mandare. Se un segno c'e, quella fascia e stata
+     lavorata; se manca, l'orologio non e passato o non era giorno di
+     allenamento. */
+  const fasce = ['mattina', 'pomeriggio', 'sera', 'riepilogo'];
+  const inviate = {};
+  await Promise.all(fasce.map(async f => {
+    const v = await convoc().get('inviate/' + oggi + '/' + f, { type: 'json' }).catch(() => null);
+    inviate[f] = v ? v.quando : null;
+  }));
+
+  /* Quanti telefoni sono raggiungibili davvero. Non chi ha detto si
+     una volta: quante sottoscrizioni valide ci sono adesso. */
+  const { blobs } = await convoc().list({ prefix: 'push/' });
+  let telefoni = 0, conNotifiche = 0;
+  await Promise.all(blobs.map(async b => {
+    const v = await convoc().get(b.key, { type: 'json' }).catch(() => null);
+    const n = (v && Array.isArray(v.sottoscrizioni)) ? v.sottoscrizioni.length : 0;
+    if (n) { conNotifiche++; telefoni += n; }
+  }));
+
+  return json({
+    adesso: { data: oggi, ora, minuto, fascia: fasciaDi(ora, minuto) },
+    allenamentoOggi: giorni.includes(oggi),
+    prossimiGiorni: giorni.slice(0, 5),
+    inviate,
+    membri: membri.length,
+    conNotifiche,
+    telefoni,
+    configurato: {
+      push: pushConfigurato(),
+      posta: postaConfigurata(),
+      modelloRiepilogo: !!process.env.EMAILJS_TEMPLATE_CONVOCAZIONI
+    }
+  });
+}
+
 /* ---------- notifiche ----------------------------------------- */
 
 async function pushIscrivi(req, segreto) {
@@ -512,6 +572,7 @@ export default async (req) => {
     if (req.method === 'GET'  && azione === 'stato')        return await stato(req, segreto);
     if (req.method === 'GET'  && azione === 'giorno')       return await giorno(req, segreto, indirizzo);
     if (req.method === 'GET'  && azione === 'presenze')     return await presenze(req, segreto, indirizzo);
+    if (req.method === 'GET'  && azione === 'diagnosi')     return await diagnosi(req, segreto);
     if (req.method === 'GET'  && azione === 'formazione')   return await formazione(req, segreto, indirizzo);
     if (req.method === 'POST' && azione === 'formazione')   return await salvaLaFormazione(req, segreto);
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
