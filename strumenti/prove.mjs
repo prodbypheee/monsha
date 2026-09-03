@@ -23,7 +23,7 @@ import { CASELLE, verificaSchieramento, soloPresenti, partitaValida, PARTITE }
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
-import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS }
+import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS, numeroWhatsApp }
   from '../netlify/lib/candidature.mjs';
 
 let fatte = 0, rotte = 0;
@@ -456,6 +456,38 @@ prova('roba che non e una lista non fa saltare niente', () => {
   const v = validaCandidatura({ ...BUONA, comp: 'non una lista', club: null }).voce;
   assert.deepEqual(v.comp, []);
   assert.deepEqual(v.club, []);
+});
+
+prova('il numero si ripulisce come lo vuole WhatsApp', () => {
+  /* Chi si candida scrive come gli pare; WhatsApp vuole cifre
+     attaccate col prefisso davanti. */
+  assert.equal(numeroWhatsApp('+39 333 1234567'), '393331234567');
+  assert.equal(numeroWhatsApp('333-123-4567'), '393331234567');
+  assert.equal(numeroWhatsApp('0039 333 1234567'), '393331234567');
+  assert.equal(numeroWhatsApp('  3331234567  '), '393331234567');
+});
+
+prova('il 39 si mette solo dove manca', () => {
+  /* Un cellulare italiano ha dieci cifre e comincia per 3; col
+     prefisso ne ha dodici. Sono due forme distinguibili, e vanno
+     distinte: mettere il 39 a chi ce l'ha gia aprirebbe la chat di
+     un numero che non esiste. */
+  assert.equal(numeroWhatsApp('3331234567'), '393331234567');   // dieci: manca
+  assert.equal(numeroWhatsApp('393331234567'), '393331234567'); // dodici: c'e gia
+});
+
+prova('un numero straniero non si tocca', () => {
+  /* Indovinare un prefisso a chi ne ha gia uno suo sarebbe peggio che
+     lasciarlo com'e. */
+  assert.equal(numeroWhatsApp('+44 7700 900123'), '447700900123');
+  assert.equal(numeroWhatsApp('+1 415 555 0123'), '14155550123');
+});
+
+prova('quello che non e un numero non apre nessuna chat', () => {
+  /* Meglio nessun bottone che un bottone che apre la chat sbagliata:
+     null e il segnale che al sito serve per non mostrarlo. */
+  [null, undefined, '', '   ', 'ciao', '12345', '1'.repeat(20)].forEach(v =>
+    assert.equal(numeroWhatsApp(v), null, JSON.stringify(v)));
 });
 
 prova('la pausa fra due invii e di due minuti', () => {

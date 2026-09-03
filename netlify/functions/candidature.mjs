@@ -20,7 +20,8 @@ import { riceveIlRiepilogo } from '../lib/convocazioni.mjs';
 import { manda, pushConfigurato } from '../lib/push.mjs';
 import {
   validaCandidatura, salvaCandidatura, leggiCandidature,
-  quantoAspettare, segnaPassaggio, potaVecchie, eliminaCandidatura
+  quantoAspettare, segnaPassaggio, potaVecchie, eliminaCandidatura,
+  numeroWhatsApp
 } from '../lib/candidature.mjs';
 
 /* L'indirizzo di chi chiama lo mette Netlify. Non lo conserviamo in
@@ -94,12 +95,29 @@ async function invia(req) {
   return json({ ok: true, avvisati });
 }
 
+/* L'invito al gruppo provini sta in una variabile d'ambiente e non nel
+   codice. Non e una password, ma e una chiave: chi ce l'ha entra nel
+   gruppo. Questo repository e pubblico, e un link scritto in un file
+   ci resta anche dopo averlo cancellato, nella cronologia. */
+const INVITO = () => String(process.env.WHATSAPP_PROVINI || '').trim();
+
 async function elenco(req, segreto) {
   const g = await esigiGestione(req, segreto);
   if (g.errore) return g.errore;
 
   const voci = await leggiCandidature();
-  return json({ candidature: voci, quante: voci.length });
+
+  /* Il numero ripulito lo calcola il server, una volta sola e con le
+     stesse regole per tutti. E lo manda accanto a quello scritto a
+     mano, non al posto suo: chi guarda deve poter vedere tutti e due
+     e accorgersi se la ripulitura ha sbagliato. */
+  const conNumero = voci.map(v => ({ ...v, whatsapp: numeroWhatsApp(v.telefono) }));
+
+  return json({
+    candidature: conNumero,
+    quante: conNumero.length,
+    invito: INVITO() || null
+  });
 }
 
 async function elimina(req, segreto) {

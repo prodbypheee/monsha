@@ -1516,7 +1516,11 @@ body.sta-trascinando { user-select: none; -webkit-user-select: none; }
   .cand-campo { grid-template-columns: 1fr; gap: 2px; }
 }
 .cand-vuoto { color: var(--txt-5); font-size: 13px; margin: 18px 0 0; }
-.cand-via { margin-top: 12px; }
+.cand-azioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cand-via { margin-top: 0; }
+/* Il verde di WhatsApp, appena accennato: si riconosce senza gridare. */
+.cand-wa { border-color: rgba(37,211,102,.45); color: #6fe0a0; }
+.cand-wa:hover { border-color: #25d366; color: #25d366; }
 
 /* =============================================================
    CAMPIONATO
