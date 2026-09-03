@@ -150,6 +150,38 @@ legale: l'orologio gira ogni mezz'ora e ogni volta guarda che ore sono
 a Roma, invece di fidarsi di un orario fisso in UTC che sbaglierebbe di
 un'ora per metà anno.
 
+### Perché l’orologio lo sveglia GitHub e non Netlify
+
+Netlify ha due funzioni programmate registrate — chiamandole da fuori
+rispondono **403**, che è la prova che le conosce — e **non le chiama
+mai**. Il 3 settembre 2026 il segno di passaggio diceva «MAI»: non una
+volta, da quando esiste.
+
+Quindi la sveglia arriva da fuori. Un’azione programmata su GitHub
+bussa ogni mezz’ora a `POST /api/orologio/batti`; il sito guarda che
+ore sono a Roma e decide se c’è da mandare qualcosa. Tutta
+l’intelligenza resta sul server: su GitHub c’è solo il dito che suona
+il campanello.
+
+**Serve una cosa sola, una volta:** inventare una frase lunga a caso e
+metterla in due posti con lo stesso valore —
+`OROLOGIO_SEGRETO` fra le variabili d’ambiente di Netlify, e
+`OROLOGIO_SEGRETO` fra i *secrets* del repository su GitHub. Senza,
+l’azione fallisce con un messaggio chiaro invece di bussare a vuoto.
+
+Sotto c’è una seconda rete che non chiede nessuna configurazione: **chi
+apre l’area riservata dà una spinta all’orologio** senza accorgersene.
+Non è affidabile — se alle 8:30 nessuno apre il sito, nessuno lo
+sveglia — ma copre il momento in cui l’app la aprono tutti, la sera.
+
+Chiamarlo cento volte non fa cento notifiche: il segno di spunta contro
+il doppio invio è per giornata e per fascia, e fuori dagli orari giusti
+non fa niente comunque.
+
+Le due funzioni programmate di Netlify restano al loro posto: se un
+giorno cominciassero a girare non farebbero danno, troverebbero già
+fatto.
+
 ### Perché gli orologi sono due file
 
 Un colpo ogni mezz'ora si scriverebbe naturalmente con una funzione
