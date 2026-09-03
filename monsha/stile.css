@@ -1451,18 +1451,30 @@ html { touch-action: pan-x pan-y; }
    scorrere come su qualsiasi altro elenco. Era il difetto peggiore
    del trascinamento: per prendere qualcuno bisognava impedire lo
    scorrimento proprio dove le dita lo cercano. */
+/* Spogliato di tutto quello che un bottone si porta dietro. Le
+   tessere della panchina sono diventate <button> per essere premibili
+   col tasto tab, ed erano <div>: senza questo si presentano con lo
+   sfondo bianco di sistema, il bordo grigio e il testo a sinistra,
+   perche un div non ha niente di tutto cio e un bottone si.
+
+   font: inherit e color: inherit sono la stessa storia: il bottone
+   porta il font dei bottoni del sistema operativo, che qui non
+   c'entra niente. */
 .conv-tessera.prendibile {
-  cursor: pointer; text-align: left; font: inherit; color: inherit;
+  cursor: pointer;
+  background: none; border: 0; padding: 0; margin: 0;
+  text-align: center; font: inherit; color: inherit;
   -webkit-appearance: none; appearance: none;
 }
 
-/* Chi si ha in mano, in panchina o in campo: acceso e appena
-   sollevato, cosi si vede a colpo d'occhio da chi si e partiti. */
-.conv-tessera.in-mano {
+/* Chi si ha in mano, in panchina: si accende la faccia, come gia
+   fanno il verde del presente e l'arancio dell'assente. Sulla tessera
+   intera non si puo — non ha ne bordo ne sfondo da accendere. */
+.conv-tessera.in-mano .conv-avatar {
   border-color: var(--acc);
-  background: var(--acc-soft);
-  box-shadow: 0 0 0 1px var(--acc-soft);
+  box-shadow: 0 0 0 4px var(--acc-soft);
 }
+.conv-tessera.in-mano .conv-nome { color: var(--acc); }
 .casella.in-mano .casella-cerchio {
   border-color: var(--acc);
   box-shadow: 0 0 0 4px var(--acc-soft);
