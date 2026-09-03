@@ -1460,6 +1460,37 @@ body.sta-trascinando { user-select: none; -webkit-user-select: none; }
 .pres-riga.zero .pres-nome { color: var(--txt-4); }
 .pres-riga.zero .pres-faccia { opacity: .45; filter: grayscale(1); }
 
+/* ---------- candidature dei provini ----------
+   Ogni candidatura e una scheda: in cima l'ID e da quanto e arrivata,
+   sotto tutto quello che ha scritto. Non una tabella — i campi sono
+   pochi ma lunghi, e su un telefono una tabella diventa illeggibile. */
+.cand-elenco { margin-top: 20px; }
+.cand-voce {
+  border-top: 1px solid var(--line); padding: 16px 0;
+}
+.cand-voce:first-child { border-top: 0; padding-top: 4px; }
+.cand-capo { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cand-id { font-size: 15px; font-weight: 600; color: var(--txt); overflow-wrap: anywhere; }
+.cand-quando { font-size: 11px; color: var(--txt-5); margin-left: auto; white-space: nowrap; }
+.cand-piatt {
+  font-size: 9.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--acc); border: 1px solid var(--acc-line); background: var(--acc-soft);
+  border-radius: 999px; padding: 4px 9px;
+}
+.cand-campi { margin-top: 12px; display: grid; gap: 8px; }
+.cand-campo { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: baseline; }
+.cand-campo dt {
+  font-size: 9.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--txt-5); margin: 0;
+}
+.cand-campo dd { margin: 0; font-size: 13px; color: var(--txt-2); overflow-wrap: anywhere; }
+.cand-campo dd.note { white-space: pre-wrap; }
+@media (max-width: 460px) {
+  .cand-campo { grid-template-columns: 1fr; gap: 2px; }
+}
+.cand-vuoto { color: var(--txt-5); font-size: 13px; margin: 18px 0 0; }
+.cand-via { margin-top: 12px; }
+
 /* =============================================================
    CAMPIONATO
    La classifica e le statistiche lette da eLudo. Le righe dei

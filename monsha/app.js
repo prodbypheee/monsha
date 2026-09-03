@@ -490,11 +490,44 @@
         return;
       }
 
-      if (!window.emailjs) { esito.textContent = 'Invio non disponibile. Scrivici sui social.'; esito.style.color = '#ff9a4d'; return; }
       btn.disabled = true;
       const testo = btn.textContent;
       btn.textContent = 'Invio in corso…';
       esito.textContent = '';
+
+      /* Due strade verso la stessa notizia, e si prova prima la
+         nostra: la mail puo finire nello spam o perdersi, l'archivio
+         no. Se il salvataggio va storto si manda comunque la mail —
+         una candidatura ricevita male e sempre meglio di una
+         candidatura persa. */
+      let salvata = false;
+      try {
+        const r = await fetch('/api/candidature/invia', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            id: dati.id, piattaforma: dati.piatt, ruoli: dati.ruoli,
+            comp: dati.comp, club: dati.club, giorni: dati.giorni,
+            telefono: dati.tel, note: dati.note
+          })
+        });
+        salvata = r.ok;
+      } catch { /* si prosegue con la mail */ }
+
+      if (!window.emailjs) {
+        btn.disabled = false;
+        btn.textContent = testo;
+        if (salvata) {
+          esito.textContent = 'Candidatura inviata. Ti ricontattiamo noi.';
+          esito.style.color = '#7fd6a0';
+          btn.hidden = true;
+        } else {
+          esito.textContent = 'Invio non disponibile. Scrivici sui social.';
+          esito.style.color = '#ff9a4d';
+        }
+        return;
+      }
+
       try {
         await emailjs.send('Angelica70', 'template_atxhyt9', {
           from_email: 'candidatura@monacishaolin.com',
@@ -511,8 +544,16 @@
         esito.style.color = '#7fd6a0';
         btn.hidden = true;
       } catch (err) {
-        esito.textContent = 'Invio non riuscito. Riprova, o scrivici sui social.';
-        esito.style.color = '#ff9a4d';
+        // La mail non e partita, ma se la candidatura e nel nostro
+        // archivio la persona non e persa: non la si manda via.
+        if (salvata) {
+          esito.textContent = 'Candidatura inviata. Ti ricontattiamo noi.';
+          esito.style.color = '#7fd6a0';
+          btn.hidden = true;
+        } else {
+          esito.textContent = 'Invio non riuscito. Riprova, o scrivici sui social.';
+          esito.style.color = '#ff9a4d';
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = testo;
@@ -833,7 +874,7 @@
       else if (aperto === 'formazione') formazione.ricarica();
       else if (aperto === 'campionato') campionato.apri(zitto);
       else if (aperto === 'annunci')    annunci.apri(zitto);
-      else if (aperto === 'gestione')   caricaRichieste(zitto);
+      else if (aperto === 'gestione')   { caricaRichieste(zitto); caricaCandidature(zitto); }
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -849,7 +890,14 @@
       $('arProfRuolo').textContent    = utente.ruolo === 'admin' ? 'Amministratore' : 'Membro';
       $('arProfIncarico').textContent = ETICHETTA[utente.incarico || 'giocatore'];
 
-      $('arVoceGestione').hidden = utente.ruolo !== 'admin';
+      /* La gestione la vede anche il capitano: e lui che fa entrare
+         la gente e che legge le candidature dei provini. Gli incarichi
+         e la cancellazione definitiva restano dell'amministratore, e
+         infatti quei comandi sotto non gli compaiono nemmeno. */
+      const gestisce = utente.ruolo === 'admin' || utente.incarico === 'capitano';
+      $('arVoceGestione').hidden = !gestisce;
+      $('arPannelloEti').textContent = utente.ruolo === 'admin'
+        ? 'Pannello amministratore' : 'Pannello capitano';
       // L'introduzione spiega come si entra: a chi e gia dentro toglie
       // solo spazio in cima, e quello spazio serve ai due bottoni.
       $('arIntro').hidden = true;
@@ -915,6 +963,8 @@
          Chi e connesso NON viene buttato fuori: il gettone di sessione
          contiene l'email, non l'ID, e l'utente si rilegge per email a
          ogni richiesta. L'ID serve a entrare, non a restare dentro. */
+      const soloAdmin = ioSono && ioSono.ruolo === 'admin';
+
       const idBtn = document.createElement('button');
       idBtn.type = 'button';
       idBtn.className = 'ar-mini';
@@ -953,7 +1003,7 @@
          solo qual e quella in vigore. Compare solo sugli approvati:
          nominare capitano qualcuno che non puo ancora entrare sarebbe
          una promessa a vuoto. */
-      if (conIncarico) {
+      if (conIncarico && soloAdmin) {
         const menu = document.createElement('select');
         menu.className = 'ar-incarico';
         menu.setAttribute('aria-label', 'Incarico di ' + utente.email);
@@ -1053,6 +1103,118 @@
     }
 
     $('arAggiorna').addEventListener('click', () => caricaRichieste());
+
+    /* ---- candidature dei provini ----
+       Le legge chi gestisce: qui dentro ci sono numeri di telefono di
+       persone che non fanno parte del club, e non e roba da lasciare
+       a chiunque abbia un accesso. */
+
+    const CAMPI = [
+      ['ruoli',  'Ruoli'],
+      ['comp',   'Competizioni'],
+      ['club',   'Club'],
+      ['giorni', 'Giorni'],
+      ['telefono', 'Telefono'],
+      ['note',   'Note']
+    ];
+
+    async function caricaCandidature(zitto) {
+      const r = await chiama('/api/candidature/elenco');
+      if (!r.ok) {
+        if (!zitto) esito($('candEsito'), r.dati.errore || 'Non riesco a leggere le candidature.');
+        return;
+      }
+
+      const voci = r.dati.candidature || [];
+      $('candConta').textContent = voci.length
+        ? voci.length + (voci.length === 1 ? ' candidatura' : ' candidature')
+        : 'nessuna';
+      esito($('candEsito'), '');
+
+      const box = $('candElenco');
+      box.textContent = '';
+
+      if (!voci.length) {
+        const p = document.createElement('p');
+        p.className = 'cand-vuoto';
+        p.textContent = 'Ancora nessuna candidatura.';
+        box.appendChild(p);
+        return;
+      }
+
+      voci.forEach(v => box.appendChild(schedaCandidatura(v)));
+    }
+
+    /* Tutto con textContent: quello che c'e scritto qui dentro l'ha
+       battuto uno sconosciuto dal modulo pubblico, ed e l'ultimo
+       posto al mondo dove infilare dell'HTML. */
+    function schedaCandidatura(v) {
+      const d = document.createElement('div');
+      d.className = 'cand-voce';
+
+      const capo = document.createElement('div');
+      capo.className = 'cand-capo';
+
+      const id = document.createElement('span');
+      id.className = 'cand-id';
+      id.textContent = v.id;
+
+      const piatt = document.createElement('span');
+      piatt.className = 'cand-piatt';
+      piatt.textContent = v.piattaforma;
+
+      const quando = document.createElement('span');
+      quando.className = 'cand-quando';
+      quando.textContent = daQuando(v.quando);
+
+      capo.append(id, piatt, quando);
+
+      const campi = document.createElement('dl');
+      campi.className = 'cand-campi';
+
+      CAMPI.forEach(([chiave, eti]) => {
+        const val = v[chiave];
+        const testo = Array.isArray(val) ? val.join(', ') : (val || '');
+        if (!testo) return;
+        const riga = document.createElement('div');
+        riga.className = 'cand-campo';
+        const dt = document.createElement('dt');
+        dt.textContent = eti;
+        const dd = document.createElement('dd');
+        if (chiave === 'note') dd.className = 'note';
+        dd.textContent = testo;
+        riga.append(dt, dd);
+        campi.appendChild(riga);
+      });
+
+      const via = document.createElement('button');
+      via.type = 'button';
+      via.className = 'ar-mini cand-via';
+      via.textContent = 'Elimina';
+      via.addEventListener('click', async () => {
+        if (!confirm('Eliminare la candidatura di ' + v.id + '?')) return;
+        via.disabled = true;
+        const r = await chiama('/api/candidature/elimina', { chiave: v.chiave });
+        if (!r.ok) { via.disabled = false; alert(r.dati.errore || 'Non riuscito.'); return; }
+        d.remove();
+        caricaCandidature(true);
+      });
+
+      d.append(capo, campi, via);
+      return d;
+    }
+
+    function daQuando(iso) {
+      const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+      if (!Number.isFinite(min)) return '';
+      if (min < 60) return min < 2 ? 'adesso' : min + ' minuti fa';
+      const ore = Math.round(min / 60);
+      if (ore < 24) return ore === 1 ? 'un\'ora fa' : ore + ' ore fa';
+      const gg = Math.round(ore / 24);
+      if (gg < 30) return gg === 1 ? 'ieri' : gg + ' giorni fa';
+      return new Date(iso).toLocaleDateString('it-IT',
+        { day: 'numeric', month: 'long', year: 'numeric' });
+    }
 
     /* ================= CONVOCAZIONI =================
        La prima tab interna dell'area. Tre mestieri in una schermata

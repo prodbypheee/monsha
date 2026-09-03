@@ -186,6 +186,54 @@ Presenze, elenchi, statistiche e riepiloghi seguono da soli, perché
 leggono il nome dall'account. Restano com'erano solo gli annunci già
 pubblicati e le formazioni già salvate: sono istantanee di un momento.
 
+## 4-quinquies. Chi tiene la porta
+
+Il pannello **Gestione** lo vedono l'amministratore **e il capitano**.
+Non e la stessa cosa pero:
+
+| | admin | capitano |
+| --- | --- | --- |
+| leggere le candidature dei provini | si | si |
+| approvare e rifiutare | si | si |
+| correggere un ID di gioco | si | si |
+| cambiare gli incarichi | si | **no** |
+| eliminare per sempre un account | si | **no** |
+
+Le due esclusioni hanno ragioni diverse. **Gli incarichi** restano
+dell'amministratore perche un capitano che puo nominare capitani
+sarebbe l'ultimo capitano sostituibile. **La cancellazione** perche e
+l'unica azione qui dentro che non si disfa: rifiutare si annulla — si
+riammette e l'account torna quello di prima — mentre cancellare butta
+via anche le risposte e le presenze di quella persona.
+
+Al capitano quei due comandi non compaiono nemmeno, e il server li
+rifiuta comunque: un bottone nascosto e cortesia, non sicurezza.
+
+## 4-sexies. Le candidature dei provini
+
+Il modulo di «Unisciti» mandava **solo una mail**, dal browser di chi
+si candidava. Se quella mail si perdeva o finiva nello spam, della
+persona non restava niente da nessuna parte.
+
+Adesso la candidatura si salva anche da noi e compare in Gestione con
+tutto quello che ha scritto: ID, piattaforma, ruoli, competizioni, club
+precedenti, giorni, telefono e note. La mail continua a partire lo
+stesso — sono due strade verso la stessa notizia, e se una si rompe
+l'altra regge. Si prova prima l'archivio: se salta la mail ma la
+candidatura e al sicuro, alla persona si risponde comunque che e
+arrivata, perche e vero.
+
+**E l'unico punto del sito dove si scrive senza avere un accesso**, e
+per forza: chi si candida non ce l'ha. Percio ha tre argini —
+quanto si puo scrivere (le note si tagliano a mille caratteri, gli
+elenchi a poche voci), quanto spesso (una ogni due minuti dallo stesso
+indirizzo di rete) e quante se ne tengono in tutto (le trecento piu
+recenti, le vecchie si buttano da sole).
+
+L'indirizzo di rete non si conserva in chiaro e non si mostra da
+nessuna parte: se ne tiene solo un'impronta, che serve a sapere «e lo
+stesso di prima?» e non «qual e».
+
 ## 5. Dove sta il codice
 
 | File | Cosa fa |

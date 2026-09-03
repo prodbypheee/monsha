@@ -198,6 +198,31 @@ export async function esigiAdmin(req, segreto) {
   return g;
 }
 
+/* Chi tiene la porta: l'amministratore e il capitano.
+
+   E una via di mezzo voluta, non una svista. Il capitano fa entrare e
+   uscire la gente — e lui che sa chi serve in squadra — e legge le
+   candidature dei provini, che e il motivo per cui gli e stata aperta
+   questa parte.
+
+   Restano invece all'amministratore due cose sole, e per ragioni
+   diverse: cambiare gli incarichi, perche un capitano che puo
+   nominare capitani sarebbe l'ultimo capitano sostituibile; e
+   cancellare per sempre un account, perche e l'unica azione qui
+   dentro che non si puo disfare. */
+export async function esigiGestione(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g;
+  const suo = incaricoDi(g.utente);
+  if (g.utente.ruolo !== 'admin' && suo !== 'capitano')
+    return { errore: errore('Non autorizzato.', 403) };
+  return g;
+}
+
+/* Lo dice anche al sito, che deve sapere quali bottoni mostrare. */
+export const puoGestire = u =>
+  !!u && (u.ruolo === 'admin' || incaricoDi(u) === 'capitano');
+
 /* ---------- date ----------------------------------------------
    Tutto il calendario ragiona in ora italiana, non in UTC. Senza
    questo, un allenamento del primo settembre segnato alle 00:30
