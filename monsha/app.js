@@ -1130,6 +1130,11 @@
        persone che non fanno parte del club, e non e roba da lasciare
        a chiunque abbia un accesso. */
 
+    /* Il link d'invito al gruppo provini, come lo manda il server.
+       Se manca, il bottone lo dice invece di aprire una chat con
+       dentro un messaggio monco. */
+    let invitoProvini = null;
+
     const CAMPI = [
       ['ruoli',  'Ruoli'],
       ['comp',   'Competizioni'],
@@ -1147,6 +1152,7 @@
       }
 
       const voci = r.dati.candidature || [];
+      invitoProvini = r.dati.invito || null;
       $('candConta').textContent = voci.length
         ? voci.length + (voci.length === 1 ? ' candidatura' : ' candidature')
         : 'nessuna';
@@ -1208,6 +1214,49 @@
         campi.appendChild(riga);
       });
 
+      /* ---- al gruppo provini ----
+         Aggiungere qualcuno a un gruppo WhatsApp da un sito non si
+         puo: WhatsApp non lo permette a nessuno, e le librerie che ci
+         riescono pilotando WhatsApp Web violano i termini e fanno
+         bannare il numero. Il massimo che esiste e questo: si apre la
+         chat di quella persona col messaggio gia scritto e l'invito
+         dentro. Un tocco qui, un tocco suo.
+
+         Il numero ripulito si mostra sul bottone: se la ripulitura ha
+         sbagliato, si vede prima di premere e non dopo. */
+      const azioni = document.createElement('div');
+      azioni.className = 'cand-azioni';
+
+      if (v.whatsapp) {
+        const wa = document.createElement('button');
+        wa.type = 'button';
+        wa.className = 'ar-mini cand-wa';
+        wa.textContent = 'Inserisci al gruppo provini';
+        wa.title = 'Apre WhatsApp su +' + v.whatsapp;
+
+        wa.addEventListener('click', () => {
+          if (!invitoProvini) {
+            alert('Manca il link del gruppo provini.\n\n' +
+                  'Va messo su Netlify come variabile d’ambiente ' +
+                  'WHATSAPP_PROVINI: si copia da WhatsApp, dal gruppo, ' +
+                  '«Invita tramite link».');
+            return;
+          }
+
+          const testo =
+            'Ciao ' + v.id + '! Siamo i Monaci Shaolin: abbiamo letto la tua ' +
+            'candidatura. Questo è il gruppo dei provini, entra quando vuoi:\n' +
+            invitoProvini;
+
+          /* wa.me e l'indirizzo ufficiale: apre l'app sul telefono e
+             WhatsApp Web sul computer, senza doverli distinguere. */
+          window.open('https://wa.me/' + v.whatsapp +
+            '?text=' + encodeURIComponent(testo), '_blank', 'noopener');
+        });
+
+        azioni.appendChild(wa);
+      }
+
       const via = document.createElement('button');
       via.type = 'button';
       via.className = 'ar-mini cand-via';
@@ -1221,7 +1270,8 @@
         caricaCandidature(true);
       });
 
-      d.append(capo, campi, via);
+      azioni.appendChild(via);
+      d.append(capo, campi, azioni);
       return d;
     }
 

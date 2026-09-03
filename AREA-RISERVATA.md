@@ -234,6 +234,39 @@ L'indirizzo di rete non si conserva in chiaro e non si mostra da
 nessuna parte: se ne tiene solo un'impronta, che serve a sapere «e lo
 stesso di prima?» e non «qual e».
 
+### Il gruppo provini su WhatsApp
+
+Sotto ogni candidatura che ha lasciato un numero c’è un bottone
+**Inserisci al gruppo provini**. Apre WhatsApp sulla chat di quella
+persona con il messaggio già scritto e il link d’invito dentro: un
+tocco tuo per mandarlo, uno suo per entrare.
+
+**Aggiungerla al gruppo da qui non si può**, e non è un limite nostro:
+WhatsApp non espone nessun modo per farlo, nemmeno con l’API a
+pagamento, che i gruppi non li gestisce proprio. Le librerie non
+ufficiali che ci riescono pilotano WhatsApp Web, violano i termini e il
+rischio concreto è che il numero del club venga bloccato. Quello sopra
+è il massimo che esiste davvero.
+
+Serve una variabile su Netlify:
+
+| Nome | Valore |
+|---|---|
+| WHATSAPP_PROVINI | il link d’invito del gruppo |
+
+Si copia da WhatsApp: apri il gruppo, **Invita tramite link**, copia.
+Sta in una variabile e non nel codice per la stessa ragione degli
+indirizzi del riepilogo — questo repository è pubblico, e chi ha quel
+link entra nel gruppo. Se manca, il bottone lo dice invece di aprire
+una chat con dentro un messaggio monco.
+
+Il numero lo ripulisce il server: chi si candida lo scrive come gli
+pare e WhatsApp lo vuole in un modo solo. Il numero ripulito compare
+sul bottone, così se la ripulitura ha sbagliato si vede **prima** di
+premere. Quando non se ne ricava un numero plausibile, il bottone non
+compare affatto: meglio nessun bottone che uno che apre la chat
+sbagliata.
+
 ## 5. Dove sta il codice
 
 | File | Cosa fa |

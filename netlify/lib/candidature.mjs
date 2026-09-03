@@ -91,6 +91,37 @@ export function validaCandidatura(corpo) {
   };
 }
 
+/* ---------- il numero, come lo vuole WhatsApp -----------------
+   Chi si candida scrive il numero come gli pare: "+39 333 1234567",
+   "333-1234567", "0039 333 1234567". WhatsApp lo vuole in un modo
+   solo: cifre attaccate, prefisso internazionale davanti, senza piu.
+
+   Il pezzo delicato e il prefisso mancante. Un cellulare italiano ha
+   dieci cifre e comincia per 3; con davanti il 39 ne ha dodici. Sono
+   due forme distinguibili, e si distinguono su quelle due regole
+   invece che a naso:
+
+     dieci cifre che cominciano per 3   e un italiano senza prefisso
+     dodici cifre che cominciano per 39 ce l'ha gia
+
+   Tutto il resto si lascia com'e: un numero straniero l'ha scritto
+   chi lo conosce, e indovinargli un prefisso sarebbe peggio che non
+   toccarlo. Quello che non ha una lunghezza plausibile torna null, e
+   il bottone non compare: meglio nessun bottone che un bottone che
+   apre la chat sbagliata. */
+
+export function numeroWhatsApp(grezzo) {
+  let n = String(grezzo == null ? '' : grezzo).replace(/\D/g, '');
+  if (!n) return null;
+
+  if (n.startsWith('00')) n = n.slice(2);          // 0039… → 39…
+  if (n.length === 10 && n.startsWith('3')) n = '39' + n;
+
+  // E.164: da otto a quindici cifre, prefisso compreso.
+  if (n.length < 8 || n.length > 15) return null;
+  return n;
+}
+
 /* ---------- la porta: una ogni due minuti per indirizzo -------
    L'indirizzo di rete non identifica una persona — un'intera casa o
    un intero ufficio ne condividono uno — quindi non si usa per altro
