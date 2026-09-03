@@ -29,7 +29,7 @@ import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
   destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
-  PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT
+  PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT, oraTardi
 } from '../lib/convocazioni.mjs';
 
 import {
@@ -42,7 +42,7 @@ import { preparaRiepilogo, leggiRosa } from '../lib/mail-riepilogo.mjs';
 
 import {
   CASELLE, leggiFormazione, salvaFormazione, verificaSchieramento,
-  togliDalCampo, soloPresenti
+  togliDalCampo, soloPresenti, PARTITE, partitaValida
 } from '../lib/formazione.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
@@ -229,17 +229,29 @@ async function formazione(req, segreto, indirizzo) {
 
   const data = String(indirizzo.searchParams.get('data') || '');
   if (!dataValida(data)) return errore('Data non valida.');
+  const partita = partitaValida(indirizzo.searchParams.get('partita'));
 
   const [salvata, risposte, utenti] = await Promise.all([
-    leggiFormazione(data), leggiRisposte(data), tuttiGliUtenti()
+    leggiFormazione(data, partita), leggiRisposte(data), tuttiGliUtenti()
   ]);
 
   // Chi c'e davvero quel giorno: sono gli unici schierabili, e il
   // sito non deve nemmeno proporre gli altri.
-  const presenti = daConvocare(utenti)
+  const eccoli = daConvocare(utenti)
     .filter(u => (risposte[chiave(u.email)] || {}).stato === 'presente')
-    .map(u => u.idGioco)
-    .sort((a, b) => a.localeCompare(b, 'it'));
+    .sort((a, b) => a.idGioco.localeCompare(b.idGioco, 'it'));
+
+  const presenti = eccoli.map(u => u.idGioco);
+
+  /* Chi arriva tardi, e a che ora. Solo dopo le 21:30 — l'ora di
+     tutti non e una notizia — e solo per chi c'e: e il dato che
+     serve a chi schiera per sapere che quella casella, per la prima
+     mezz'ora, e scoperta. */
+  const orari = {};
+  eccoli.forEach(u => {
+    const tardi = oraTardi((risposte[chiave(u.email)] || {}).ora);
+    if (tardi) orari[normId(u.idGioco)] = tardi;
+  });
 
   /* LA REGOLA, resa vera per costruzione: in campo si vede solo chi
      e presente adesso. Chi ha segnato assente viene tolto quando
@@ -256,12 +268,15 @@ async function formazione(req, segreto, indirizzo) {
 
   return json({
     data,
+    partita,
+    partite: PARTITE,
     modulo: salvata.modulo,
     caselle: CASELLE,
     schieramento,
     aggiornato: salvata.aggiornato,
     da: salvata.da,
     presenti,
+    orari,
     modificabile: puoConvocare(g.utente)
   });
 }
@@ -275,6 +290,7 @@ async function salvaLaFormazione(req, segreto) {
   const corpo = await req.json().catch(() => ({}));
   const data = String(corpo.data || '');
   if (!dataValida(data)) return errore('Data non valida.');
+  const partita = partitaValida(corpo.partita);
 
   const [risposte, utenti] = await Promise.all([leggiRisposte(data), tuttiGliUtenti()]);
   const presenti = daConvocare(utenti)
@@ -288,8 +304,8 @@ async function salvaLaFormazione(req, segreto) {
   const esito = verificaSchieramento(corpo.schieramento, presenti);
   if (esito.errore) return errore(esito.errore, 409);
 
-  await salvaFormazione(data, esito.schieramento, g.utente.idGioco);
-  return json({ ok: true, data, schieramento: esito.schieramento });
+  await salvaFormazione(data, partita, esito.schieramento, g.utente.idGioco);
+  return json({ ok: true, data, partita, schieramento: esito.schieramento });
 }
 
 /* ---------- il colpetto sulla spalla --------------------------

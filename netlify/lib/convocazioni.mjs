@@ -168,6 +168,15 @@ export function oraArrivo(v) {
   return inOra(Math.min(ULTIMA, Math.max(PRIMA, m)));
 }
 
+/* Chi arriva all'ora solita non ha un orario da mostrare: e l'ora di
+   tutti, e scriverla accanto a undici facce su undici sarebbe rumore.
+   Si mostra solo chi arriva DOPO — le 21:30 escluse — perche quello
+   e l'unico caso in cui l'ora cambia qualcosa per chi schiera. */
+export function oraTardi(ora) {
+  const v = oraArrivo(ora);
+  return v > ORA_DEFAULT ? v : null;
+}
+
 /* Una mezz'ora avanti o indietro, fermandosi ai due capi invece di
    girare in tondo: dalle 23:30 si deve poter tornare indietro, non
    ricominciare dal mattino. */

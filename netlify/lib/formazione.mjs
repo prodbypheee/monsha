@@ -53,8 +53,26 @@ const normId = v => String(v || '').trim().toLowerCase();
 
 /* ---------- archivio ------------------------------------------ */
 
-export async function leggiFormazione(data) {
-  const v = await convoc().get(PREFISSO + data, { type: 'json' }).catch(() => null);
+/* Quante formazioni per giornata. In una serata se ne giocano piu
+   d'una, e ognuna vuole la sua: cambiare undici caselle fra un
+   fischio e l'altro, e perdere quella di prima, non e un modo di
+   lavorare.
+
+   Le tre vivono dentro la giornata e basta: la chiave comincia con la
+   data, quindi al prossimo allenamento sono tre caselle nuove e
+   vuote. Non c'e nessuna scadenza da far scattare — la scadenza e il
+   giorno dopo. */
+export const PARTITE = 3;
+
+export function partitaValida(n) {
+  const v = Number(n);
+  return Number.isInteger(v) && v >= 1 && v <= PARTITE ? v : 1;
+}
+
+const dove = (data, partita) => PREFISSO + data + '/' + partitaValida(partita);
+
+export async function leggiFormazione(data, partita = 1) {
+  const v = await convoc().get(dove(data, partita), { type: 'json' }).catch(() => null);
   return {
     modulo: MODULO,
     schieramento: (v && v.schieramento && typeof v.schieramento === 'object') ? v.schieramento : {},
@@ -63,8 +81,8 @@ export async function leggiFormazione(data) {
   };
 }
 
-export async function salvaFormazione(data, schieramento, autore) {
-  await convoc().setJSON(PREFISSO + data, {
+export async function salvaFormazione(data, partita, schieramento, autore) {
+  await convoc().setJSON(dove(data, partita), {
     modulo: MODULO,
     schieramento,
     aggiornato: new Date().toISOString(),
@@ -134,20 +152,31 @@ export async function togliDalCampo(data, idGioco) {
   const cercato = normId(idGioco);
   if (!cercato) return false;
 
-  const f = await leggiFormazione(data);
-  const caselle = Object.entries(f.schieramento)
-    .filter(([, chi]) => normId(chi) === cercato)
-    .map(([casella]) => casella);
+  /* Tutte e tre le partite, non solo quella aperta: chi dice "non ci
+     sono" non c'e in nessuna, e lasciarlo schierato nella seconda
+     perche il capitano stava guardando la prima sarebbe proprio il
+     buco che questa funzione esiste per chiudere. */
+  let tolto = false;
 
-  if (!caselle.length) return false;
+  for (let p = 1; p <= PARTITE; p++) {
+    const f = await leggiFormazione(data, p);
+    const caselle = Object.entries(f.schieramento)
+      .filter(([, chi]) => normId(chi) === cercato)
+      .map(([casella]) => casella);
 
-  caselle.forEach(c => { delete f.schieramento[c]; });
+    if (!caselle.length) continue;
 
-  /* Si tiene la firma di chi aveva schierato: e ancora la sua
-     formazione, semplicemente con un buco in meno di quanti credeva.
-     Cambia solo il momento dell'ultima modifica, che e vero. */
-  await salvaFormazione(data, f.schieramento, f.da);
-  return true;
+    caselle.forEach(c => { delete f.schieramento[c]; });
+
+    /* Si tiene la firma di chi aveva schierato: e ancora la sua
+       formazione, semplicemente con un buco in meno di quanti
+       credeva. Cambia solo il momento dell'ultima modifica, che e
+       vero. */
+    await salvaFormazione(data, p, f.schieramento, f.da);
+    tolto = true;
+  }
+
+  return tolto;
 }
 
 /* Lo schieramento ripulito: restano solo le caselle occupate da chi e

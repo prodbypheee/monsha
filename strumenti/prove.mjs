@@ -16,9 +16,10 @@ import {
   incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo,
-  attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi, oraArrivo, scorriOra, ORA_DEFAULT }
+  attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi, oraArrivo, scorriOra, ORA_DEFAULT, oraTardi }
   from '../netlify/lib/convocazioni.mjs';
-import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/formazione.mjs';
+import { CASELLE, verificaSchieramento, soloPresenti, partitaValida, PARTITE }
+  from '../netlify/lib/formazione.mjs';
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
@@ -349,6 +350,60 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nLe tre partite della serata');
+
+prova('le partite sono tre', () => {
+  assert.equal(PARTITE, 3);
+  assert.equal(partitaValida(1), 1);
+  assert.equal(partitaValida(2), 2);
+  assert.equal(partitaValida(3), 3);
+});
+
+prova('fuori dalle tre si torna alla prima', () => {
+  /* Il numero arriva dall'indirizzo o dal corpo di una richiesta:
+     qualunque cosa sia, deve finire su una casella che esiste. */
+  [0, 4, 99, -1, 1.5, 'due', '', null, undefined, {}].forEach(v =>
+    assert.equal(partitaValida(v), 1, 'partitaValida(' + JSON.stringify(v) + ')'));
+});
+
+prova('il numero scritto come testo vale lo stesso', () => {
+  // Dall'indirizzo arriva sempre come stringa.
+  assert.equal(partitaValida('2'), 2);
+  assert.equal(partitaValida('3'), 3);
+});
+
+console.log('\nChi arriva tardi');
+
+prova('all\'ora di tutti non si scrive niente', () => {
+  /* Le 21:30 sono l'ora di tutti: scriverla accanto a undici facce su
+     undici sarebbe rumore, non informazione. */
+  assert.equal(oraTardi('21:30'), null);
+  assert.equal(oraTardi(null), null);
+  assert.equal(oraTardi(undefined), null);
+  assert.equal(oraTardi(''), null);
+});
+
+prova('chi arriva dopo si vede, con la sua ora', () => {
+  assert.equal(oraTardi('22:00'), '22:00');
+  assert.equal(oraTardi('22:30'), '22:30');
+  assert.equal(oraTardi('23:30'), '23:30');
+});
+
+prova('il confine e escluso, non incluso', () => {
+  /* "dopo le 21:30, 21:30 escluso": mezz'ora piu tardi si vede, le
+     21:30 spaccate no. */
+  assert.equal(oraTardi(ORA_DEFAULT), null);
+  assert.notEqual(oraTardi('22:00'), null);
+});
+
+prova('un\'ora impossibile non diventa un ritardo', () => {
+  /* oraArrivo riporta dentro i limiti quello che non torna, e quello
+     che torna alle 21:30 non e un ritardo. */
+  assert.equal(oraTardi('03:00'), null);
+  assert.equal(oraTardi('pippo'), null);
+  assert.equal(oraTardi('21:17'), null);
 });
 
 console.log('\nCandidature dei provini');
