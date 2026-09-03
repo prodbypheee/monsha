@@ -322,10 +322,25 @@
       Xbox:        'Il tuo Xbox Gamertag',
       PC:          'Il tuo ID Origin, Steam o Epic Games'
     };
+    /* I ruoli sul campo, non piu in fila. Le coordinate sono quelle
+       del 3-4-1-2 della formazione — stesso riquadro 100x150, stesso
+       modo di leggerlo — cosi le due parti del sito disegnano la
+       stessa squadra.
+
+       Non sono le undici caselle della formazione: li si sceglie una
+       maglia, qui un mestiere. I due attaccanti sono un ruolo solo, e
+       la difesa a tre diventa terzino-centrale-terzino, che e come si
+       descrive uno quando dice dove gioca. */
     const RUOLI = [
-      ['POR','Portiere'], ['TD','Terzino destro'], ['DC','Difensore centrale'],
-      ['TS','Terzino sinistro'], ['MED','Mediano'], ['COC','Centrocampista'],
-      ['ED','Esterno destro'], ['ES','Esterno sinistro'], ['ATT','Attaccante']
+      ['POR', 'Portiere',            50, 90],
+      ['TS',  'Terzino sinistro',    18, 72],
+      ['DC',  'Difensore centrale',  50, 76],
+      ['TD',  'Terzino destro',      82, 72],
+      ['ES',  'Esterno sinistro',    15, 50],
+      ['MED', 'Mediano',             37, 55],
+      ['COC', 'Centrocampista',      63, 55],
+      ['ED',  'Esterno destro',      85, 50],
+      ['ATT', 'Attaccante',          50, 18]
     ];
     // Competizioni reali in cui si puo aver militato, con le rispettive
     // divisioni: sono quelle del form precedente alla rifacitura grafica,
@@ -356,10 +371,7 @@
     }
 
     function disegna() {
-      $('ruoli').innerHTML = RUOLI.map(r =>
-        '<button type="button" class="chip ruolo" data-v="' + r[0] + '" aria-pressed="' +
-        dati.ruoli.includes(r[0]) + '"><b>' + r[0] + '</b><span>' + esc(r[1]) + '</span></button>').join('');
-      $('nRuoli').textContent = dati.ruoli.length;
+      disegnaCampoRuoli();
       // raggruppate per lega, come nel menu del form precedente: con
       // quattordici voci di fila non si capirebbe a quale lega appartengono
       $('comp').innerHTML = COMP_GRUPPI.map(g =>
@@ -381,17 +393,67 @@
         '<button type="button" class="chip tolgo" data-club="' + esc(c) + '">' + esc(c) + ' ✕</button>').join('');
     }
 
+    /* Dentro il modulo i ruoli viaggiano come sigle, che sono le chiavi
+       dei bottoni sul campo; fuori — riepilogo, mail, archivio,
+       messaggio su WhatsApp — devono uscire per esteso. «Si è candidato
+       come por» non lo scriverebbe nessuno. */
+    const ruoliPerEsteso = () =>
+      RUOLI.filter(r => dati.ruoli.includes(r[0])).map(r => r[1]);
+
     function riepilogo() {
       const righe = [
         ['Piattaforma', dati.piatt || '—'],
         ['ID player', dati.id || '—'],
-        ['Ruoli', dati.ruoli.join(', ') || '—'],
+        ['Ruoli', ruoliPerEsteso().join(', ') || '—'],
         ['Competizioni', dati.comp.join(', ') || '—'],
         ['Club', dati.club.join(', ') || '—'],
         ['Giorni', dati.giorni.join(', ') || '—']
       ];
       $('riepilogo').innerHTML = righe.map(r =>
         '<div><dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd></div>').join('');
+    }
+
+    /* Il campo si costruisce una volta sola: ridisegnarlo a ogni tocco
+       distruggerebbe il bottone appena premuto, e con lui il fuoco da
+       tastiera. Dopo, si accende e si spegne e basta. */
+    function disegnaCampoRuoli() {
+      const box = $('ruoli');
+
+      if (!box.children.length) {
+        RUOLI.forEach(([sigla, nome, x, y]) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'casella';
+          b.dataset.v = sigla;
+          b.style.left = x + '%';
+          b.style.top  = y + '%';
+          b.setAttribute('aria-label', nome);
+
+          const cerchio = document.createElement('span');
+          cerchio.className = 'casella-cerchio';
+          const s = document.createElement('span');
+          s.className = 'ruolo-sigla';
+          s.textContent = sigla;
+          cerchio.appendChild(s);
+
+          const n = document.createElement('span');
+          n.className = 'ruolo-nome';
+          n.textContent = nome;
+
+          b.append(cerchio, n);
+          box.appendChild(b);
+        });
+      }
+
+      [...box.children].forEach(b =>
+        b.setAttribute('aria-pressed', String(dati.ruoli.includes(b.dataset.v))));
+
+      $('nRuoli').textContent = dati.ruoli.length;
+
+      /* Sotto il campo, per esteso: sul cerchio ci sta la sigla, e
+         "COC" non dice niente a chi non e cresciuto in questi giochi. */
+      const scelti = RUOLI.filter(r => dati.ruoli.includes(r[0])).map(r => r[1]);
+      $('ruoliScelti').textContent = scelti.length ? scelti.join(' · ') : '';
     }
 
     function vai(n) {
@@ -427,7 +489,10 @@
       const c = e.target.closest('[data-club]');
       if (c) { dati.club = dati.club.filter(x => x !== c.dataset.club); disegnaClub(); return; }
 
-      const ch = e.target.closest('.chip');
+      /* Il campo dei ruoli e le due file di bottoncini sotto sono la
+         stessa cosa per chi tocca: si accende, si spegne, e il massimo
+         di due vale uguale. */
+      const ch = e.target.closest('.casella[data-v], .chip');
       if (ch && ch.dataset.v) {
         const v = ch.dataset.v;
         const dove = ch.closest('#ruoli') ? 'ruoli' : ch.closest('#comp') ? 'comp' : 'giorni';
@@ -442,7 +507,7 @@
         // aggiorno solo il pulsante toccato: ridisegnare tutta la lista
         // distruggerebbe i nodi, perdendo il fuoco da tastiera
         ch.setAttribute('aria-pressed', lista.includes(v));
-        if (dove === 'ruoli') $('nRuoli').textContent = dati.ruoli.length;
+        if (dove === 'ruoli') disegnaCampoRuoli();
         $('esito').textContent = '';
       }
     });
@@ -533,7 +598,7 @@
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            id: dati.id, piattaforma: dati.piatt, ruoli: dati.ruoli,
+            id: dati.id, piattaforma: dati.piatt, ruoli: ruoliPerEsteso(),
             comp: dati.comp, club: dati.club, giorni: dati.giorni,
             telefono: dati.tel, note: dati.note
           })
@@ -557,7 +622,7 @@
           from_email: 'candidatura@monacishaolin.com',
           platform: dati.piatt || 'Non specificata',
           player_id: dati.id || 'Non specificato',
-          selected_roles: dati.ruoli.map(r => '- ' + r).join('\n') || 'Nessun ruolo selezionato',
+          selected_roles: ruoliPerEsteso().map(r => '- ' + r).join('\n') || 'Nessun ruolo selezionato',
           selected_competitions: dati.comp.map(c => '- ' + c).join('\n') || 'Nessuna competizione',
           clubs: dati.club.map(c => '- ' + c).join('\n') || 'Nessun club',
           available_days: dati.giorni.map(g => '- ' + g).join('\n') || 'Nessun giorno',
