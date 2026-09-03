@@ -22,6 +22,8 @@ import { CASELLE, verificaSchieramento, soloPresenti } from '../netlify/lib/form
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
+import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS }
+  from '../netlify/lib/candidature.mjs';
 
 let fatte = 0, rotte = 0;
 function prova(nome, fn) {
@@ -347,6 +349,66 @@ prova('chi e presente resta sempre da qualche parte', () => {
   const panchina = presenti.filter(id => !inCampo.has(id.toLowerCase()));
   assert.deepEqual([...inCampo].concat(panchina.map(p => p.toLowerCase())).sort(),
                    presenti.map(p => p.toLowerCase()).sort());
+});
+
+console.log('\nCandidature dei provini');
+
+const BUONA = { id: 'TizioACaso99', piattaforma: 'PC', ruoli: ['Attaccante'] };
+
+prova('senza ID, piattaforma o ruolo non si accetta', () => {
+  /* Sono le tre cose senza cui non si puo richiamare nessuno. */
+  assert.ok(validaCandidatura({ ...BUONA, id: '   ' }).errore);
+  assert.ok(validaCandidatura({ ...BUONA, piattaforma: '' }).errore);
+  assert.ok(validaCandidatura({ ...BUONA, ruoli: [] }).errore);
+  assert.ok(validaCandidatura(null).errore);
+});
+
+prova('una candidatura completa passa intera', () => {
+  const v = validaCandidatura({
+    ...BUONA, comp: ['FVPA'], club: ['Vecchio FC'],
+    giorni: ['lunedì'], telefono: '+39 333', note: 'ciao'
+  }).voce;
+  assert.equal(v.id, 'TizioACaso99');
+  assert.deepEqual(v.ruoli, ['Attaccante']);
+  assert.equal(v.note, 'ciao');
+});
+
+prova('il resto puo mancare senza far cadere niente', () => {
+  const v = validaCandidatura(BUONA).voce;
+  assert.deepEqual(v.comp, []);
+  assert.deepEqual(v.club, []);
+  assert.equal(v.note, '');
+});
+
+prova('quello che e troppo lungo si taglia, non si rifiuta', () => {
+  /* Una candidatura scritta male resta una persona che vuole giocare
+     con noi: si taglia, non si butta. */
+  const v = validaCandidatura({ ...BUONA, note: 'x'.repeat(5000) }).voce;
+  assert.equal(v.note.length, LIMITI.note);
+});
+
+prova('non ci si puo fare un deposito con gli elenchi', () => {
+  const v = validaCandidatura({
+    ...BUONA,
+    ruoli: Array(50).fill('Attaccante'),
+    club: Array(99).fill('c')
+  }).voce;
+  assert.equal(v.ruoli.length, LIMITI.ruoli);
+  assert.equal(v.club.length, LIMITI.club);
+});
+
+prova('roba che non e una lista non fa saltare niente', () => {
+  const v = validaCandidatura({ ...BUONA, comp: 'non una lista', club: null }).voce;
+  assert.deepEqual(v.comp, []);
+  assert.deepEqual(v.club, []);
+});
+
+prova('la pausa fra due invii e di due minuti', () => {
+  const ora = Date.parse('2026-08-31T20:00:00Z');
+  assert.equal(PAUSA_INVIO_MS, 2 * 60 * 1000);
+  assert.equal(attesaInvio(null, ora), 0);
+  assert.equal(attesaInvio(new Date(ora).toISOString(), ora), PAUSA_INVIO_MS);
+  assert.equal(attesaInvio(new Date(ora - 3 * 60000).toISOString(), ora), 0);
 });
 
 console.log('\nChi e chi nella rosa');

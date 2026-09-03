@@ -885,11 +885,30 @@
 
       <!-- ===================== GESTIONE (solo admin) ===================== -->
       <section id="pan-gestione" hidden>
+
+        <!-- Le candidature dei provini. Prima erano solo una mail che
+             partiva dal browser di chi si candidava: se si perdeva,
+             della persona non restava niente. Adesso restano qui. -->
+        <div class="ar-scheda" id="arCandidature" style="margin-bottom:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Provini</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Candidature</h3>
+              </div>
+              <span class="conv-stato" id="candConta">—</span>
+            </div>
+            <p class="ar-aiuto" style="margin-top:16px;">Chi ha compilato il modulo in «Unisciti», con tutto quello che ha scritto. Le più recenti in cima.</p>
+            <p class="ar-esito" id="candEsito" role="status" aria-live="polite"></p>
+            <div class="cand-elenco" id="candElenco"></div>
+          </div>
+        </div>
+
         <div class="ar-scheda" id="arAdmin">
           <div class="ar-corpo">
             <div class="ar-intestazione">
               <div>
-                <div class="eyebrow">Pannello amministratore</div>
+                <div class="eyebrow" id="arPannelloEti">Pannello amministratore</div>
                 <h3 class="wiz-tit" style="margin-top:14px;">Gestione accessi</h3>
               </div>
               <button type="button" class="btn" id="arAggiorna">Aggiorna</button>
@@ -902,7 +921,7 @@
 
             <div class="ar-gruppo">
               <div class="ar-gruppo-tit">Approvati <span class="ar-conta" id="arContaApprovati">0</span></div>
-              <p class="ar-aiuto" style="margin:12px 0 0;">L’incarico decide chi può fissare gli allenamenti. Capitano e amministrazione hanno gli stessi poteri sul calendario; nessuno dei due tocca gli accessi.</p>
+              <p class="ar-aiuto" style="margin:12px 0 0;" id="arAiutoIncarichi">L’incarico decide chi può fissare gli allenamenti. Capitano e amministrazione hanno gli stessi poteri sul calendario. Gli incarichi li cambia solo l’amministratore.</p>
               <div class="ar-lista" id="arListaApprovati"></div>
             </div>
 

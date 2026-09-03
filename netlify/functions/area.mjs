@@ -54,7 +54,7 @@ import {
   DURATA, DURATA_ADMIN, INCARICHI,
   store, chiave, normEmail, normId, emailValida,
   json, errore, creaGettone, leggiGettone, cookieSessione, leggiCookie,
-  leggiUtente, salvaUtente, tuttiGliUtenti, pubblico, esigiAdmin
+  leggiUtente, salvaUtente, tuttiGliUtenti, pubblico, esigiAdmin, esigiGestione
 } from '../lib/comune.mjs';
 
 import { mandaMail } from '../lib/posta.mjs';
@@ -307,8 +307,10 @@ async function sessione(req, segreto) {
     { 'set-cookie': cookieSessione(gettone, durata) });
 }
 
+/* L'elenco lo legge anche il capitano: e la stessa gente che poi
+   convoca, e non poterla nemmeno guardare sarebbe strano. */
 async function elenco(req, segreto) {
-  const g = await esigiAdmin(req, segreto);
+  const g = await esigiGestione(req, segreto);
   if (g.errore) return g.errore;
 
   const validi = (await tuttiGliUtenti()).map(pubblico)
@@ -322,7 +324,7 @@ async function elenco(req, segreto) {
 }
 
 async function decidi(req, segreto) {
-  const g = await esigiAdmin(req, segreto);
+  const g = await esigiGestione(req, segreto);
   if (g.errore) return g.errore;
 
   const corpo = await req.json().catch(() => ({}));
@@ -330,6 +332,14 @@ async function decidi(req, segreto) {
   const esito = String(corpo.esito || '');
   if (!['approva', 'rifiuta', 'elimina'].includes(esito))
     return errore('Esito non valido.');
+
+  /* Far entrare e far uscire puo farlo anche il capitano; cancellare
+     per sempre no. Rifiutare si disfa — si riammette e l'account
+     torna quello di prima — mentre cancellare butta via anche le
+     risposte e le presenze di quella persona. Un'azione
+     irreversibile resta di chi risponde del sito. */
+  if (esito === 'elimina' && g.utente.ruolo !== 'admin')
+    return errore('Solo l’amministratore può eliminare un account.', 403);
 
   // Rete di sicurezza: se l'admin si rifiutasse o eliminasse da solo,
   // resterebbe un sito senza nessuno che possa approvare.
@@ -394,8 +404,10 @@ async function incarico(req, segreto) {
    pubblicati e le formazioni gia salvate — che sono istantanee di un
    momento, e nel caso d'uso vero (una lettera sbagliata, corretta
    subito) non esistono ancora. */
+/* Correggere un ID scritto male e una gentilezza, non un potere: la
+   fa anche il capitano. */
 async function cambiaId(req, segreto) {
-  const g = await esigiAdmin(req, segreto);
+  const g = await esigiGestione(req, segreto);
   if (g.errore) return g.errore;
 
   const corpo   = await req.json().catch(() => ({}));
