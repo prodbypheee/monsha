@@ -542,6 +542,33 @@ button, input, select, textarea { font: inherit; }
 .wiz-piede .btn { min-height: 48px; }
 #esito { font-size: 13.5px; }
 
+/* ---------- candidatura ricevuta ----------
+   Il momento in cui uno sconosciuto si offre di giocare con noi vale
+   piu di una riga verde: qui ci sta il torii, cosa succede adesso, e
+   due porte per restare sul sito invece di chiudere la scheda. */
+.grazie { text-align: center; padding: 34px 20px 8px; }
+.grazie-segno {
+  font-size: 40px; line-height: 1; color: var(--acc);
+  filter: drop-shadow(0 0 22px var(--acc-glow));
+}
+.grazie-tit {
+  font-family: 'Instrument Serif', Georgia, serif; font-weight: 400;
+  font-size: 30px; line-height: 1.1; margin: 18px 0 0; letter-spacing: -.01em;
+}
+.grazie-testo {
+  max-width: 46ch; margin: 14px auto 0;
+  font-size: 14.5px; line-height: 1.75; color: var(--txt-2);
+}
+.grazie-testo b { color: var(--txt); font-weight: 600; }
+.grazie-azioni {
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 26px;
+}
+/* Su schermo stretto uno sotto l'altro e larghi uguali: due bottoni
+   sfalsati di mezzo dito si notano più del testo che li sovrasta. */
+@media (max-width: 430px) {
+  .grazie-azioni { flex-direction: column; align-items: stretch; }
+}
+
 /* ---------- pie' di pagina ---------- */
 .piede { border-top: 1px solid var(--line); }
 .piede-in {

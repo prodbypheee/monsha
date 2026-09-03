@@ -46,11 +46,20 @@ async function avvisaChiGestisce(voce, origine) {
   const chi = riceveIlRiepilogo(await tuttiGliUtenti());
   if (!chi.length) return 0;
 
+  /* Il ruolo in italiano corrente: "Attaccante e Seconda punta" si
+     legge, "Attaccante, Seconda punta" e un elenco. */
+  const ruoli = voce.ruoli.length > 1
+    ? voce.ruoli.slice(0, -1).join(', ') + ' e ' + voce.ruoli[voce.ruoli.length - 1]
+    : voce.ruoli[0];
+
   const carico = {
-    titolo: 'Nuova candidatura',
-    // Chi e, su cosa gioca e in che ruolo: il minimo per decidere se
-    // vale la pena aprire il sito adesso o dopo cena.
-    testo: voce.id + ' · ' + voce.piattaforma + ' · ' + voce.ruoli.join(', '),
+    titolo: 'Qualcuno vuole entrare 🥋',
+    /* Chi e, in che ruolo e su cosa gioca: il minimo per decidere se
+       vale la pena aprire il sito adesso o dopo cena. Il numero di
+       telefono no — una notifica si legge a schermo bloccato, e non
+       e roba da lasciare li. */
+    testo: voce.id + ' si è candidato come ' + ruoli.toLowerCase() +
+           ', su ' + voce.piattaforma + '.',
     /* Niente campo `data`, e di proposito: e quello che fa comparire
        i bottoni Presente e Assente dentro la notifica, e su una
        candidatura non vorrebbero dire niente. */
