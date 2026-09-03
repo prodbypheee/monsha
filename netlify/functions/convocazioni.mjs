@@ -39,7 +39,7 @@ import {
 } from '../lib/push.mjs';
 
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
-import { ultimoGiro } from '../lib/orologio.mjs';
+import { ultimoGiro, lasciaBiglietto, leggiBiglietto } from '../lib/orologio.mjs';
 import { preparaRiepilogo, leggiRosa } from '../lib/mail-riepilogo.mjs';
 
 import {
@@ -389,6 +389,18 @@ async function sollecita(req, segreto) {
   });
 }
 
+/* Lascia il biglietto: il primo giro dell'orologio lo trova e manda
+   una notifica a tutti. E l'unico modo di provare che la catena
+   intera funziona da sola — senza aspettare le 14:00 e senza che
+   nessuno prema niente al momento giusto. */
+async function provaAlProssimoGiro(req, segreto) {
+  const g = await esigiAdmin(req, segreto);
+  if (g.errore) return g.errore;
+
+  await lasciaBiglietto(g.utente.idGioco);
+  return json({ ok: true });
+}
+
 /* ---------- perche non e arrivata --------------------------------
    Quando una notifica non arriva, le domande sono sempre le stesse
    quattro: oggi si allena? l'orologio ha girato? le chiavi ci sono?
@@ -437,8 +449,10 @@ async function diagnosi(req, segreto) {
      indistinguibile da "non era giorno di allenamento", e per cinque
      giorni abbiamo cercato il guasto dalla parte sbagliata. */
   const ultimo = await ultimoGiro();
+  const biglietto = await leggiBiglietto();
 
   return json({
+    provaInAttesa: !!biglietto,
     adesso: { data: oggi, ora, minuto, fascia: fasciaDi(ora, minuto) },
     orologio: ultimo ? { quando: ultimo.quando, esito: ultimo.esito } : null,
     allenamentoOggi: giorni.includes(oggi),
@@ -581,6 +595,7 @@ export default async (req) => {
     if (req.method === 'GET'  && azione === 'giorno')       return await giorno(req, segreto, indirizzo);
     if (req.method === 'GET'  && azione === 'presenze')     return await presenze(req, segreto, indirizzo);
     if (req.method === 'GET'  && azione === 'diagnosi')     return await diagnosi(req, segreto);
+    if (req.method === 'POST' && azione === 'prova-giro')   return await provaAlProssimoGiro(req, segreto);
     if (req.method === 'GET'  && azione === 'formazione')   return await formazione(req, segreto, indirizzo);
     if (req.method === 'POST' && azione === 'formazione')   return await salvaLaFormazione(req, segreto);
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
