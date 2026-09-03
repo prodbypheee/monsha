@@ -1706,11 +1706,20 @@
          spegneva e li disabilitava mentre il server rispondeva, e chi
          premeva in quel mezzo secondo trovava un bottone morto — da
          cui l'impressione di doverlo premere due volte. */
+      /* Ogni lettura prende un numero. Due letture della STESSA
+         giornata possono accavallarsi — una automatica e una partita
+         da un tocco — e tornare in ordine sparso: senza un numero, la
+         piu vecchia arriva per ultima e riscrive quello che la piu
+         nuova aveva gia messo a posto. Il controllo sulla data non
+         bastava, perche la data e la stessa. */
+      let letturaNumero = 0;
+
       async function caricaGiornata(data, toccaBottoni) {
+        const questaLettura = ++letturaNumero;
         const r = await apiConv('giorno?data=' + encodeURIComponent(data));
-        // Nel frattempo si puo aver toccato un altro giorno: la
-        // risposta vecchia non deve sovrascrivere quella nuova.
-        if (!r.ok || attivo !== data) {
+        // Nel frattempo si puo aver toccato un altro giorno, o puo
+        // essere arrivata una lettura piu recente di questa.
+        if (!r.ok || attivo !== data || questaLettura !== letturaNumero) {
           if (!r.ok) esito($('convEsito'), r.dati.errore || 'Non riesco a leggere la giornata.');
           return;
         }
@@ -2043,19 +2052,43 @@
         segnaOvunque(data, scelta, false);
         esito(cassetta, '');
 
+        /* LA RETE SI ARMA ADESSO, PRIMA DELLA RICHIESTA, e questo mezzo
+           secondo di anticipo e tutta la correzione.
+
+           Prima si armava dopo la risposta del server, e nel frattempo
+           la pagina era scoperta: la rilettura automatica — quella che
+           gira ogni mezzo minuto, o quella che scatta tornando
+           sull'app — poteva cadere proprio li in mezzo, leggere dal
+           server lo stato VECCHIO (la richiesta non era ancora
+           arrivata) e ridipingere i bottoni con quello. Chi aveva
+           appena premuto Presente si vedeva tornare Assente.
+
+           Non era una svista rara: con diciotto persone che rispondono
+           nello stesso quarto d'ora e una rilettura ogni trenta
+           secondi, la finestra la si becca.
+
+           La rete mieRisposte esisteva gia proprio per questo — "quel che ho
+           appena scelto vale piu di quel che il server mi rimanda" — ma
+           veniva alzata un attimo troppo tardi. */
+        const prima = mieRisposte[data];
+        const primaStato = mioStato[data];
+        mieRisposte[data] = scelta;
+        mioStato[data] = scelta;
+
         const r = await apiConv('rispondi', {
           data, stato: scelta,
           // Solo quando serve: a un assente l'ora di arrivo non si chiede.
           ...(scelta === 'presente' ? { ora: oraDi(data) } : {})
         });
         if (!r.ok) {
+          // Non e andata: si rimette com'era, altrimenti la rete
+          // continuerebbe a difendere una risposta che non esiste.
+          if (prima === undefined) delete mieRisposte[data]; else mieRisposte[data] = prima;
+          mioStato[data] = primaStato;
           esito(cassetta, r.dati.errore || 'Non sono riuscito a registrare la risposta.');
-          segnaOvunque(data, null, false);
+          segnaOvunque(data, primaStato || null, false);
           return;
         }
-
-        mieRisposte[data] = scelta;
-        mioStato[data] = scelta;
 
         // L'ora buona e quella che risponde il server, non quella che
         // gli abbiamo mandato: e lui che la riporta dentro i limiti.
