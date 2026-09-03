@@ -2136,9 +2136,21 @@
           sera: 'ultima chiamata 18:00', riepilogo: 'mail 20:00'
         };
 
+        /* La prima cosa da guardare: l'orologio e passato? Senza
+           questa riga, "non e arrivata" e indistinguibile da "non era
+           giorno di allenamento". */
+        const giro = d.orologio
+          ? 'Ultimo giro dell’orologio: ' +
+            new Date(d.orologio.quando).toLocaleString('it-IT',
+              { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+            ' — ' + d.orologio.esito
+          : 'Ultimo giro dell’orologio: MAI. La funzione programmata non sta girando.';
+
         const righe = [
           'Sul server sono le ' + String(d.adesso.ora).padStart(2, '0') + ':' +
             String(d.adesso.minuto).padStart(2, '0') + ' di ' + d.adesso.data + '.',
+          '',
+          giro,
           '',
           'Oggi si allena:        ' + si(d.allenamentoOggi),
           'Prossimi allenamenti:  ' + (d.prossimiGiorni.length ? d.prossimiGiorni.join(', ') : 'nessuno in calendario'),
@@ -2164,7 +2176,9 @@
         /* La riga che conta: invece di lasciare interpretare
            l'elenco, si dice qual e la causa piu probabile. */
         let verdetto;
-        if (!d.allenamentoOggi) verdetto = 'Oggi non è giorno di allenamento: è normale che non sia arrivato niente.';
+        const fermo = !d.orologio || (Date.now() - Date.parse(d.orologio.quando)) > 90 * 60000;
+        if (fermo) verdetto = 'L’orologio non gira: la funzione programmata non viene chiamata. È questo il guasto, non le notifiche.';
+        else if (!d.allenamentoOggi) verdetto = 'Oggi non è giorno di allenamento: è normale che non sia arrivato niente.';
         else if (!d.configurato.push) verdetto = 'Mancano le chiavi VAPID sul server: nessuna notifica può partire.';
         else if (!d.conNotifiche) verdetto = 'Nessuno ha acceso le notifiche: non c’è nessun telefono da raggiungere.';
         else if (d.adesso.ora >= 9 && !d.inviate.mattina) verdetto = 'Le 8:30 sono passate e il buongiorno non risulta partito: l’orologio non ha girato.';

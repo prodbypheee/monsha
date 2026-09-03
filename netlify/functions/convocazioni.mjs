@@ -39,6 +39,7 @@ import {
 } from '../lib/push.mjs';
 
 import { mandaMail, postaConfigurata } from '../lib/posta.mjs';
+import { ultimoGiro } from '../lib/orologio.mjs';
 import { preparaRiepilogo, leggiRosa } from '../lib/mail-riepilogo.mjs';
 
 import {
@@ -431,8 +432,15 @@ async function diagnosi(req, segreto) {
     if (n) { conNotifiche++; telefoni += n; }
   }));
 
+  /* Quando e passato l'orologio l'ultima volta. E la riga piu
+     importante di tutte: senza, "non e arrivata la notifica" e
+     indistinguibile da "non era giorno di allenamento", e per cinque
+     giorni abbiamo cercato il guasto dalla parte sbagliata. */
+  const ultimo = await ultimoGiro();
+
   return json({
     adesso: { data: oggi, ora, minuto, fascia: fasciaDi(ora, minuto) },
+    orologio: ultimo ? { quando: ultimo.quando, esito: ultimo.esito } : null,
     allenamentoOggi: giorni.includes(oggi),
     prossimiGiorni: giorni.slice(0, 5),
     inviate,
