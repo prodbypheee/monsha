@@ -197,6 +197,73 @@ async function giro(oggi, ora, minuto) {
   return n + ' notifiche partite (' + fascia + ')';
 }
 
+/* ---------- la prova al prossimo giro -------------------------
+   Che le notifiche arrivino ai telefoni lo dimostra gia il bottone
+   che le manda a tutti. Che la sveglia bussi lo dimostra il 200 nei
+   log di GitHub. Quello che nessuna delle due prova e l'anello in
+   mezzo: che l'orologio, girando DA SOLO, mandi davvero.
+
+   Questo lo prova. Si lascia un biglietto, e il primo giro
+   dell'orologio che lo trova manda una notifica a tutti e lo strappa.
+   Se quella notifica arriva senza che nessuno abbia toccato niente,
+   la catena intera funziona: GitHub bussa, il sito si sveglia,
+   riconosce che c'e da fare, e fa.
+
+   Il biglietto ha una scadenza sua: se per un'ora non passa nessuno,
+   si strappa da solo invece di far suonare i telefoni a sorpresa il
+   giorno dopo. */
+
+const BIGLIETTO = 'prova/al-prossimo-giro';
+const VALE_PER_MS = 60 * 60 * 1000;
+
+export async function lasciaBiglietto(chi) {
+  await convoc().setJSON(BIGLIETTO, {
+    quando: new Date().toISOString(),
+    da: chi || null
+  });
+}
+
+export async function leggiBiglietto() {
+  return convoc().get(BIGLIETTO, { type: 'json' }).catch(() => null);
+}
+
+async function strappaBiglietto() {
+  await convoc().delete(BIGLIETTO).catch(() => {});
+}
+
+/* Ritorna cosa e successo, o null se non c'era niente da fare. */
+async function faiLaProva(sito) {
+  const b = await leggiBiglietto();
+  if (!b) return null;
+
+  await strappaBiglietto();   // prima di mandare: mai due volte
+
+  const eta = Date.now() - Date.parse(b.quando);
+  if (!(eta >= 0) || eta > VALE_PER_MS) return 'biglietto scaduto, strappato';
+
+  if (!pushConfigurato()) return 'prova saltata: mancano le chiavi VAPID';
+
+  const membri = daConvocare(await tuttiGliUtenti());
+  if (!membri.length) return 'prova saltata: nessun membro';
+
+  const adesso = new Date().toLocaleTimeString('it-IT',
+    { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' });
+
+  const carico = {
+    titolo: 'L’orologio gira',
+    testo: 'Sono le ' + adesso + ' e questa notifica è partita da sola, ' +
+           'senza che nessuno toccasse niente. È la prova che funziona.',
+    // Niente `data`: non e una giornata di allenamento, e i bottoni
+    // Presente e Assente qui non vorrebbero dire niente.
+    vai: sito + '/area-riservata'
+  };
+
+  const esiti = await Promise.all(
+    membri.map(u => manda(chiave(u.email), carico, 1800)));
+
+  return 'PROVA: ' + esiti.reduce((a, b2) => a + b2, 0) + ' notifiche partite';
+}
+
 /* ---------- il segno che l'orologio e passato ------------------
    Si scrive a OGNI giro, anche quando non c'e niente da fare. E la
    cosa che e mancata per cinque giorni: senza, "non e arrivata la
@@ -223,7 +290,12 @@ export default async function batti() {
 
   let esito;
   try {
+    /* La prova viene prima e non al posto del lavoro vero: se un
+       biglietto capitasse proprio nel giro delle 14:00, l'avviso
+       dell'allenamento deve partire lo stesso. */
+    const prova = await faiLaProva(SITO);
     esito = await giro(oggi, ora, minuto);
+    if (prova) esito = prova + ' — poi: ' + esito;
   } catch (e) {
     esito = 'errore: ' + (e && e.message ? e.message : e);
     console.error('orologio:', e);

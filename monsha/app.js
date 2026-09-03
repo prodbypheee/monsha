@@ -2128,6 +2128,28 @@
           !!r.dati.partite);
       });
 
+      /* ---- la prova al prossimo giro ----
+         Lascia un biglietto che il primo giro dell'orologio trova.
+         Non manda niente adesso: e proprio questo il punto — se la
+         notifica arriva fra meno di mezz'ora senza che nessuno abbia
+         toccato niente, vuol dire che l'orologio gira da solo. */
+
+      $('provaGiro').addEventListener('click', async () => {
+        const btn = $('provaGiro'), box = $('diagnosiEsito');
+        btn.disabled = true;
+        const r = await apiConv('prova-giro', {});
+        btn.disabled = false;
+
+        box.hidden = false;
+        box.textContent = r.ok
+          ? 'Biglietto lasciato.\n\nEntro mezz’ora l’orologio deve passare e far ' +
+            'suonare tutti i telefoni da solo, senza che nessuno tocchi niente.\n' +
+            'Se arriva, la catena funziona: GitHub bussa, il sito si sveglia, e manda.\n\n' +
+            'Se dopo mezz’ora non è arrivato niente, ripremi «Perché non è arrivata?»: ' +
+            'la prima riga dirà se l’orologio è passato.'
+          : (r.dati.errore || 'Non riesco a lasciare il biglietto.');
+      });
+
       /* ---- perche non e arrivata ----
          Quando una notifica non arriva le domande sono sempre le
          stesse quattro: oggi si allena? l'orologio ha girato? le
@@ -2168,6 +2190,7 @@
             String(d.adesso.minuto).padStart(2, '0') + ' di ' + d.adesso.data + '.',
           '',
           giro,
+          d.provaInAttesa ? 'C’è un biglietto di prova in attesa: al prossimo giro suona.' : '',
           '',
           'Oggi si allena:        ' + si(d.allenamentoOggi),
           'Prossimi allenamenti:  ' + (d.prossimiGiorni.length ? d.prossimiGiorni.join(', ') : 'nessuno in calendario'),
