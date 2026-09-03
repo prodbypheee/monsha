@@ -49,7 +49,7 @@ import {
 
 import {
   leggiProvinanti, salvaProvinante, eliminaProvinante,
-  validaProvinante, restaDaVivere, RUOLI as RUOLI_PROVINO
+  validaProvinante, RUOLI as RUOLI_PROVINO
 } from '../lib/provinanti.mjs';
 
 /* ---------- chi sono e cosa vedo ------------------------------ */
@@ -292,11 +292,10 @@ async function formazione(req, segreto, indirizzo) {
     orari,
     provinanti: provinanti.map(p => ({
       id: p.id,
+      ruoli: p.ruoli,
+      reparti: p.reparti,
       ruolo: p.ruolo,
-      reparto: p.reparto,
-      // Ore che restano: un numero da mostrare, non una data da
-      // interpretare sul telefono di chi guarda.
-      ore: Math.max(1, Math.round(restaDaVivere(p.creato) / 3600000))
+      reparto: p.reparto
     })),
     ruoliProvino: RUOLI_PROVINO.map(r => r[0]),
     modificabile: puoConvocare(g.utente)
@@ -341,8 +340,10 @@ async function salvaLaFormazione(req, segreto) {
    Chi convoca aggiunge uno che viene a fare una prova: un nome e un
    ruolo, e da quel momento e schierabile come tutti gli altri.
 
-   Non e un account e non diventa niente: dura due giorni e sparisce
-   da solo. Se quella persona resta, si registra come tutti.
+   Non e un account e non diventa niente, e resta finche non lo si
+   toglie: i provini si guardano su piu serate, e chi decide quando
+   uno ha finito e il capitano. Se quella persona resta, si registra
+   come tutti.
 
    Lo puo fare chi puo convocare — capitano, amministrazione, admin —
    perche e la stessa mano che mette in campo. */
@@ -365,7 +366,10 @@ async function aggiungiProvinante(req, segreto) {
   if (esito.errore) return errore(esito.errore);
 
   const messo = await salvaProvinante(esito.voce, g.utente.idGioco);
-  return json({ ok: true, provinante: { id: messo.id, ruolo: messo.ruolo, reparto: messo.reparto } });
+  return json({ ok: true, provinante: {
+    id: messo.id, ruoli: messo.ruoli, reparti: messo.reparti,
+    ruolo: messo.ruolo, reparto: messo.reparto
+  } });
 }
 
 async function togliProvinante(req, segreto) {

@@ -1433,36 +1433,87 @@ button, input, select, textarea { font: inherit; }
 }
 .ann-cancella:hover { border-color: var(--acc); color: var(--acc); }
 
-/* ---------- trascinare i giocatori ----------
-   touch-action: none solo su cio che si trascina: senza, al primo
-   movimento del dito il browser scorre la pagina e il gesto muore
-   sul nascere. Limitarlo ai cerchi e alle tessere lascia intatto lo
-   scorrimento sul resto della pagina. */
-.casella.tocca, .conv-tessera.prendibile { touch-action: none; }
-.conv-tessera.prendibile { cursor: grab; }
-.conv-tessera.prendibile:active { cursor: grabbing; }
+/* ---------- prendere e mettere ----------
+   Si tocca chi, si tocca dove. Niente touch-action: none e niente
+   pointer capture — sono click normali, e la pagina sotto continua a
+   scorrere come su qualsiasi altro elenco. Era il difetto peggiore
+   del trascinamento: per prendere qualcuno bisognava impedire lo
+   scorrimento proprio dove le dita lo cercano. */
+.conv-tessera.prendibile {
+  cursor: pointer; text-align: left; font: inherit; color: inherit;
+  -webkit-appearance: none; appearance: none;
+}
 
-/* Il fantasma che segue il dito. Fuori da ogni contenitore, sopra
-   tutto, e non deve mai intercettare il puntatore: se lo facesse,
-   elementFromPoint troverebbe sempre e solo lui. */
-.trascinato {
-  position: fixed; z-index: 90; pointer-events: none;
-  width: 58px; height: 58px; margin: -29px 0 0 -29px;
-  border-radius: 50%; border: 2px solid var(--acc);
-  background: var(--bg-3) center 20% / cover no-repeat;
-  box-shadow: 0 12px 30px rgba(0,0,0,.55);
-  display: grid; place-items: center;
-  font-family: 'Instrument Serif', Georgia, serif; font-size: 22px; color: var(--acc);
+/* Chi si ha in mano, in panchina o in campo: acceso e appena
+   sollevato, cosi si vede a colpo d'occhio da chi si e partiti. */
+.conv-tessera.in-mano {
+  border-color: var(--acc);
+  background: var(--acc-soft);
+  box-shadow: 0 0 0 1px var(--acc-soft);
+}
+.casella.in-mano .casella-cerchio {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 4px var(--acc-soft);
   transform: scale(1.06);
 }
 
-/* Mentre si trascina non si seleziona testo per sbaglio. */
-body.sta-trascinando { user-select: none; -webkit-user-select: none; }
-
-/* La casella sotto il dito si accende: si sa dove si sta per mollare. */
-.casella.sotto-mira .casella-cerchio {
+/* Con qualcuno in mano il campo dice dove si puo metterlo: le vuote
+   pulsano piano, le piene restano visibili ma spente — ci si puo
+   mettere lo stesso, e i due si scambiano. */
+.casella.mira .casella-cerchio { border-color: rgba(236,233,228,.4); }
+.casella.mira.libera .casella-cerchio {
   border-color: var(--acc);
-  box-shadow: 0 0 0 4px var(--acc-soft);
+  box-shadow: 0 0 0 3px var(--acc-soft);
+  animation: presaBattito 1.6s ease-in-out infinite;
+}
+@keyframes presaBattito {
+  0%, 100% { box-shadow: 0 0 0 3px var(--acc-soft); }
+  50%      { box-shadow: 0 0 0 7px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .casella.mira.libera .casella-cerchio { animation: none; }
+}
+
+/* La barra di chi si ha in mano. Fissa in fondo: si sceglie guardando
+   la panchina e si mette guardando il campo, e fra i due c'e uno
+   scorrimento — una barra che scorre via sarebbe una barra che al
+   momento di servire non c'e.
+
+   env(safe-area-inset-bottom) e per gli iPhone: senza, i bottoni
+   finiscono sotto la barretta di casa. */
+.presa {
+  position: fixed; z-index: 80;
+  left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 16px;
+  border: 1px solid var(--acc);
+  background: rgba(18,17,16,.92);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.5);
+  animation: msDrop .3s var(--ease) both;
+}
+.presa-chi { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.presa-nome {
+  display: flex; flex-direction: column; min-width: 0;
+  font-size: 13px; font-weight: 600; color: var(--txt);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.presa-nome em {
+  font-style: normal; font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--txt-5);
+}
+.presa-azioni { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 460px) {
+  .presa-azioni { width: 100%; }
+  .presa-azioni .ar-mini { flex: 1; }
+}
+
+/* Il bottone che dalla candidatura porta in panchina, dopo che lo si
+   e premuto: resta li a dire cosa e successo invece di tornare
+   premibile e rispondere "quell'ID e gia in campo". */
+.ar-mini.fatto {
+  border-color: rgba(127,214,160,.5); color: #7fd6a0;
+  background: rgba(127,214,160,.08);
 }
 
 /* Separatore fra i consigliati per quella casella e tutti gli altri:

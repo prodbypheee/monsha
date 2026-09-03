@@ -1325,6 +1325,53 @@
       const azioni = document.createElement('div');
       azioni.className = 'cand-azioni';
 
+      /* ---- dalla candidatura al campo ----
+         Chi legge una candidatura e chi schiera sono la stessa
+         persona, e fino a ieri fra le due cose c'era un travaso a
+         mano: si apriva la formazione, si premeva "aggiungi
+         provinante", si ricopiava l'ID guardando l'altra scheda e si
+         sceglieva il ruolo a memoria. Tre occasioni di sbagliare per
+         una cosa che il sito sapeva gia.
+
+         L'ID e i ruoli li prende da qui: sono le parole che ha scritto
+         lui, non una traduzione. E per questo che i ruoli del provino
+         sono gli stessi sette del modulo pubblico — se i due
+         vocabolari non combaciassero, questo bottone dovrebbe
+         indovinare. */
+      const inCampo = document.createElement('button');
+      inCampo.type = 'button';
+      inCampo.className = 'ar-mini si cand-campo-btn';
+      inCampo.textContent = 'Metti in formazione';
+      inCampo.title = v.ruoli && v.ruoli.length
+        ? 'Lo aggiunge come provinante: ' + v.ruoli.join(', ')
+        : 'Lo aggiunge come provinante';
+
+      inCampo.addEventListener('click', async () => {
+        inCampo.disabled = true;
+        const prima = inCampo.textContent;
+        inCampo.textContent = 'Aggiungo…';
+
+        const r = await chiama('/api/convocazioni/provinante',
+          { id: v.id, ruoli: v.ruoli || [] });
+
+        inCampo.textContent = prima;
+
+        if (!r.ok) {
+          inCampo.disabled = false;
+          alert(r.dati.errore || 'Non riuscito.');
+          return;
+        }
+
+        /* Resta spento con scritto cosa e successo: premerlo due volte
+           darebbe soltanto "quell'ID e gia in campo", che e un errore
+           per una cosa che invece era andata bene. */
+        inCampo.textContent = 'È in panchina';
+        inCampo.classList.remove('si');
+        inCampo.classList.add('fatto');
+      });
+
+      azioni.appendChild(inCampo);
+
       if (v.whatsapp) {
         const wa = document.createElement('button');
         wa.type = 'button';
@@ -2749,18 +2796,28 @@
             const el = document.createElement(modificabile ? 'button' : 'div');
             if (modificabile) {
               el.type = 'button';
-              el.addEventListener('click', () => apriScelta(c));
+              /* Tre casi e nessuna ambiguita: se si ha qualcuno in
+                 mano lo si mette qui; se la casella e piena si prende
+                 chi c'e dentro, per spostarlo o farlo uscire; se e
+                 vuota si apre l'elenco di chi ci si puo mettere. */
+              el.addEventListener('click', () => {
+                if (preso) metti(c.id);
+                else if (chi) prendi(c.id, chi);
+                else apriScelta(c);
+              });
             }
-            el.className = 'casella' + (chi ? ' piena' : '') + (modificabile ? ' tocca' : '');
+            el.className = 'casella' + (chi ? ' piena' : '') + (modificabile ? ' tocca' : '') +
+              (preso ? (chi ? ' mira' : ' mira libera') : '') +
+              (stessoPreso(chi) ? ' in-mano' : '');
             el.dataset.casella = c.id;
             el.style.left = c.x + '%';
             el.style.top  = c.y + '%';
-            /* Si prende e si trascina: su un'altra casella per
-               scambiare i due, sulla panchina per farlo uscire. */
-            if (modificabile && chi)
-              el.addEventListener('pointerdown', e => iniziaPresa(e, c.id, chi));
             el.setAttribute('aria-label',
-              c.eti + (chi ? ': ' + chi : ': vuoto') + (modificabile ? ' — tocca per cambiare' : ''));
+              c.eti + (chi ? ': ' + chi : ': vuoto') +
+              (modificabile
+                ? (preso ? ' — tocca per metterci ' + preso.id
+                         : (chi ? ' — tocca per spostarlo' : ' — tocca per scegliere'))
+                : ''));
 
             const cerchio = document.createElement('span');
             cerchio.className = 'casella-cerchio';
@@ -2809,6 +2866,7 @@
           });
 
           disegnaPanchina();
+          disegnaPresa();
         });
       }
 
@@ -2843,11 +2901,16 @@
         fuori.forEach(id => {
           const g = trovaGiocatore(id);
 
-          const t = document.createElement('div');
-          t.className = 'conv-tessera' + (modificabile ? ' prendibile' : '');
-          // Dalla panchina si trascina direttamente in campo.
-          if (modificabile)
-            t.addEventListener('pointerdown', e => iniziaPresa(e, 'panchina', id));
+          const t = document.createElement(modificabile ? 'button' : 'div');
+          t.className = 'conv-tessera' +
+            (modificabile ? ' prendibile' : '') + (stessoPreso(id) ? ' in-mano' : '');
+          /* Un bottone vero e non un div che ascolta i click: cosi ci
+             si arriva col tasto tab e lo si preme con lo spazio,
+             senza che qui dentro ci sia una riga in piu. */
+          if (modificabile) {
+            t.type = 'button';
+            t.addEventListener('click', () => prendi('panchina', id));
+          }
 
           const avatar = document.createElement('div');
           avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
@@ -2879,7 +2942,9 @@
           if (prova) {
             const p = document.createElement('em');
             p.className = 'prova-segno';
-            p.textContent = 'in prova · ' + prova.ruolo;
+            p.textContent = 'in prova · ' +
+              (prova.ruoli && prova.ruoli.length ? prova.ruoli : [prova.ruolo])
+                .filter(Boolean).join(', ');
             nome.appendChild(p);
           }
 
@@ -2895,6 +2960,14 @@
           box.appendChild(t);
         });
       }
+
+      /* Toccare la panchina con qualcuno in mano lo fa uscire dal
+         campo: e il gesto che si prova per primo, e senza questo
+         resterebbe solo il bottone nella barra. */
+      $('formPanchina').addEventListener('click', e => {
+        if (preso && preso.da !== 'panchina' && !e.target.closest('.conv-tessera'))
+          faiUscire();
+      });
 
       /* ---- chi puo stare in una casella ----
          Presente quel giorno, non gia schierato altrove, e del
@@ -2932,7 +3005,7 @@
           const g = trovaGiocatore(id);
           if (g) return g.reparto === c.reparto;
           const p = provinanteDi(id);
-          if (p) return p.reparto === c.reparto;
+          if (p) return (p.reparti || [p.reparto]).includes(c.reparto);
           return true;
         };
 
@@ -2940,139 +3013,167 @@
       }
 
 
-      /* ---- trascinare ----
-         Il drag&drop nativo del browser sul telefono non esiste: e
-         fatto per il mouse e su touch semplicemente non parte. Qui si
-         usano i Pointer Events, che parlano la stessa lingua per dito
-         e mouse, e ci si costruisce sopra il minimo indispensabile:
-         un fantasma che segue il dito, e all'arrivo si guarda cosa c'e
-         sotto con elementFromPoint.
+      /* ---- prendere e mettere ----
+         Prima i giocatori si trascinavano. Funzionava, ma male: il
+         drag&drop nativo sul telefono non esiste, e quello finto —
+         pointer events, un fantasma che segue il dito,
+         elementFromPoint all'arrivo — chiedeva al pollice di tenere
+         premuto e mirare a un cerchio di sessanta pixel mentre la
+         pagina sotto voleva scorrere. Chi schiera lo fa dal divano,
+         con una mano.
 
-         Il gesto comincia solo dopo qualche pixel di movimento: senza
-         quella soglia un tocco fermo verrebbe scambiato per un
-         trascinamento, e la scelta a tocco — che resta, ed e come si
-         fa da tastiera — non funzionerebbe piu. */
+         Adesso sono due tocchi: si tocca chi, si tocca dove. Piu
+         lento di mezzo secondo e molto piu difficile da sbagliare — e
+         soprattutto si vede sempre cosa sta per succedere, perche fra
+         un tocco e l'altro c'e una barra in fondo che dice chi si ha
+         in mano.
 
-      const SOGLIA = 8;   // pixel prima di considerarlo un trascinamento
+         Ne segue un guadagno che non era in preventivo: funziona
+         identico da tastiera, perche i tocchi sono click su bottoni
+         veri. Il trascinamento invece non era usabile in nessun modo
+         senza un puntatore. */
 
-      let presa = null;   // { da, id, x0, y0, fantasma, partito }
+      let preso = null;   // { da: 'panchina' | id della casella, id }
 
-      function fantasmaDi(id) {
-        const g = trovaGiocatore(id);
-        const f = document.createElement('div');
-        f.className = 'trascinato';
-        if (g) f.style.backgroundImage = "url('./immagini/" + g.img + "')";
-        else f.textContent = (id || '?').charAt(0).toUpperCase();
-        document.body.appendChild(f);
-        return f;
-      }
+      const stessoPreso = id => !!preso && !!id && idPiatto(preso.id) === idPiatto(id);
 
-      function muoviFantasma(e) {
-        presa.fantasma.style.left = e.clientX + 'px';
-        presa.fantasma.style.top  = e.clientY + 'px';
-
-        // Evidenzia la casella sotto il dito, cosi si sa dove si molla.
-        const sotto = bersaglio(e, presa.fantasma);
-        document.querySelectorAll('.casella.sotto-mira')
-          .forEach(n => n.classList.remove('sotto-mira'));
-        if (sotto && sotto.dataset) sotto.classList.add('sotto-mira');
-      }
-
-      /* Cosa c'e sotto il dito. Il fantasma va nascosto un istante,
-         altrimenti elementFromPoint trova sempre e solo lui. */
-      function bersaglio(e, fantasma) {
-        fantasma.style.display = 'none';
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        fantasma.style.display = '';
-        if (!el) return null;
-        return el.closest('.casella') || el.closest('#formPanchina');
-      }
-
-      function iniziaPresa(e, da, id) {
+      /* Prendere due volte la stessa persona la rimette giu: e il modo
+         piu ovvio di annullare, e lo si scopre da soli. */
+      function prendi(da, id) {
         if (!modificabile || !id) return;
-        // Solo il tasto sinistro del mouse; col dito non c'e questione.
-        if (e.button !== undefined && e.button !== 0) return;
-        presa = { da, id, x0: e.clientX, y0: e.clientY, fantasma: null, partito: false };
-        e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId);
-        presa.bersagliato = e.target;
+        preso = stessoPreso(id) ? null : { da, id };
+        disegnaCampo();
       }
 
-      document.addEventListener('pointermove', e => {
-        if (!presa) return;
-
-        if (!presa.partito) {
-          const quanto = Math.hypot(e.clientX - presa.x0, e.clientY - presa.y0);
-          if (quanto < SOGLIA) return;
-          presa.partito = true;
-          presa.fantasma = fantasmaDi(presa.id);
-          document.body.classList.add('sta-trascinando');
-        }
-
-        // Da qui in poi il dito sta trascinando, non scorrendo.
-        e.preventDefault();
-        muoviFantasma(e);
-      }, { passive: false });
-
-      document.addEventListener('pointerup', e => {
-        if (!presa) return;
-        const g = presa;
-        presa = null;
-
-        if (!g.partito) return;   // era un tocco: se ne occupa il click
-
-        const sotto = bersaglio(e, g.fantasma);
-        g.fantasma.remove();
-        document.body.classList.remove('sta-trascinando');
-        document.querySelectorAll('.casella.sotto-mira')
-          .forEach(n => n.classList.remove('sotto-mira'));
-
-        molla(g, sotto);
-      });
-
-      document.addEventListener('pointercancel', () => {
-        if (presa && presa.fantasma) presa.fantasma.remove();
-        document.body.classList.remove('sta-trascinando');
-        document.querySelectorAll('.casella.sotto-mira')
-          .forEach(n => n.classList.remove('sotto-mira'));
-        presa = null;
-      });
-
-      /* Dove e finito il giocatore trascinato.
-
-         panchina -> casella   entra in campo, e chi c'era torna fuori
-         casella  -> casella   si scambiano di posto
-         casella  -> panchina  esce dal campo
-         altrove               non succede niente */
-      function molla(g, sotto) {
-        if (!sotto) return;
-
-        const inPanchina = sotto.id === 'formPanchina' || sotto.closest('#formPanchina');
-        const casella = sotto.classList && sotto.classList.contains('casella') ? sotto : null;
-
-        if (inPanchina) {
-          if (g.da === 'panchina') return;          // era gia fuori
-          delete schieramento[g.da];
-        } else if (casella) {
-          const dove = casella.dataset.casella;
-          if (!dove) return;
-
-          if (g.da === 'panchina') {
-            schieramento[dove] = g.id;
-          } else {
-            if (g.da === dove) return;
-            // Scambio: chi stava li va dove stava l'altro.
-            const altro = schieramento[dove];
-            schieramento[dove] = g.id;
-            if (altro) schieramento[g.da] = altro; else delete schieramento[g.da];
-          }
-        } else {
-          return;
-        }
-
+      function cambiato() {
         disegnaCampo();
         sporco = true;
         esito($('formEsito'), 'Modifica non ancora salvata.', false);
       }
+
+      /* Mettere in una casella: se dentro c'e gia qualcuno, i due si
+         scambiano quando chi si ha in mano veniva dal campo, e chi
+         c'era torna in panchina quando veniva dalla panchina. */
+      function metti(dove) {
+        const g = preso;
+        if (!g || !dove) return;
+        preso = null;
+
+        if (g.da === dove) { disegnaCampo(); return; }
+
+        const altro = schieramento[dove] || null;
+        schieramento[dove] = g.id;
+
+        if (g.da !== 'panchina') {
+          if (altro) schieramento[g.da] = altro; else delete schieramento[g.da];
+        }
+
+        cambiato();
+      }
+
+      function faiUscire() {
+        const g = preso;
+        preso = null;
+        if (!g || g.da === 'panchina') { disegnaCampo(); return; }
+        delete schieramento[g.da];
+        cambiato();
+      }
+
+      /* Dove finisce chi si ha in mano se si preme "In campo" invece
+         di scegliere una casella: la prima libera del suo reparto, e
+         se il reparto e pieno la prima libera qualunque.
+
+         Il reparto non e un vincolo — un difensore lo si puo mettere
+         in attacco se serve — ma quando la macchina sceglie da sola
+         deve scegliere la cosa ovvia, non una a caso. */
+      function primaLibera(id) {
+        const g = trovaGiocatore(id);
+        const p = provinanteDi(id);
+        const suoi = g ? [g.reparto] : (p ? (p.reparti || [p.reparto]).filter(Boolean) : []);
+        const vuote = caselle.filter(c => !schieramento[c.id]);
+        return vuote.find(c => suoi.includes(c.reparto)) || vuote[0] || null;
+      }
+
+      /* ---- la barra di chi si ha in mano ----
+         Sta fissa in fondo allo schermo e non dentro il riquadro: si
+         sceglie guardando la panchina, si mette guardando il campo, e
+         fra i due c'e uno scorrimento. Una barra che scorre via
+         sarebbe una barra che al momento di servire non c'e. */
+
+      function disegnaPresa() {
+        const barra = $('formPresa');
+        barra.textContent = '';
+
+        if (!preso || !modificabile) { barra.hidden = true; return; }
+        barra.hidden = false;
+
+        const g = trovaGiocatore(preso.id);
+
+        const chi = document.createElement('span');
+        chi.className = 'presa-chi';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'conv-avatar' + (g ? ' con-foto' : '');
+        if (g) {
+          const foto = document.createElement('i');
+          foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+          avatar.appendChild(foto);
+        }
+        const iniziale = document.createElement('span');
+        iniziale.textContent = preso.id.charAt(0).toUpperCase();
+        avatar.appendChild(iniziale);
+
+        const nome = document.createElement('span');
+        nome.className = 'presa-nome';
+        nome.textContent = preso.id;
+        const dove = document.createElement('em');
+        dove.textContent = 'tocca una casella';
+        nome.appendChild(dove);
+
+        chi.append(avatar, nome);
+
+        const azioni = document.createElement('span');
+        azioni.className = 'presa-azioni';
+
+        if (preso.da === 'panchina') {
+          const dentro = document.createElement('button');
+          dentro.type = 'button';
+          dentro.className = 'ar-mini si';
+          dentro.textContent = 'In campo';
+          dentro.addEventListener('click', () => {
+            const c = primaLibera(preso.id);
+            if (!c) {
+              esito($('formEsito'),
+                'Il campo è pieno: tocca la casella di chi deve uscire.', false);
+              return;
+            }
+            metti(c.id);
+          });
+          azioni.appendChild(dentro);
+        } else {
+          const fuori = document.createElement('button');
+          fuori.type = 'button';
+          fuori.className = 'ar-mini no';
+          fuori.textContent = 'Togli dal campo';
+          fuori.addEventListener('click', faiUscire);
+          azioni.appendChild(fuori);
+        }
+
+        const stop = document.createElement('button');
+        stop.type = 'button';
+        stop.className = 'ar-mini';
+        stop.textContent = 'Annulla';
+        stop.addEventListener('click', () => { preso = null; disegnaCampo(); });
+        azioni.appendChild(stop);
+
+        barra.append(chi, azioni);
+      }
+
+      /* Con qualcuno in mano, Esc lo rimette giu: e la stessa uscita
+         del foglio di scelta, e chi la conosce la prova per prima. */
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && preso && !apertaSu) { preso = null; disegnaCampo(); }
+      });
 
       /* ---- il foglio di scelta ---- */
 
@@ -3187,9 +3288,11 @@
          invitato. Qui gli si da un nome e un ruolo, e da quel momento
          si schiera come tutti gli altri.
 
-         Dura due giorni e sparisce da solo. Non c'e niente da
-         ricordarsi di cancellare, ed e voluto: una lista di provini di
-         tre mesi fa nel mezzo della panchina non serve a nessuno. */
+         Resta finche non lo si toglie. Prima spariva da solo dopo due
+         giorni e sembrava comodo — nessuna lista da pulire — ma voleva
+         dire che uno provato di giovedi non c'era piu il martedi, e i
+         provini si guardano su piu serate. Quando ha finito lo dice il
+         capitano, non un contatore. */
 
       function riempiRuoliProvino(elenco) {
         const menu = $('provRuolo');
@@ -3215,11 +3318,11 @@
           nome.textContent = p.id;
 
           const quanto = document.createElement('i');
-          // Le ore e non la data: "ancora 31 ore" si capisce al volo,
-          // "scade il 5 settembre alle 21:14" va interpretato.
-          quanto.textContent = p.ruolo + ' · ancora ' +
-            (p.ore >= 24 ? Math.round(p.ore / 24) + (p.ore >= 48 ? ' giorni' : ' giorno')
-                         : p.ore + (p.ore === 1 ? ' ora' : ' ore'));
+          // Tutti i ruoli, non solo il primo: uno che gioca esterno e
+          // centrocampista lo si schiera in due posti, e chi guarda
+          // l'elenco deve saperlo senza aprire niente.
+          quanto.textContent = (p.ruoli && p.ruoli.length ? p.ruoli : [p.ruolo])
+            .filter(Boolean).join(' · ');
 
           const via = document.createElement('button');
           via.type = 'button';
@@ -3266,7 +3369,7 @@
         const testo = btn.textContent;
         btn.textContent = 'Aggiungo…';
 
-        const r = await apiConv('provinante', { id, ruolo });
+        const r = await apiConv('provinante', { id, ruoli: [ruolo] });
 
         btn.disabled = false;
         btn.textContent = testo;
