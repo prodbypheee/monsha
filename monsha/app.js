@@ -322,25 +322,28 @@
       Xbox:        'Il tuo Xbox Gamertag',
       PC:          'Il tuo ID Origin, Steam o Epic Games'
     };
-    /* I ruoli sul campo, non piu in fila. Le coordinate sono quelle
-       del 3-4-1-2 della formazione — stesso riquadro 100x150, stesso
-       modo di leggerlo — cosi le due parti del sito disegnano la
-       stessa squadra.
+    /* IL 3-4-1-2, quello vero: le undici caselle della formazione,
+       con le stesse identiche coordinate. La fonte e
+       netlify/lib/formazione.mjs — se un giorno il modulo cambia, va
+       cambiato li e ricopiato qui, perche questa tab e pubblica e non
+       puo chiedere niente al server.
 
-       Non sono le undici caselle della formazione: li si sceglie una
-       maglia, qui un mestiere. I due attaccanti sono un ruolo solo, e
-       la difesa a tre diventa terzino-centrale-terzino, che e come si
-       descrive uno quando dice dove gioca. */
+       Undici caselle e sette ruoli: tre difensori centrali sono la
+       stessa cosa quando uno dice dove gioca, e due attaccanti pure.
+       Si tocca la casella, si salva il ruolo — e se uno tocca due
+       caselle dello stesso ruolo, il ruolo resta uno. */
     const RUOLI = [
-      ['POR', 'Portiere',            50, 90],
-      ['TS',  'Terzino sinistro',    18, 72],
-      ['DC',  'Difensore centrale',  50, 76],
-      ['TD',  'Terzino destro',      82, 72],
-      ['ES',  'Esterno sinistro',    15, 50],
-      ['MED', 'Mediano',             37, 55],
-      ['COC', 'Centrocampista',      63, 55],
-      ['ED',  'Esterno destro',      85, 50],
-      ['ATT', 'Attaccante',          50, 18]
+      ['por',  'POR', 'Portiere',              50, 90],
+      ['dcs',  'DC',  'Difensore centrale',    20, 72],
+      ['dcc',  'DC',  'Difensore centrale',    50, 76],
+      ['dcd',  'DC',  'Difensore centrale',    80, 72],
+      ['es',   'ES',  'Esterno sinistro',      11, 50],
+      ['cdcs', 'CDC', 'Centrocampista',        37, 55],
+      ['cdcd', 'CDC', 'Centrocampista',        63, 55],
+      ['ed',   'ED',  'Esterno destro',        89, 50],
+      ['coc',  'COC', 'Trequartista',          50, 34],
+      ['atts', 'ATT', 'Attaccante',            33, 15],
+      ['attd', 'ATT', 'Attaccante',            67, 15]
     ];
     // Competizioni reali in cui si puo aver militato, con le rispettive
     // divisioni: sono quelle del form precedente alla rifacitura grafica,
@@ -393,12 +396,16 @@
         '<button type="button" class="chip tolgo" data-club="' + esc(c) + '">' + esc(c) + ' ✕</button>').join('');
     }
 
-    /* Dentro il modulo i ruoli viaggiano come sigle, che sono le chiavi
-       dei bottoni sul campo; fuori — riepilogo, mail, archivio,
-       messaggio su WhatsApp — devono uscire per esteso. «Si è candidato
-       come por» non lo scriverebbe nessuno. */
+    /* Dentro il modulo viaggiano le caselle, che sono le chiavi dei
+       bottoni sul campo; fuori — riepilogo, mail, archivio, messaggio
+       su WhatsApp — deve uscire il ruolo per esteso. «Si è candidato
+       come dcs» non lo scriverebbe nessuno.
+
+       Senza doppioni: chi tocca due caselle di difesa gioca in un
+       ruolo solo, e scriverlo due volte sarebbe una svista che si
+       vede. */
     const ruoliPerEsteso = () =>
-      RUOLI.filter(r => dati.ruoli.includes(r[0])).map(r => r[1]);
+      [...new Set(RUOLI.filter(r => dati.ruoli.includes(r[0])).map(r => r[2]))];
 
     function riepilogo() {
       const righe = [
@@ -420,11 +427,11 @@
       const box = $('ruoli');
 
       if (!box.children.length) {
-        RUOLI.forEach(([sigla, nome, x, y]) => {
+        RUOLI.forEach(([casella, sigla, nome, x, y]) => {
           const b = document.createElement('button');
           b.type = 'button';
           b.className = 'casella';
-          b.dataset.v = sigla;
+          b.dataset.v = casella;
           b.style.left = x + '%';
           b.style.top  = y + '%';
           b.setAttribute('aria-label', nome);
@@ -436,11 +443,7 @@
           s.textContent = sigla;
           cerchio.appendChild(s);
 
-          const n = document.createElement('span');
-          n.className = 'ruolo-nome';
-          n.textContent = nome;
-
-          b.append(cerchio, n);
+          b.appendChild(cerchio);
           box.appendChild(b);
         });
       }
@@ -450,10 +453,15 @@
 
       $('nRuoli').textContent = dati.ruoli.length;
 
-      /* Sotto il campo, per esteso: sul cerchio ci sta la sigla, e
-         "COC" non dice niente a chi non e cresciuto in questi giochi. */
-      const scelti = RUOLI.filter(r => dati.ruoli.includes(r[0])).map(r => r[1]);
-      $('ruoliScelti').textContent = scelti.length ? scelti.join(' · ') : '';
+      /* I nomi stanno sotto il campo e non sotto ogni cerchio: con
+         undici caselle e nomi lunghi il campo diventerebbe illeggibile,
+         e le sigle sono le stesse che la squadra usa in formazione.
+         Per esteso si scrive solo quello che si e scelto — che e
+         l'unica cosa che serve leggere. */
+      const scelti = ruoliPerEsteso();
+      $('ruoliScelti').textContent = scelti.length
+        ? scelti.join(' · ')
+        : 'Tocca dove giochi. POR portiere · DC difensore · ES ED esterni · CDC centrocampo · COC trequartista · ATT attacco';
     }
 
     function vai(n) {
