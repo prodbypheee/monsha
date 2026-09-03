@@ -1,0 +1,72 @@
+# =============================================================
+# MONACI SHAOLIN — la sveglia dell'orologio
+# -------------------------------------------------------------
+# Netlify ha due funzioni programmate registrate e non le chiama mai:
+# il 3 settembre 2026 l'orologio del sito non era mai passato, e per
+# cinque giorni non e arrivata una notifica senza che niente lo
+# segnalasse.
+#
+# Questa azione fa il lavoro che avrebbe dovuto fare Netlify: ogni
+# mezz'ora bussa al sito, e il sito guarda che ore sono a Roma e
+# decide se c'e da mandare qualcosa. Tutta l'intelligenza resta sul
+# server — qui c'e solo il dito che suona il campanello.
+#
+# COSA SERVE, UNA VOLTA SOLA:
+#   1. inventare una frase lunga a caso, per esempio da
+#      `openssl rand -base64 32`
+#   2. su Netlify → Site configuration → Environment variables:
+#      OROLOGIO_SEGRETO = quella frase
+#   3. su GitHub → Settings → Secrets and variables → Actions →
+#      New repository secret: OROLOGIO_SEGRETO = la stessa frase
+#
+# Il segreto non compare mai nel repository: sta nelle due
+# configurazioni e basta. Senza, l'azione fallisce con un messaggio
+# chiaro invece di bussare a vuoto per sempre.
+# =============================================================
+
+name: Orologio
+
+on:
+  schedule:
+    # Ogni mezz'ora. GitHub puo far partire qualche minuto piu tardi
+    # quando e carico, e non e un problema: il sito guarda l'ora vera
+    # e le fasce hanno mezz'ora di tolleranza in avanti.
+    - cron: '0,30 * * * *'
+  # Per provarla subito, senza aspettare la mezz'ora.
+  workflow_dispatch:
+
+# Se un giro e ancora in corso, il successivo aspetta invece di
+# accavallarsi.
+concurrency:
+  group: orologio
+  cancel-in-progress: false
+
+jobs:
+  bussa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sveglia l'orologio del sito
+        env:
+          SEGRETO: ${{ secrets.OROLOGIO_SEGRETO }}
+        run: |
+          if [ -z "$SEGRETO" ]; then
+            echo "Manca il segreto OROLOGIO_SEGRETO fra i secrets del repository."
+            echo "Vedi le istruzioni in cima a questo file."
+            exit 1
+          fi
+
+          risposta=$(curl -sS -o /tmp/corpo.txt -w '%{http_code}' \
+            -X POST 'https://monacishaolin.it/api/orologio/batti' \
+            -H "x-orologio: $SEGRETO")
+
+          echo "HTTP $risposta"
+          cat /tmp/corpo.txt
+          echo
+
+          # Un 403 vuol dire che i due segreti non coincidono: e un
+          # guasto di configurazione, e deve fermare l'azione invece
+          # di passare inosservato.
+          if [ "$risposta" != "200" ]; then
+            echo "L'orologio non ha risposto bene."
+            exit 1
+          fi
