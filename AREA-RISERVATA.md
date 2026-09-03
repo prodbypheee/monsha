@@ -188,26 +188,35 @@ pubblicati e le formazioni già salvate: sono istantanee di un momento.
 
 ## 4-quinquies. Chi tiene la porta
 
-Il pannello **Gestione** lo vedono l'amministratore **e il capitano**.
-Non e la stessa cosa pero:
+Il pannello **Gestione** lo vedono l'amministratore, **il capitano e
+l'amministrazione** — le stesse persone che convocano. Non è un caso
+che l'elenco coincida: chi decide chi gioca decide anche chi entra, è
+lo stesso mestiere.
 
-| | admin | capitano |
+Non è la stessa cosa però:
+
+| | admin | capitano e amministrazione |
 | --- | --- | --- |
-| leggere le candidature dei provini | si | si |
-| approvare e rifiutare | si | si |
-| correggere un ID di gioco | si | si |
-| cambiare gli incarichi | si | **no** |
-| eliminare per sempre un account | si | **no** |
+| leggere le candidature dei provini | sì | sì |
+| approvare e rifiutare | sì | sì |
+| correggere un ID di gioco | sì | sì |
+| cambiare gli incarichi | sì | **no** |
+| eliminare per sempre un account | sì | **no** |
 
 Le due esclusioni hanno ragioni diverse. **Gli incarichi** restano
-dell'amministratore perche un capitano che puo nominare capitani
-sarebbe l'ultimo capitano sostituibile. **La cancellazione** perche e
-l'unica azione qui dentro che non si disfa: rifiutare si annulla — si
-riammette e l'account torna quello di prima — mentre cancellare butta
-via anche le risposte e le presenze di quella persona.
+dell'amministratore perché chi può nominare capitani sarebbe l'ultimo
+capitano sostituibile. **La cancellazione** perché è l'unica azione qui
+dentro che non si disfa: rifiutare si annulla — si riammette e
+l'account torna quello di prima — mentre cancellare butta via anche le
+risposte e le presenze di quella persona.
 
-Al capitano quei due comandi non compaiono nemmeno, e il server li
-rifiuta comunque: un bottone nascosto e cortesia, non sicurezza.
+Quei due comandi non compaiono nemmeno, e il server li rifiuta
+comunque: un bottone nascosto è cortesia, non sicurezza.
+
+La regola è scritta **una volta sola** (`puoGestire`, definita in
+termini di `puoConvocare`) e c'è una prova che verifica che i due
+elenchi restino identici: se un giorno divergono deve essere una
+decisione, non una svista in uno dei due posti.
 
 ## 4-sexies. Le candidature dei provini
 

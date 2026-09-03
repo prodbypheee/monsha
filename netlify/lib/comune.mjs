@@ -174,8 +174,14 @@ export const pubblico = u => ({
 /* Chi puo decidere i giorni di allenamento. L'admin c'e dentro
    sempre: e lui che assegna gli incarichi, sarebbe assurdo che non
    potesse rimediare a un capitano che non tocca il sito da un mese. */
+/* Regge anche un utente che non c'e: qui dentro arriva sempre uno
+   letto dall'archivio, ma una funzione che risponde a «costui puo?»
+   deve poter dire no a nessuno invece di esplodere. Se un giorno
+   qualcuno la chiama con un utente mancante, la risposta giusta e
+   «no», non un errore a meta pagina. */
 export const puoConvocare = u =>
-  u.ruolo === 'admin' || incaricoDi(u) === 'capitano' || incaricoDi(u) === 'amministrazione';
+  !!u && (u.ruolo === 'admin' ||
+    incaricoDi(u) === 'capitano' || incaricoDi(u) === 'amministrazione');
 
 /* ---------- guardie ------------------------------------------- */
 
@@ -198,30 +204,30 @@ export async function esigiAdmin(req, segreto) {
   return g;
 }
 
-/* Chi tiene la porta: l'amministratore e il capitano.
+/* Chi tiene la porta: l'amministratore, il capitano e
+   l'amministrazione — le stesse persone che convocano.
 
-   E una via di mezzo voluta, non una svista. Il capitano fa entrare e
-   uscire la gente — e lui che sa chi serve in squadra — e legge le
-   candidature dei provini, che e il motivo per cui gli e stata aperta
-   questa parte.
+   Non e un caso che l'elenco coincida con puoConvocare: chi decide
+   chi gioca e chi decide chi entra sono lo stesso mestiere, e tenerli
+   separati significava solo che l'amministrazione vedeva la squadra
+   in campo ma non poteva far entrare nessuno.
 
-   Restano invece all'amministratore due cose sole, e per ragioni
-   diverse: cambiare gli incarichi, perche un capitano che puo
-   nominare capitani sarebbe l'ultimo capitano sostituibile; e
-   cancellare per sempre un account, perche e l'unica azione qui
-   dentro che non si puo disfare. */
+   Restano all'amministratore due cose sole, e per ragioni diverse:
+   cambiare gli incarichi, perche chi puo nominare capitani sarebbe
+   l'ultimo capitano sostituibile; e cancellare per sempre un account,
+   perche e l'unica azione qui dentro che non si disfa. */
 export async function esigiGestione(req, segreto) {
   const g = await esigiMembro(req, segreto);
   if (g.errore) return g;
-  const suo = incaricoDi(g.utente);
-  if (g.utente.ruolo !== 'admin' && suo !== 'capitano')
-    return { errore: errore('Non autorizzato.', 403) };
+  if (!puoGestire(g.utente)) return { errore: errore('Non autorizzato.', 403) };
   return g;
 }
 
-/* Lo dice anche al sito, che deve sapere quali bottoni mostrare. */
-export const puoGestire = u =>
-  !!u && (u.ruolo === 'admin' || incaricoDi(u) === 'capitano');
+/* Lo dice anche al sito, che deve sapere quali bottoni mostrare.
+
+   Scritto in termini di puoConvocare e non ricopiato: sono la stessa
+   regola, e due copie della stessa regola prima o poi divergono. */
+export const puoGestire = u => puoConvocare(u);
 
 /* ---------- date ----------------------------------------------
    Tutto il calendario ragiona in ora italiana, non in UTC. Senza
