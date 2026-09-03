@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import {
   creaGettone, leggiGettone, cookieSessione, leggiCookie,
-  incaricoDi, puoConvocare, oggiRoma, oraRoma, dataInLettere, dataValida
+  incaricoDi, puoConvocare, puoGestire, oggiRoma, oraRoma, dataInLettere, dataValida
 } from '../netlify/lib/comune.mjs';
 import { fraGiorni, rispostaAmmessa, riceveIlRiepilogo, daConvocare, destinatariRiepilogo,
   attesaSollecito, PAUSA_SOLLECITO_MS, fasciaDi, oraArrivo, scorriOra, ORA_DEFAULT, oraTardi }
@@ -170,6 +170,29 @@ prova('capitano e amministrazione convocano, il giocatore no', () => {
 
 prova('l\'admin convoca sempre', () => {
   assert.ok(puoConvocare(chi('admin', 'giocatore')));
+});
+
+prova('la gestione la vedono admin, capitano e amministrazione', () => {
+  /* Chi decide chi gioca decide anche chi entra: e lo stesso
+     mestiere, e l'elenco coincide con quello di puoConvocare. */
+  assert.ok(puoGestire(chi('admin', 'giocatore')));
+  assert.ok(puoGestire(chi('membro', 'capitano')));
+  assert.ok(puoGestire(chi('membro', 'amministrazione')));
+});
+
+prova('un giocatore non vede la gestione', () => {
+  assert.ok(!puoGestire(chi('membro', 'giocatore')));
+  assert.ok(!puoGestire(chi('membro', undefined)));
+  assert.ok(!puoGestire(null));
+  assert.ok(!puoGestire(undefined));
+});
+
+prova('chi gestisce e chi convoca sono lo stesso elenco', () => {
+  /* Se un giorno divergono deve essere una decisione, non una svista
+     in uno dei due posti. */
+  [['admin','giocatore'], ['membro','capitano'], ['membro','amministrazione'],
+   ['membro','giocatore'], ['membro', undefined]].forEach(([r, i]) =>
+    assert.equal(puoGestire(chi(r, i)), puoConvocare(chi(r, i)), r + '/' + i));
 });
 
 prova('si convocano solo gli approvati', () => {

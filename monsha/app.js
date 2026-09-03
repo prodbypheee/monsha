@@ -985,14 +985,17 @@
       $('arProfRuolo').textContent    = utente.ruolo === 'admin' ? 'Amministratore' : 'Membro';
       $('arProfIncarico').textContent = ETICHETTA[utente.incarico || 'giocatore'];
 
-      /* La gestione la vede anche il capitano: e lui che fa entrare
-         la gente e che legge le candidature dei provini. Gli incarichi
-         e la cancellazione definitiva restano dell'amministratore, e
+      /* La gestione la vedono anche capitano e amministrazione: sono
+         le stesse persone che convocano, ed e lo stesso mestiere —
+         chi decide chi gioca decide anche chi entra. Gli incarichi e
+         la cancellazione definitiva restano dell'amministratore, e
          infatti quei comandi sotto non gli compaiono nemmeno. */
-      const gestisce = utente.ruolo === 'admin' || utente.incarico === 'capitano';
+      const gestisce = utente.ruolo === 'admin' ||
+        utente.incarico === 'capitano' || utente.incarico === 'amministrazione';
       $('arVoceGestione').hidden = !gestisce;
       $('arPannelloEti').textContent = utente.ruolo === 'admin'
-        ? 'Pannello amministratore' : 'Pannello capitano';
+        ? 'Pannello amministratore'
+        : (utente.incarico === 'capitano' ? 'Pannello capitano' : 'Pannello amministrazione');
       // L'introduzione spiega come si entra: a chi e gia dentro toglie
       // solo spazio in cima, e quello spazio serve ai due bottoni.
       $('arIntro').hidden = true;
