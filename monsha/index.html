@@ -341,8 +341,27 @@
 
         <section class="wiz-pass" data-pass="2">
           <h3 class="wiz-tit">Dove ti mettiamo in campo?</h3>
-          <p class="wiz-sub">Massimo due ruoli. Selezionati: <strong id="nRuoli" style="color:var(--acc); font-weight:600;">0</strong>/2</p>
-          <div class="chips" id="ruoli"></div>
+          <p class="wiz-sub">Tocca la tua posizione sul campo. Massimo due: <strong id="nRuoli" style="color:var(--acc); font-weight:600;">0</strong>/2</p>
+
+          <!-- Lo stesso campo della formazione, con le stesse linee e
+               gli stessi cerchi: chi si candida vede da subito la lingua
+               con cui la squadra parla di se. Le posizioni le mette
+               app.js. -->
+          <div class="campo campo-scelta" id="campoRuoli">
+            <svg class="campo-linee" viewBox="0 0 100 150" preserveAspectRatio="none" aria-hidden="true">
+              <rect x="1" y="1" width="98" height="148" rx="1"/>
+              <line x1="1" y1="75" x2="99" y2="75"/>
+              <circle cx="50" cy="75" r="13"/>
+              <circle cx="50" cy="75" r="1.1" class="pieno"/>
+              <rect x="24" y="1"   width="52" height="20"/>
+              <rect x="38" y="1"   width="24" height="8"/>
+              <rect x="24" y="129" width="52" height="20"/>
+              <rect x="38" y="141" width="24" height="8"/>
+            </svg>
+            <div class="campo-caselle" id="ruoli"></div>
+          </div>
+
+          <p class="ar-aiuto" id="ruoliScelti" style="margin-top:2px; text-align:center;"></p>
         </section>
 
         <section class="wiz-pass" data-pass="3">
