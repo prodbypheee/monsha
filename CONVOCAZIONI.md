@@ -346,24 +346,43 @@ non si poteva schierare.
 
 Ora nella tab **Formazione** c’è **Aggiungi provinante** — per chi può
 convocare, cioè capitano, amministrazione e admin. Si scrive un ID e si
-scegle un ruolo, e da quel momento è in panchina come tutti gli altri.
+sceglie un ruolo, e da quel momento è in panchina come tutti gli altri.
 
 Il ruolo non è una scritta: da lì si ricava il reparto, quindi un
 portiere in prova compare **fra i consigliati della porta** e non
 sotto «da altri reparti». Ed è il motivo per cui lo si chiede.
 
+I ruoli possono essere **due**, e sono gli stessi sette del modulo
+pubblico, parola per parola. Chi ne ha due compare fra i consigliati di
+**entrambi** i reparti.
+
+#### Dalla candidatura al campo, con un bottone
+
+Nel pannello **Gestione**, su ogni candidatura, c’è **Metti in
+formazione**: prende l’ID e i ruoli da lì e lo mette in panchina, senza
+ricopiare niente a mano.
+
+È il motivo per cui i due elenchi di ruoli devono combaciare: se il
+modulo pubblico dicesse «Esterno sinistro» e il provino solo «Esterno»,
+quel bottone dovrebbe indovinare. Una prova verifica che i sette nomi
+restino identici.
+
+Dopo averlo premuto il bottone resta lì spento con scritto **è in
+panchina**: premerlo due volte risponderebbe «quell’ID è già in campo»,
+che è un errore per una cosa che invece era andata bene.
+
 In campo e in panchina porta scritto **in prova**: guardando l’undici si
 deve capire subito chi è della squadra e chi sta facendo un provino.
 
-**Dura due giorni e sparisce da solo.** Non c’è nessuna pulizia da far
-girare: la scadenza si guarda quando si legge, e chi è scaduto viene
-buttato quando si scrive. Due giorni coprono la sera della prova e
-quella dopo, che è il tempo in cui si decide; oltre, se uno resta, si
-registra come tutti e diventa un membro con la sua scheda.
+**Resta finché non lo si toglie.** Prima spariva da solo dopo due
+giorni, e sembrava comodo: nessuna lista da pulire. Nella pratica
+voleva dire che uno provato di giovedì non c’era più il martedì — e i
+provini si guardano su più serate, non su una. Quando ha finito lo dice
+il capitano, non un contatore.
 
-Si può togliere prima, dalla ✕ accanto al nome — e se era in campo,
-esce: la regola «in campo va solo chi c’è» vale anche per chi non c’è
-più perché lo abbiamo cancellato noi.
+Si toglie dalla ✕ accanto al nome — e se era in campo, esce: la regola
+«in campo va solo chi c’è» vale anche per chi non c’è più perché lo
+abbiamo cancellato noi.
 
 Due nomi uguali non si accettano: in campo sarebbero indistinguibili e
 la formazione li tratterebbe come una sola persona.
@@ -391,17 +410,41 @@ Due regole, e sono di natura diversa:
   presente sta sempre da una delle due parti e non sparisce mai.
 - **Ogni casella suggerisce un reparto, ma non lo impone.** Il sito
   propone per primi quelli del ruolo giusto e mette gli altri sotto
-  una riga che lo dice; **trascinando si mette chiunque ovunque**. Un
+  una riga che lo dice; **si mette comunque chiunque ovunque**. Un
   centrocampista in difesa o il portiere in punta sono cose che
   succedono, e chi allena sa perché: un server che glielo impedisse
   pretenderebbe di capire di calcio più di lui.
 
-**Si trascina**: dalla panchina a una casella per farlo entrare, da una
-casella a un'altra per scambiare due giocatori, da una casella alla
-panchina per farlo uscire. Funziona col dito e col mouse — il drag&drop
-del browser sul telefono non esiste, quindi è costruito sui Pointer
-Events. Il tocco singolo continua ad aprire la lista, che resta il modo
-di schierare da tastiera.
+#### Due tocchi: chi, e dove
+
+**Si tocca chi, si tocca dove.**
+
+- Un giocatore in **panchina** → lo si ha in mano; poi una casella per
+  metterlo lì, o il bottone **In campo** per la prima libera del suo
+  reparto.
+- Un giocatore **in campo** → lo si ha in mano; poi un’altra casella
+  per scambiare i due, la panchina o **Togli dal campo** per farlo
+  uscire.
+- Una casella **vuota** senza nessuno in mano → si apre la lista di chi
+  ci si può mettere, come prima.
+- Toccarlo di nuovo, **Annulla** o **Esc** → lo si rimette giù.
+
+Fra un tocco e l’altro, in fondo allo schermo, c’è una barra che dice
+chi si ha in mano: fissa e non dentro il riquadro, perché si sceglie
+guardando la panchina e si mette guardando il campo, e fra i due c’è
+uno scorrimento.
+
+Prima si trascinava. Funzionava, ma male: il drag&drop nativo sul
+telefono non esiste, e quello finto — pointer events, un fantasma che
+segue il dito, `elementFromPoint` all’arrivo — chiedeva al pollice di
+tenere premuto e mirare a un cerchio di sessanta pixel mentre la pagina
+sotto voleva scorrere. Peggio: per prendere qualcuno bisognava
+**impedire lo scorrimento** proprio dove le dita lo cercano.
+
+Due tocchi costano mezzo secondo in più e sono molto più difficili da
+sbagliare. E funzionano identici da tastiera, perché sono click su
+bottoni veri — il trascinamento non era usabile in nessun modo senza un
+puntatore.
 
 Gli **Icons** non compaiono fra i consigliati di nessuna casella, ma se
 hanno segnato presente si possono schierare come tutti gli altri.
@@ -460,7 +503,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/lib/comune.mjs` | sessione, cookie, utenti, date italiane — condiviso |
 | `netlify/lib/convocazioni.mjs` | giorni e risposte nell'archivio |
 | `netlify/lib/formazione.mjs` | il 3-4-1-2, le undici caselle e le loro regole |
-| `netlify/lib/provinanti.mjs` | chi viene a fare una prova, e per due giorni |
+| `netlify/lib/provinanti.mjs` | chi viene a fare una prova, e in che ruoli |
 | `netlify/lib/annunci.mjs` | la bacheca: testo, freno di un minuto, cancellazioni |
 | `netlify/functions/annunci.mjs` | le API `/api/annunci/:azione` |
 | `netlify/lib/push.mjs` | invio delle notifiche, sottoscrizioni |

@@ -23,7 +23,7 @@ import { CASELLE, verificaSchieramento, soloPresenti, partitaValida, PARTITE }
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
-import { validaProvinante, restaDaVivere, viviSoltanto, VIVE_MS, RUOLI as RUOLI_PROVINO }
+import { validaProvinante, repartoDi as repartoProvino, MAX_RUOLI, RUOLI as RUOLI_PROVINO }
   from '../netlify/lib/provinanti.mjs';
 import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS, numeroWhatsApp }
   from '../netlify/lib/candidature.mjs';
@@ -380,10 +380,15 @@ prova('chi e presente resta sempre da qualche parte', () => {
 console.log('\nI provinanti');
 
 prova('un provinante vuole un nome e un ruolo vero', () => {
+  /* Un ruolo solo, come lo manda il menu a tendina del campo: e la
+     stessa cosa detta da un'altra porta, e non deve travestirsi da
+     elenco per essere accettata. */
   const v = validaProvinante({ id: 'ProvaTizio', ruolo: 'Attaccante' }).voce;
   assert.equal(v.id, 'ProvaTizio');
   assert.equal(v.ruolo, 'Attaccante');
   assert.equal(v.reparto, 'attaccanti', 'il reparto lo ricava dal ruolo');
+  assert.deepEqual(v.ruoli, ['Attaccante']);
+  assert.deepEqual(v.reparti, ['attaccanti']);
 });
 
 prova('senza nome non si aggiunge', () => {
@@ -418,46 +423,62 @@ prova('un nome lunghissimo si taglia invece di far fallire', () => {
   assert.equal(v.id.length, 60);
 });
 
-console.log('\nQuanto vive un provinante');
+console.log('\nI ruoli, dalla candidatura al campo');
 
-const SERA = Date.parse('2026-09-03T21:00:00Z');
-const oreFa = ore => new Date(SERA - ore * 3600000).toISOString();
+prova('i sette ruoli del provino sono quelli del modulo pubblico', () => {
+  /* Non e un vezzo: dalla candidatura si passa in formazione con un
+     bottone, e quel bottone ricopia i ruoli parola per parola. Se i
+     due elenchi divergessero dovrebbe indovinare cosa intendeva chi
+     ha scritto "Esterno sinistro".
 
-prova('appena aggiunto ha due giorni davanti', () => {
-  assert.equal(restaDaVivere(oreFa(0), SERA), VIVE_MS);
-  assert.equal(VIVE_MS, 2 * 24 * 60 * 60 * 1000);
+     Questi sono i sette del campo dei ruoli in "Unisciti a noi" —
+     undici caselle, ma i tre difensori centrali sono un ruolo solo e
+     i due attaccanti pure. */
+  assert.deepEqual(RUOLI_PROVINO.map(r => r[0]), [
+    'Portiere', 'Difensore centrale', 'Esterno sinistro', 'Esterno destro',
+    'Centrocampista', 'Trequartista', 'Attaccante'
+  ]);
 });
 
-prova('a un\'ora dalla fine e ancora vivo', () => {
-  assert.equal(restaDaVivere(oreFa(47), SERA), 3600000);
+prova('un provinante puo avere due ruoli, come nella candidatura', () => {
+  const v = validaProvinante({ id: 'ProvaTizio', ruoli: ['Esterno destro', 'Attaccante'] }).voce;
+  assert.deepEqual(v.ruoli, ['Esterno destro', 'Attaccante']);
+  assert.deepEqual(v.reparti, ['centrocampisti', 'attaccanti']);
+  assert.equal(v.ruolo, 'Esterno destro', 'il primo resta a portata di mano');
+  assert.equal(v.reparto, 'centrocampisti');
 });
 
-prova('passate le quarantotto ore e finito', () => {
-  assert.equal(restaDaVivere(oreFa(48), SERA), 0);
-  assert.equal(restaDaVivere(oreFa(100), SERA), 0);
+prova('due ruoli dello stesso reparto fanno un reparto solo', () => {
+  const v = validaProvinante({ id: 'X', ruoli: ['Trequartista', 'Centrocampista'] }).voce;
+  assert.deepEqual(v.reparti, ['centrocampisti']);
 });
 
-prova('una data illeggibile conta come scaduta', () => {
-  /* Meglio far sparire un provinante che tenerne uno per sempre
-     perche una riga d'archivio era scritta male. */
-  assert.equal(restaDaVivere('ieri', SERA), 0);
-  assert.equal(restaDaVivere(null, SERA), 0);
+prova('i doppioni si contano una volta', () => {
+  const v = validaProvinante({ id: 'X', ruoli: ['Attaccante', 'Attaccante'] }).voce;
+  assert.deepEqual(v.ruoli, ['Attaccante']);
 });
 
-prova('una data nel futuro non lo fa sparire', () => {
-  /* Sara l'orologio di qualcuno a mentire: buttare via il lavoro del
-     capitano per quello sarebbe peggio. */
-  assert.equal(restaDaVivere(new Date(SERA + 3600000).toISOString(), SERA), VIVE_MS);
+prova('oltre il secondo ruolo si taglia', () => {
+  /* Come nel modulo pubblico: uno dice dove gioca, non elenca tutto
+     quello che sa fare. */
+  const v = validaProvinante({ id: 'X',
+    ruoli: ['Portiere', 'Attaccante', 'Trequartista'] }).voce;
+  assert.equal(v.ruoli.length, MAX_RUOLI);
+  assert.deepEqual(v.ruoli, ['Portiere', 'Attaccante']);
 });
 
-prova('nell\'elenco restano solo i vivi', () => {
-  const lista = [
-    { id: 'Fresco', creato: oreFa(1) },
-    { id: 'Vecchio', creato: oreFa(70) },
-    { id: 'Rotto', creato: 'chissa' },
-    { id: 'AlLimite', creato: oreFa(47.5) }
-  ];
-  assert.deepEqual(viviSoltanto(lista, SERA).map(p => p.id), ['Fresco', 'AlLimite']);
+prova('un ruolo inventato non passa nemmeno in compagnia', () => {
+  /* Uno solo sbagliato ferma tutto: meglio un errore che un
+     provinante meta buono, con un reparto in meno e nessuno che se
+     ne accorge. */
+  assert.ok(validaProvinante({ id: 'X', ruoli: ['Attaccante', 'Libero'] }).errore);
+  assert.ok(validaProvinante({ id: 'X', ruoli: [] }).errore);
+});
+
+prova('repartoDi risponde no a un ruolo che non esiste', () => {
+  assert.equal(repartoProvino('Portiere'), 'portieri');
+  assert.equal(repartoProvino('Libero'), null);
+  assert.equal(repartoProvino(''), null);
 });
 
 console.log('\nLe tre partite della serata');
