@@ -1123,40 +1123,56 @@ await provaLenta('un annuncio senza giornata non ha bottoni', async () => {
   assert.deepEqual(n.opzioni.actions, []);
 });
 
-await provaLenta('la conferma porta il bottone per dire il contrario', async () => {
-  /* Qualcuno ha premuto Presente e si e visto registrare assente.
-     Qualunque sia la causa, il danno si ripara nello stesso modo: un
-     tocco sulla stessa notifica. */
+await provaLenta('la conferma NON porta bottoni', async () => {
+  /* Ne ha avuto uno per mezza giornata: l'opposto di quel che era
+     stato registrato, per riparare in un tocco. Idea giusta, posto
+     sbagliato — su Android la conferma compare dove il dito ha appena
+     premuto, e un secondo tocco capovolgeva la risposta appena data.
+
+     Questa prova esiste perche quel bottone non torni per distrazione:
+     se un giorno deve tornare, sara una decisione, e questa riga
+     cambiera insieme al resto. */
   const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
   const n = await sw.arrivaNotifica(CARICO);
   await sw.premi(n, 'presente');
 
   const conferma = sw.mostrate[1];
   assert.equal(conferma.titolo, 'Segnato assente');
-  assert.deepEqual(conferma.opzioni.actions,
-    [{ action: 'presente', title: '✅ Ci sono' }]);
-  assert.equal(conferma.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
+  assert.deepEqual(conferma.opzioni.actions, []);
+  assert.equal(conferma.opzioni.data.data, '2026-09-03',
+    'la data resta: toccando la conferma si apre il sito sulla giornata giusta');
 });
 
-await provaLenta('e quel bottone rimanda davvero il contrario', async () => {
-  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
-  const n = await sw.arrivaNotifica(CARICO);
-  await sw.premi(n, 'presente');
+await provaLenta('una seconda risposta si riconosce da quale notifica veniva', async () => {
+  /* Questa e la prova che serve all'indagine in corso. Se un tocco
+     solo finisce per registrare due risposte, la seconda arriva da un
+     altro evento — e la traccia dice da QUALE notifica, con la sua
+     etichetta e i suoi bottoni.
 
-  // Adesso si preme il bottone della conferma.
-  await sw.premi(sw.mostrate[1], 'presente');
-
-  assert.equal(sw.inviate.length, 2);
-  assert.equal(sw.inviate[1].corpo.stato, 'presente');
-  assert.equal(sw.inviate[1].corpo.data, '2026-09-03');
-});
-
-await provaLenta('dopo un presente il bottone offre l\'assente', async () => {
+     Qui si finge il caso peggiore: un secondo click che arriva dalla
+     conferma. Il service worker lo esegue — non ha modo di sapere se
+     quel tocco lo voleva qualcuno — ma lascia scritto da dove veniva,
+     ed e cosi che lo si riconosce dopo. */
   const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'presente', ora: '21:30' } });
   const n = await sw.arrivaNotifica(CARICO);
   await sw.premi(n, 'presente');
-  assert.deepEqual(sw.mostrate[1].opzioni.actions,
-    [{ action: 'assente', title: '❌ Non ci sono' }]);
+  await sw.premi(sw.mostrate[1], 'assente');
+
+  assert.equal(sw.inviate.length, 2);
+  assert.equal(sw.inviate[1].corpo.stato, 'assente');
+  assert.equal(sw.inviate[1].corpo.traccia.tag, 'esito-2026-09-03',
+    'l’etichetta dice che veniva dalla conferma e non dalla convocazione');
+  assert.equal(sw.inviate[0].corpo.traccia.tag, 'convocazione-2026-09-03');
+});
+
+await provaLenta('nemmeno dopo un presente compare un bottone', async () => {
+  /* L'altro verso della stessa regola: la conferma non offre mai un
+     modo di capovolgersi in un tocco, in nessuna delle due direzioni. */
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'presente', ora: '21:30' } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.deepEqual(sw.mostrate[1].opzioni.actions, []);
+  assert.match(sw.mostrate[1].opzioni.body, /dal sito/);
 });
 
 await provaLenta('se il server rifiuta non si mostra una conferma falsa', async () => {
