@@ -1021,11 +1021,13 @@ await provaLenta('la notifica di una giornata porta i due bottoni', async () => 
 
      Questa prova tiene ferme tutte e due le cose. Se un giorno
      cambiano deve essere una decisione, non una svista — e siccome
-     l'ordine e un esperimento in corso, il giorno che si torna
-     indietro questa riga e il posto dove accorgersene. */
+     L'ordine e stato rovesciato per un'ora, come esperimento, e poi
+     rimesso: due rimedi in volo insieme per lo stesso sintomo sono il
+     modo migliore di non capire quale dei due funzioni. Questa riga e
+     il posto dove accorgersene, in tutti e due i versi. */
   assert.deepEqual(n.opzioni.actions, [
-    { action: 'assente',  title: '❌ Non ci sono' },
-    { action: 'presente', title: '✅ Ci sono' }
+    { action: 'presente', title: '✅ Ci sono' },
+    { action: 'assente',  title: '❌ Non ci sono' }
   ]);
   assert.equal(n.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
 });
@@ -1063,7 +1065,7 @@ await provaLenta('la risposta porta la traccia di cosa ha visto il service worke
   const t = sw.inviate[0].corpo.traccia;
   assert.equal(t.azione, 'presente', 'quel che il browser dice sia stato premuto');
   assert.equal(t.tag, 'convocazione-2026-09-03');
-  assert.deepEqual(t.bottoni, ['assente·❌ Non ci sono', 'presente·✅ Ci sono'],
+  assert.deepEqual(t.bottoni, ['presente·✅ Ci sono', 'assente·❌ Non ci sono'],
     'i bottoni che la notifica aveva davvero addosso, nell’ordine in cui li aveva');
 });
 
