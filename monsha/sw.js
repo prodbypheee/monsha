@@ -33,8 +33,16 @@ self.addEventListener('push', evento => {
   try { d = evento.data ? evento.data.json() : {}; } catch { d = {}; }
 
   const titolo = d.titolo || 'Monaci Shaolin';
+
+  /* Senza bottoni, la notifica deve dire da sola cosa fare. Vale solo
+     per le notifiche di una giornata: su un avviso della bacheca non
+     vorrebbe dire niente. */
+  const corpo = d.data
+    ? (d.testo ? d.testo + '\nTocca qui per rispondere.' : 'Tocca qui per rispondere.')
+    : (d.testo || '');
+
   const opzioni = {
-    body:  d.testo || '',
+    body:  corpo,
     /* Quando la notizia ha un autore, la sua faccia al posto
        dell'icona del club: si riconosce chi ha scritto prima ancora
        di leggere il nome. Se manca, si torna al torii. */
@@ -133,10 +141,34 @@ self.addEventListener('push', evento => {
        l'etichetta della notifica da cui veniva il tocco — convocazione
        o esito — e l'ordine dei bottoni: ogni risposta si porta dietro
        con quale versione e stata data. */
-    actions: d.data
-      ? [{ action: 'presente', title: '✅ Ci sono' },
-         { action: 'assente',  title: '❌ Non ci sono' }]
-      : []
+    /* NIENTE BOTTONI. La notifica torna a essere un avviso: si tocca,
+       si apre il sito sulla giornata giusta, e si risponde li.
+
+       Tre tentativi, tre volte lo stesso finale: preme e risulta
+       assente. La traccia ha detto ogni volta la stessa cosa — una
+       richiesta sola, dalla notifica giusta, con tutti e due i bottoni
+       addosso e nell'ordine giusto, e l'azione riferita e la SECONDA.
+
+       Da qui dentro non si vede quale bottone venga toccato, e ogni
+       rimedio provato era una scommessa su quale fosse il pezzo rotto:
+       le etichette, la posizione, il bottone della conferma. Tre
+       scommesse, tre volte lo stesso risultato.
+
+       Quindi si toglie la scommessa invece di rilanciare. Senza
+       bottoni non esiste piu nessun gesto — ne umano ne del sistema —
+       che possa registrare una risposta che nessuno ha voluto dare. Il
+       tocco fa una cosa sola, e la fa sotto gli occhi di chi lo dà:
+       apre l'app, sulla giornata giusta, con i due bottoni grandi e
+       lontani in mezzo allo schermo.
+
+       Su iPhone e sempre stato cosi, perche Safari i bottoni non li ha
+       mai mostrati. Funziona: un tocco in piu, e nessuno che risulti
+       assente per sbaglio.
+
+       Il codice che risponde all'azione resta dov'e, qualche riga piu
+       sotto. Non costa niente tenerlo, e il giorno che i bottoni
+       tornano — se torneranno — deve tornare anche la sua traccia. */
+    actions: []
   };
 
   evento.waitUntil(self.registration.showNotification(titolo, opzioni));

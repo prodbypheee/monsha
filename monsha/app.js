@@ -2439,6 +2439,31 @@
         return await reg.pushManager.getSubscription();
       }
 
+      /* ---- tenere aggiornato il service worker ----
+         Una correzione ai bottoni della notifica non serve a niente se
+         sul telefono continua a girare la versione di ieri. Ed e
+         successo: per un'ora intera abbiamo guardato le prove di un
+         telefono che aveva ancora addosso il codice di prima, e ogni
+         ragionamento su "adesso dovrebbe funzionare" era campato per
+         aria.
+
+         Il file non e in cache — glielo dice netlify.toml — ma nessuno
+         chiedeva mai al browser di andare a rileggerlo. Adesso lo si
+         chiede a ogni apertura del sito: update() e silenzioso, non
+         chiede permessi, e se non c'e niente di nuovo non fa niente.
+
+         skipWaiting e clients.claim, dentro il service worker, fanno
+         il resto: la versione nuova entra in servizio subito invece di
+         aspettare che si chiudano tutte le schede. */
+      async function aggiornaSW() {
+        if (!('serviceWorker' in navigator)) return;
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg) await reg.update();
+        } catch { /* offline, o il browser non vuole: si riprova alla prossima apertura */ }
+      }
+      aggiornaSW();
+
       async function mostraStatoPush() {
         const attiva = !!(await sottoscrizione()) && Notification.permission === 'granted';
         $('pushStato').textContent = attiva ? 'attive' : 'spente';

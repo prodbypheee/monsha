@@ -1008,28 +1008,36 @@ const CARICO = {
   vai:    'https://monacishaolin.it/area-riservata?giorno=2026-09-03'
 };
 
-await provaLenta('la notifica di una giornata porta i due bottoni', async () => {
+await provaLenta('la notifica non porta bottoni, e dice cosa fare', async () => {
+  /* I bottoni ci sono stati e sono stati tolti. Tre tentativi, tre
+     volte lo stesso finale: preme e risulta assente. Ogni rimedio
+     provato — le etichette, la posizione, il bottone della conferma —
+     era una scommessa su quale fosse il pezzo rotto, e da dentro il
+     service worker non si vede quale bottone venga toccato.
+
+     Senza bottoni non esiste piu nessun gesto che possa registrare una
+     risposta che nessuno ha voluto dare: il tocco apre il sito, e li
+     si risponde sotto i propri occhi.
+
+     Questa prova tiene ferma la scelta. Se un giorno tornano deve
+     essere una decisione, non una svista. */
   const sw = accendiSW();
   const n = await sw.arrivaNotifica(CARICO);
-  /* L'ORDINE E ROVESCIATO DI PROPOSITO, prima il no e poi il si: un
-     telefono riferiva sempre il secondo bottone qualunque cosa
-     venisse premuta, e scambiandoli l'esperimento risponde da solo.
 
-     I titoli non sono decorazione: prima erano Presente e Assente,
-     che finiscono uguali per cinque lettere su sette e che Android
-     scrive in maiuscolo uno accanto all'altro.
-
-     Questa prova tiene ferme tutte e due le cose. Se un giorno
-     cambiano deve essere una decisione, non una svista — e siccome
-     L'ordine e stato rovesciato per un'ora, come esperimento, e poi
-     rimesso: due rimedi in volo insieme per lo stesso sintomo sono il
-     modo migliore di non capire quale dei due funzioni. Questa riga e
-     il posto dove accorgersene, in tutti e due i versi. */
-  assert.deepEqual(n.opzioni.actions, [
-    { action: 'presente', title: '✅ Ci sono' },
-    { action: 'assente',  title: '❌ Non ci sono' }
-  ]);
+  assert.deepEqual(n.opzioni.actions, []);
+  assert.match(n.opzioni.body, /Tocca qui per rispondere/,
+    'senza bottoni la notifica deve dire da sola cosa fare');
   assert.equal(n.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
+  assert.equal(n.opzioni.data.vai, 'https://monacishaolin.it/area-riservata?giorno=2026-09-03',
+    'e l’indirizzo che apre la giornata giusta');
+});
+
+await provaLenta('un avviso della bacheca non si sporca di istruzioni', async () => {
+  /* "Tocca qui per rispondere" sotto un annuncio non vorrebbe dire
+     niente: non c'e niente a cui rispondere. */
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica({ titolo: 'Bacheca', testo: 'Nuovo avviso' });
+  assert.equal(n.opzioni.body, 'Nuovo avviso');
 });
 
 await provaLenta('premendo PRESENTE parte presente', async () => {
@@ -1065,8 +1073,8 @@ await provaLenta('la risposta porta la traccia di cosa ha visto il service worke
   const t = sw.inviate[0].corpo.traccia;
   assert.equal(t.azione, 'presente', 'quel che il browser dice sia stato premuto');
   assert.equal(t.tag, 'convocazione-2026-09-03');
-  assert.deepEqual(t.bottoni, ['presente·✅ Ci sono', 'assente·❌ Non ci sono'],
-    'i bottoni che la notifica aveva davvero addosso, nell’ordine in cui li aveva');
+  assert.deepEqual(t.bottoni, [],
+    'i bottoni che la notifica aveva davvero addosso: adesso nessuno');
 });
 
 await provaLenta('la traccia si porta dietro anche un ordine rovesciato', async () => {
