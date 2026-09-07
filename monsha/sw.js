@@ -184,24 +184,42 @@ self.addEventListener('notificationclick', evento => {
          niente: chi ha appena risposto dal telefono non apre il sito
          per controllare che il telefono abbia fatto quel che diceva
          di fare. */
-      const contrario = salvato === 'presente' ? 'assente' : 'presente';
+      /* IL BOTTONE DEL CONTRARIO E STATO TOLTO.
+
+         L'avevo messo stamattina: la conferma portava un bottone solo,
+         l'opposto di quel che era stato registrato, per riparare in un
+         tocco. Idea giusta, posto sbagliato.
+
+         Su Android la conferma compare come striscia in cima, cioe
+         ESATTAMENTE DOVE IL DITO HA APPENA PREMUTO, un istante dopo
+         averlo fatto. Un secondo tocco — uno di quelli che partono da
+         soli quando il primo sembra non aver fatto niente — finiva
+         sul contrario e capovolgeva la risposta appena data.
+
+         Un rimedio che puo causare la cosa da cui ripara e peggio del
+         danno. La correzione resta, ma per la via lunga: si tocca la
+         conferma, si apre il sito sulla giornata giusta, e li i due
+         bottoni sono grandi e lontani fra loro.
+
+         Se la traccia dovesse dire che non era questo, si rimette —
+         ma altrove, non sotto il dito. */
 
       await self.registration.showNotification(
         salvato === 'presente'
           ? 'Segnato presente' + (esito && esito.ora ? ' — arrivi alle ' + esito.ora : '')
           : 'Segnato assente',
         {
-          body:  'Se volevi dire il contrario, cambia qui sotto.',
+          body:  'Se volevi dire il contrario, tocca qui e cambia dal sito.',
           icon:  ICONA,
           badge: SEGNO,
           tag:   'esito-' + dati.data,
           silent: true,
-          // La data se la porta dietro: e quella che serve al bottone.
+          /* La data se la porta dietro: toccare la conferma apre il
+             sito sulla giornata giusta, dove i due bottoni sono
+             grandi e lontani fra loro. */
           data:  { data: dati.data, vai: dati.vai },
-          actions: dati.data
-            ? [{ action: contrario,
-                 title: contrario === 'presente' ? '✅ Ci sono' : '❌ Non ci sono' }]
-            : []
+          // Nessun bottone: vedi sopra.
+          actions: []
         });
     } catch {
       // Sessione scaduta, accesso revocato, rete assente: invece di

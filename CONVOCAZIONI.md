@@ -532,22 +532,23 @@ vede cosa è successo. Dire «segnato presente» quando non è stato
 segnato niente è il modo più sicuro di ritrovarsi con una squadra in
 meno.
 
-### Il contrario, a portata di pollice
+### Perché la conferma non ha bottoni
 
-La conferma porta con sé **un bottone solo: il contrario di quel che è
-stato registrato**. Se dice «Segnato assente», sotto c’è «No, sono
-presente».
+Per mezza giornata ne ha avuto uno: l’opposto di quel che era stato
+registrato, per riparare in un tocco. Idea giusta, posto sbagliato.
 
-È nato da una segnalazione: qualcuno ha premuto Presente e si è visto
-registrare assente. Fra il dito e il server ci sono parecchie mani che
-non sono le nostre — il launcher, il sistema, il browser — e i due
-bottoni sono uno accanto all’altro e larghi un dito. Qualunque sia la
-causa, il danno è lo stesso e si ripara nello stesso modo: un tocco,
-dalla stessa notifica, senza aprire niente.
+Su Android la conferma compare come striscia in cima, cioè **esattamente
+dove il dito ha appena premuto**, un istante dopo averlo fatto. Un
+secondo tocco — uno di quelli che partono da soli quando il primo
+sembra non aver fatto niente — finiva sul contrario e capovolgeva la
+risposta appena data.
 
-Prima diceva «puoi cambiarla dal sito»: vero, e inutile. Chi ha appena
-risposto dal telefono non apre il sito per controllare che il telefono
-abbia fatto quel che diceva di fare.
+Un rimedio che può causare la cosa da cui ripara è peggio del danno.
+
+La correzione resta, ma per la via lunga: si tocca la conferma, si apre
+il sito sulla giornata giusta, e lì i due bottoni sono grandi e lontani
+fra loro. Una prova tiene fermo che la conferma non abbia bottoni, così
+non tornano per distrazione.
 
 ### Da dove è arrivata la risposta
 
