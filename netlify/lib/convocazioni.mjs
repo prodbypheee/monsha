@@ -169,6 +169,17 @@ const inOra = m =>
 const PRIMA  = 21 * 60 + 30;
 const ULTIMA = 23 * 60 + 30;
 
+/* Toglie la risposta di qualcuno: quella giornata torna a non avere
+   niente scritto, come prima che rispondesse.
+
+   Non e "segnalo assente": sono due cose diverse. Assente vuol dire
+   "ho chiesto e mi ha detto che non viene"; nessuna risposta vuol
+   dire "non lo so ancora", ed e l'unica che rimette quella persona
+   nell'elenco di chi va sollecitato. */
+export async function cancellaRisposta(data, utente) {
+  await convoc().delete(RISPOSTE + data + '/' + chiave(utente.email));
+}
+
 export function oraArrivo(v) {
   const m = inMinuti(v);
   if (m === null) return ORA_DEFAULT;

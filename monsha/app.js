@@ -1872,6 +1872,7 @@
           assenti:  elenco.filter(v => v.stato === 'assente').length,
           muti:     elenco.filter(v => !v.stato).length
         });
+        giornataAperta = !!r.dati.apribile;
         disegnaElenco(elenco);
         vestiOra(data);
         mostraSolleciti(r.dati, elenco);
@@ -1888,6 +1889,32 @@
          chi preme: due capitani che sollecitano lo stesso giocatore a
          un minuto di distanza gli farebbero suonare il telefono due
          volte, che e la cosa che la pausa deve impedire. */
+
+      /* Toglie la risposta di una persona: quella giornata torna a non
+         avere niente scritto per lei.
+
+         Si chiede conferma col nome dentro, perche il bottoncino e
+         piccolo e sta sopra una faccia in mezzo ad altre venti: un
+         tocco per sbaglio qui vuol dire una risposta cancellata a
+         qualcun altro. */
+      async function togliRisposta(id, data, bottone) {
+        if (!confirm('Togliere la risposta di ' + id + '?\n\n' +
+                     'Tornerà fra chi non ha ancora risposto, e potrai sollecitarlo.'))
+          return;
+
+        bottone.disabled = true;
+        const r = await apiConv('togli-risposta', { data, id });
+
+        if (!r.ok) {
+          bottone.disabled = false;
+          esito($('convEsito'), r.dati.errore || 'Non riuscito.');
+          return;
+        }
+
+        await caricaGiornata(data, true);
+        esito($('convEsito'), 'Risposta di ' + id + ' tolta' +
+          (r.dati.toltoDalCampo ? ': era in campo, ed è uscito.' : '.'), true);
+      }
 
       function mostraSolleciti(dati, elenco) {
         const scheda = $('convSolleciti');
@@ -2090,6 +2117,13 @@
       /* La griglia delle facce. Le foto vengono dalla rosa pubblica;
          chi non ha ancora risposto resta in penombra, cosi il capitano
          capisce in un colpo d'occhio chi deve ancora sentire. */
+      /* Se la giornata si puo ancora cambiare. Lo dice il server a
+         ogni lettura, e serve qui perche il bottoncino per togliere
+         una risposta non deve comparire su una giornata chiusa: il
+         server la rifiuterebbe, ed e meglio non offrire un gesto che
+         non si puo fare. */
+      let giornataAperta = false;
+
       function disegnaElenco(voci) {
         const box = $('convElenco');
         const perQuale = attivo;
@@ -2123,6 +2157,26 @@
               segno.textContent = v.stato === 'presente' ? '✓' : '✕';
               segno.title = v.stato;
               avatar.appendChild(segno);
+            }
+
+            /* Togliere la risposta di qualcuno. Compare solo a chi
+               convoca, solo su chi ha risposto, e solo se la giornata
+               e ancora aperta.
+
+               Non e "segnalo assente": quella persona torna a non aver
+               detto niente, e quindi torna nell'elenco di chi va
+               sollecitato. E la differenza fra "non viene" e "non lo
+               so ancora", e sono due informazioni diverse per chi
+               deve fare la formazione. */
+            if (v.stato && giornataAperta && io && io.convoca) {
+              const via = document.createElement('button');
+              via.type = 'button';
+              via.className = 'conv-togli';
+              via.textContent = '✕';
+              via.title = 'Togli la risposta di ' + v.idGioco;
+              via.setAttribute('aria-label', 'Togli la risposta di ' + v.idGioco);
+              via.addEventListener('click', () => togliRisposta(v.idGioco, perQuale, via));
+              avatar.appendChild(via);
             }
 
             const nome = document.createElement('span');
