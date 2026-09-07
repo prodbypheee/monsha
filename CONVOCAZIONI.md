@@ -580,7 +580,13 @@ bottoni che quella notifica aveva davvero addosso**, uno per uno.
 Si legge dal pannello dell’amministratore, in fondo a **«Perché non è
 arrivata?»**:
 
-
+```
+Risposte arrivate oggi dalla notifica:
+  18:04:12  RageeVII → assente   (prima: presente da notifica)
+        azione premuta: assente
+        bottoni sulla notifica: presente·✅ Ci sono   assente·❌ Non ci sono
+        etichetta: convocazione-2026-09-07
+```
 
 Serve a una segnalazione che senza questo non si chiude: *premo
 presente e mi segna assente, sempre*. Da dentro il service worker il
