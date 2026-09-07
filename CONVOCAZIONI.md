@@ -529,6 +529,17 @@ risponde da un telefono non ha modo di mostrare cosa è partito, e senza
 questa riga una segnalazione come «ho premuto presente e mi segna
 assente» si può solo provare a indovinare.
 
+### La campanella nell’elenco
+
+Chi convoca vede una 🔔 accanto a chi ha risposto **dai bottoni della
+notifica**. Risponde a una domanda sola, e senza chiedere niente a
+nessuno: quella risposta l’ha scritta la notifica o il sito? Chi
+risponde da un telefono non ha modo di far vedere cosa è partito, e
+finora l’unico modo di saperlo era fidarsi del racconto.
+
+Sulle risposte scritte prima che il campo esistesse non compare: di
+quelle non lo sappiamo, e inventarlo sarebbe peggio che non dirlo.
+
 ### Le prove
 
 I bottoni della notifica erano l'unico pezzo del sito **senza nessuna
