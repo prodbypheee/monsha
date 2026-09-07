@@ -54,9 +54,28 @@ self.addEventListener('push', evento => {
        riguarda una giornata di allenamento. Su un annuncio della
        bacheca "Presente / Assente" non vorrebbe dire niente, e
        toccarli non avrebbe nessun effetto. */
+    /* I due bottoni NON si chiamano piu Presente e Assente.
+
+       PRESENTE e ASSENTE finiscono uguali per cinque lettere su
+       sette, sono larghi uguale, e Android li scrive in maiuscolo uno
+       accanto all'altro in una striscia alta un dito. Da mezzo metro,
+       col telefono in mano mentre si fa altro, sono la stessa parola.
+
+       Qualcuno ha premuto Presente e il server ha ricevuto assente.
+       Il codice qui sotto manda quel che riceve — c'e una prova che lo
+       verifica — e la conferma ha confermato che dall'altra parte e
+       arrivato assente. Quindi quel che e andato storto sta fra il
+       dito e l'azione. Fra le spiegazioni possibili, due parole che si
+       somigliano cosi e la piu semplice, ed e anche l'unica che si
+       puo togliere di mezzo invece di discuterne.
+
+       Adesso sono lunghe diverse, cominciano diverse, e portano
+       ognuna il suo segno davanti. Gli identificativi restano quelli
+       di prima: cambia cosa legge chi preme, non cosa capisce il
+       server. */
     actions: d.data
-      ? [{ action: 'presente', title: 'Presente' },
-         { action: 'assente',  title: 'Assente'  }]
+      ? [{ action: 'presente', title: '✅ Ci sono' },
+         { action: 'assente',  title: '❌ Non ci sono' }]
       : []
   };
 
@@ -159,7 +178,7 @@ self.addEventListener('notificationclick', evento => {
           data:  { data: dati.data, vai: dati.vai },
           actions: dati.data
             ? [{ action: contrario,
-                 title: contrario === 'presente' ? 'No, sono presente' : 'No, sono assente' }]
+                 title: contrario === 'presente' ? '✅ Ci sono' : '❌ Non ci sono' }]
             : []
         });
     } catch {

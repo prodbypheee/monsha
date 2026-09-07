@@ -1011,9 +1011,13 @@ const CARICO = {
 await provaLenta('la notifica di una giornata porta i due bottoni', async () => {
   const sw = accendiSW();
   const n = await sw.arrivaNotifica(CARICO);
+  /* I titoli non sono decorazione: PRESENTE e ASSENTE finivano uguali
+     per cinque lettere su sette, e Android li scrive in maiuscolo uno
+     accanto all'altro. Questa prova tiene ferma la distanza fra i due,
+     che e la cosa che si e rotta davvero. */
   assert.deepEqual(n.opzioni.actions, [
-    { action: 'presente', title: 'Presente' },
-    { action: 'assente',  title: 'Assente'  }
+    { action: 'presente', title: '✅ Ci sono' },
+    { action: 'assente',  title: '❌ Non ci sono' }
   ]);
   assert.equal(n.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
 });
@@ -1093,7 +1097,7 @@ await provaLenta('la conferma porta il bottone per dire il contrario', async () 
   const conferma = sw.mostrate[1];
   assert.equal(conferma.titolo, 'Segnato assente');
   assert.deepEqual(conferma.opzioni.actions,
-    [{ action: 'presente', title: 'No, sono presente' }]);
+    [{ action: 'presente', title: '✅ Ci sono' }]);
   assert.equal(conferma.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
 });
 
@@ -1115,7 +1119,7 @@ await provaLenta('dopo un presente il bottone offre l\'assente', async () => {
   const n = await sw.arrivaNotifica(CARICO);
   await sw.premi(n, 'presente');
   assert.deepEqual(sw.mostrate[1].opzioni.actions,
-    [{ action: 'assente', title: 'No, sono assente' }]);
+    [{ action: 'assente', title: '❌ Non ci sono' }]);
 });
 
 await provaLenta('se il server rifiuta non si mostra una conferma falsa', async () => {
