@@ -1042,6 +1042,43 @@ await provaLenta('premendo ASSENTE parte assente', async () => {
   assert.equal(sw.inviate[0].corpo.stato, 'assente');
 });
 
+await provaLenta('la risposta porta la traccia di cosa ha visto il service worker', async () => {
+  /* Uno preme il bottone di sinistra e il server riceve assente,
+     sempre. Da dentro il service worker il dito non si vede, ma si
+     vede cosa il browser dice sia stato premuto e QUALI BOTTONI la
+     notifica avesse addosso in quel momento. E l'unica cosa che
+     trasforma un racconto in una prova. */
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+
+  const t = sw.inviate[0].corpo.traccia;
+  assert.equal(t.azione, 'presente', 'quel che il browser dice sia stato premuto');
+  assert.equal(t.tag, 'convocazione-2026-09-03');
+  assert.deepEqual(t.bottoni, ['presente·✅ Ci sono', 'assente·❌ Non ci sono'],
+    'i bottoni che la notifica aveva davvero addosso');
+});
+
+await provaLenta('la traccia si porta dietro anche un ordine rovesciato', async () => {
+  /* Se un giorno la notifica arrivasse con i bottoni al contrario, la
+     traccia lo direbbe invece di lasciarcelo dedurre. Qui si finge
+     quel caso a mano: la prova e che il service worker copia quel che
+     trova, senza rimetterlo in ordine per conto suo. */
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.spara('notificationclick', {
+    action: 'assente',
+    notification: {
+      data: n.opzioni.data, tag: 'strano', title: 'Allenamento oggi', close: () => {},
+      actions: [{ action: 'assente', title: '✅ Ci sono' },
+                { action: 'presente', title: '❌ Non ci sono' }]
+    }
+  });
+  assert.deepEqual(sw.inviate[0].corpo.traccia.bottoni,
+    ['assente·✅ Ci sono', 'presente·❌ Non ci sono']);
+  assert.equal(sw.inviate[0].corpo.traccia.tag, 'strano');
+});
+
 await provaLenta('la risposta dice da dove viene', async () => {
   const sw = accendiSW();
   const n = await sw.arrivaNotifica(CARICO);

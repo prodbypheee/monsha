@@ -2645,6 +2645,32 @@
           'Oggi è partito:'
         ];
 
+        /* Le risposte arrivate oggi dai bottoni della notifica, con
+           dentro quel che il service worker aveva sotto gli occhi.
+           Si stampa tutto senza interpretare niente: e materiale da
+           indagine, e la prima cosa da non fare e riassumerlo. */
+        const notifiche = (d.dallaNotifica || []).length ? (() => {
+          const r = ['', 'Risposte arrivate oggi dalla notifica:'];
+          d.dallaNotifica.forEach(v => {
+            const ora = v.quando
+              ? new Date(v.quando).toLocaleTimeString('it-IT',
+                  { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              : '?';
+            r.push('  ' + ora + '  ' + v.idGioco + ' → ' + v.stato +
+              (v.prima ? '   (prima: ' + v.prima.stato +
+                (v.prima.da ? ' da ' + v.prima.da : '') + ')' : ''));
+            if (v.traccia) {
+              r.push('        azione premuta: ' + (v.traccia.azione || '(nessuna)'));
+              if (v.traccia.bottoni && v.traccia.bottoni.length)
+                r.push('        bottoni sulla notifica: ' + v.traccia.bottoni.join('   '));
+              if (v.traccia.tag) r.push('        etichetta: ' + v.traccia.tag);
+            } else {
+              r.push('        nessuna traccia: telefono con il codice vecchio');
+            }
+          });
+          return r;
+        })() : [];
+
         Object.entries(fasce).forEach(([k, eti]) => {
           const q = d.inviate[k];
           righe.push('  ' + eti.padEnd(22) +
@@ -2672,7 +2698,9 @@
         else verdetto = 'Le fasce già passate risultano partite: se un telefono non ha suonato, il problema è su quel telefono.';
 
         righe.push('', verdetto);
-        box.textContent = righe.join('\n');
+        // In fondo, dopo il verdetto: e materiale da indagine, non
+        // la risposta alla domanda del bottone.
+        box.textContent = righe.concat(notifiche).join('\n');
       });
 
       /* Riempie solo i due bottoni in cima, senza toccare la giornata

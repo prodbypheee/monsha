@@ -82,11 +82,23 @@ export function accendiSW(file = 'monsha/sw.js', risposta = { ok: true, dati: {}
     return mostrate[mostrate.length - 1];
   };
 
-  /* Preme un bottone della notifica appena arrivata. */
+  /* Preme un bottone della notifica appena arrivata.
+
+     La notifica che si consegna al click porta addosso quel che
+     porterebbe quella vera — etichetta, titolo, bottoni — e non solo
+     i dati. Prima ne dava una spoglia, e una prova sulla traccia
+     passava per finta: il service worker leggeva undefined ovunque e
+     nessuno se ne accorgeva. */
   const premi = async (notifica, azione) =>
     spara('notificationclick', {
       action: azione,
-      notification: { data: notifica.opzioni.data, close: () => {} }
+      notification: {
+        data:    notifica.opzioni.data,
+        tag:     notifica.opzioni.tag,
+        title:   notifica.titolo,
+        actions: notifica.opzioni.actions || [],
+        close:   () => {}
+      }
     });
 
   return { ascoltatori, inviate, mostrate, aperte, spara, arrivaNotifica, premi };

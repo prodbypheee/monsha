@@ -115,7 +115,25 @@ export async function leggiRisposte(data) {
    un telefono non ha modo di mostrare cosa e partito, e senza questa
    riga una segnalazione come "ho premuto presente e mi segna assente"
    si puo solo provare a indovinare. */
-export async function salvaRisposta(data, utente, stato, ora, da) {
+/* La traccia arriva dal telefono di qualcun altro: si prende quel che
+   serve, tagliato corto, e si butta il resto. Non e sfiducia verso
+   Rage, e che qui dentro finisce roba che nessuno di noi ha scritto e
+   che verra riletta e mostrata: un tetto alla lunghezza costa una
+   riga e toglie di mezzo la questione. */
+export function ripulisciTraccia(t) {
+  if (!t || typeof t !== 'object') return null;
+  const testo = (v, n) => String(v == null ? '' : v).slice(0, n);
+  const bottoni = Array.isArray(t.bottoni)
+    ? t.bottoni.slice(0, 4).map(v => testo(v, 60)) : [];
+  return {
+    azione:  testo(t.azione, 20),
+    tag:     testo(t.tag, 60),
+    titolo:  testo(t.titolo, 80),
+    bottoni
+  };
+}
+
+export async function salvaRisposta(data, utente, stato, ora, da, traccia) {
   const k = chiave(utente.email);
   const dove = RISPOSTE + data + '/' + k;
 
@@ -137,6 +155,7 @@ export async function salvaRisposta(data, utente, stato, ora, da) {
     stato,                      // 'presente' oppure 'assente'
     ora:     ora || null,       // a che ora arriva; solo per i presenti
     da:      da === 'notifica' ? 'notifica' : 'app',
+    traccia: ripulisciTraccia(traccia),
     quando:  new Date().toISOString(),
     prima:   vecchia
       ? { stato: vecchia.stato, da: vecchia.da || null, quando: vecchia.quando || null }
