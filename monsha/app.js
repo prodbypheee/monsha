@@ -2193,6 +2193,25 @@
               nome.appendChild(q);
             }
 
+            /* Una campanella su chi ha risposto dai bottoni dentro la
+               notifica, e solo per chi convoca.
+
+               Serve a rispondere a una domanda sola, e senza chiedere
+               niente a nessuno: quella risposta l'ha scritta la
+               notifica o il sito? Chi risponde da un telefono non ha
+               modo di far vedere cosa e partito, e finora l'unico modo
+               di saperlo era fidarsi del racconto.
+
+               Su chi ha risposto prima che il campo esistesse non
+               compare: di quelle risposte non lo sappiamo. */
+            if (v.da === 'notifica' && io && io.convoca) {
+              const b = document.createElement('em');
+              b.className = 'conv-da';
+              b.textContent = '🔔';
+              b.title = 'Ha risposto dai bottoni della notifica';
+              nome.appendChild(b);
+            }
+
             tessera.append(avatar, nome);
 
             if (v.incarico && v.incarico !== 'giocatore') {

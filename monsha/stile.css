@@ -1142,6 +1142,10 @@ button, input, select, textarea { font: inherit; }
 }
 .conv-togli:disabled { opacity: .3; cursor: default; }
 
+/* La campanella di chi ha risposto dalla notifica: piccola, accanto
+   all'ora, e non deve pesare piu del nome che sta sopra. */
+.conv-da { font-style: normal; font-size: 10px; margin-left: 5px; opacity: .75; }
+
 .conv-nome {
   display: block; margin-top: 9px; font-size: 11.5px;
   color: var(--txt-3); word-break: break-word; line-height: 1.35;

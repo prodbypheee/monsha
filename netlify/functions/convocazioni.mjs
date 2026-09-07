@@ -106,6 +106,11 @@ async function giorno(req, segreto, indirizzo) {
       // dire niente, e mostrarla confonderebbe l'elenco.
       ora:      (r && r.stato === 'presente') ? (r.ora || ORA_DEFAULT) : null,
       quando:   r ? r.quando : null,
+      /* Da dove e nata: 'notifica' se dai bottoni dentro la notifica,
+         'app' se dal sito. Le risposte scritte prima che questo campo
+         esistesse non hanno niente, ed e giusto cosi: di quelle non
+         lo sappiamo, e inventarlo sarebbe peggio che non dirlo. */
+      da:       r ? (r.da || null) : null,
       io:       u.email === g.utente.email
     };
   }).sort((a, b) => a.idGioco.localeCompare(b.idGioco, 'it'));
