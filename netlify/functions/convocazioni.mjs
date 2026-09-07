@@ -111,6 +111,10 @@ async function giorno(req, segreto, indirizzo) {
          esistesse non hanno niente, ed e giusto cosi: di quelle non
          lo sappiamo, e inventarlo sarebbe peggio che non dirlo. */
       da:       r ? (r.da || null) : null,
+      /* La risposta di prima, ma solo quando dice qualcosa: se era
+         gia quella non c'e niente da raccontare. Serve a vedere una
+         risposta che ne ha sovrascritta un'altra, e da dove. */
+      prima:    (r && r.prima && r.prima.stato && r.prima.stato !== r.stato) ? r.prima : null,
       io:       u.email === g.utente.email
     };
   }).sort((a, b) => a.idGioco.localeCompare(b.idGioco, 'it'));

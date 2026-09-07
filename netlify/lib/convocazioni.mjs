@@ -117,14 +117,30 @@ export async function leggiRisposte(data) {
    si puo solo provare a indovinare. */
 export async function salvaRisposta(data, utente, stato, ora, da) {
   const k = chiave(utente.email);
-  await convoc().setJSON(RISPOSTE + data + '/' + k, {
+  const dove = RISPOSTE + data + '/' + k;
+
+  /* La risposta di prima resta scritta dentro quella nuova: una sola,
+     non uno storico. Costa una lettura e non fa crescere niente,
+     perche la vecchia "prima" viene buttata ogni volta.
+
+     Serve a una cosa che senza di lei non si vede: se una risposta ne
+     ha sovrascritta un'altra, e da dove. "Presente dalla notifica alle
+     18:03, poi assente dalla notifica alle 18:03" e una diagnosi;
+     "assente" e basta non dice niente. Chi risponde da un telefono non
+     ha modo di far vedere cosa e partito. */
+  const vecchia = await convoc().get(dove, { type: 'json' }).catch(() => null);
+
+  await convoc().setJSON(dove, {
     chiave:  k,
     email:   utente.email,
     idGioco: utente.idGioco,
     stato,                      // 'presente' oppure 'assente'
     ora:     ora || null,       // a che ora arriva; solo per i presenti
     da:      da === 'notifica' ? 'notifica' : 'app',
-    quando:  new Date().toISOString()
+    quando:  new Date().toISOString(),
+    prima:   vecchia
+      ? { stato: vecchia.stato, da: vecchia.da || null, quando: vecchia.quando || null }
+      : null
   });
 }
 

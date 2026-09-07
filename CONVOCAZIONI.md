@@ -557,6 +557,20 @@ finora l’unico modo di saperlo era fidarsi del racconto.
 Sulle risposte scritte prima che il campo esistesse non compare: di
 quelle non lo sappiamo, e inventarlo sarebbe peggio che non dirlo.
 
+### La risposta di prima
+
+Ogni risposta si porta dentro **quella che ha sovrascritto**: stato,
+provenienza e ora. Una sola, non uno storico — la vecchia «prima»
+viene buttata a ogni scrittura, quindi non cresce niente.
+
+Nell’elenco, a chi convoca, compare in piccolo sotto il nome quando le
+due sono diverse: «prima presente 🔔».
+
+Senza, «assente» non dice niente. Con, si legge una diagnosi:
+*presente dalla notifica, poi assente dalla notifica nello stesso
+minuto* è una cosa; *presente dalla notifica, poi assente dal sito* è
+un’altra, e vuol dire semplicemente che qualcuno ha cambiato idea.
+
 ### Le prove
 
 I bottoni della notifica erano l'unico pezzo del sito **senza nessuna

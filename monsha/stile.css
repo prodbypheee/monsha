@@ -1146,6 +1146,14 @@ button, input, select, textarea { font: inherit; }
    all'ora, e non deve pesare piu del nome che sta sopra. */
 .conv-da { font-style: normal; font-size: 10px; margin-left: 5px; opacity: .75; }
 
+/* "prima assente": la risposta che questa ha sovrascritto. In punta
+   di piedi, sotto tutto: e una nota per chi indaga, non una notizia
+   per chi guarda l'elenco. */
+.conv-prima {
+  display: block; font-style: normal; font-size: 9.5px;
+  color: var(--txt-5); margin-top: 2px; letter-spacing: .04em;
+}
+
 .conv-nome {
   display: block; margin-top: 9px; font-size: 11.5px;
   color: var(--txt-3); word-break: break-word; line-height: 1.35;
