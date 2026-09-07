@@ -73,8 +73,36 @@ self.addEventListener('push', evento => {
        ognuna il suo segno davanti. Gli identificativi restano quelli
        di prima: cambia cosa legge chi preme, non cosa capisce il
        server. */
-    /* I DUE BOTTONI SONO INVERTITI DI PROPOSITO: prima il no, poi il
-       si. Non e una scelta di stile, e un esperimento.
+    /* ORDINE NATURALE: prima il si, poi il no.
+
+       Per un'ora sono stati invertiti, come esperimento: un telefono
+       riferiva sempre il secondo bottone qualunque cosa venisse
+       premuta, e scambiandoli si sarebbe capito se il guasto era
+       nella posizione.
+
+       L'esperimento e stato ritirato prima ancora di partire, perche
+       le foto di quel telefono hanno mostrato una cosa che cambia il
+       quadro: quella conferma aveva ANCORA il bottone del contrario,
+       cioe girava una versione precedente. Ne la rimozione di quel
+       bottone ne l'inversione erano mai arrivate fin li.
+
+       E allora c'erano due rimedi in volo per lo stesso sintomo, che
+       e il modo migliore di non capire quale dei due funzioni.
+       Peggio: se quel telefono sbaglia davvero posizione, con
+       l'ordine rovesciato quella persona premerebbe il no e
+       risulterebbe presente — la risposta giusta per il motivo
+       sbagliato, e l'indagine si chiuderebbe in bianco.
+
+       Quindi si cambia una cosa alla volta. Per ora resta in campo
+       solo la conferma senza bottoni, che e un guaio nostro certo. Se
+       il sintomo sopravvive a quella, allora e la posizione, e a quel
+       punto invertire diventa una correzione invece di una scommessa.
+
+       I titoli restano quelli nuovi: ✅ e ❌ non si possono
+       confondere, e PRESENTE e ASSENTE finivano uguali per cinque
+       lettere su sette.
+
+       Quel che segue e la storia di come ci siamo arrivati.
 
        La traccia di una risposta sbagliata diceva questo:
 
@@ -88,21 +116,26 @@ self.addEventListener('push', evento => {
        ogni tentativo.
 
        Da qui dentro non si vede quale pixel venga toccato, e non si
-       vedra mai. Ma se qualcosa preme sistematicamente il secondo
-       bottone — un orologio che ne mostra uno solo, una tendina che
-       li accorpa, un dito che va a memoria — allora scambiandoli
-       quella persona da domani risulta PRESENTE, e l'esperimento
-       risponde da solo alla domanda che il codice non puo risolvere.
+       vedra mai. Ma c'e un'altra strada che spiega la stessa cosa
+       senza guasti misteriosi, ed e nostra:
 
-       Se invece continua a risultare assente, allora non e la
-       posizione: e l'etichetta o l'identificativo, e si guarda li.
+         preme "Ci sono"  ->  registrato presente
+         la conferma compare NELLO STESSO PUNTO un istante dopo,
+         col bottone "Non ci sono" sotto
+         un secondo tocco finisce li  ->  registrato assente
+         la conferma si riscrive: "Segnato assente"
 
-       In tutti e due i casi la traccia lo dira, perche registra anche
-       l'ordine dei bottoni: da ora in poi ogni risposta si porta
-       dietro con quale versione e stata data. */
+       Che e esattamente quel che si vedeva sul telefono. Per questo
+       il bottone della conferma e stato tolto, ed e la sola cosa che
+       adesso resta in campo.
+
+       La traccia lo dira in tutti e due i casi, perche registra anche
+       l'etichetta della notifica da cui veniva il tocco — convocazione
+       o esito — e l'ordine dei bottoni: ogni risposta si porta dietro
+       con quale versione e stata data. */
     actions: d.data
-      ? [{ action: 'assente',  title: '❌ Non ci sono' },
-         { action: 'presente', title: '✅ Ci sono' }]
+      ? [{ action: 'presente', title: '✅ Ci sono' },
+         { action: 'assente',  title: '❌ Non ci sono' }]
       : []
   };
 
