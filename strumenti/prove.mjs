@@ -1082,6 +1082,42 @@ await provaLenta('un annuncio senza giornata non ha bottoni', async () => {
   assert.deepEqual(n.opzioni.actions, []);
 });
 
+await provaLenta('la conferma porta il bottone per dire il contrario', async () => {
+  /* Qualcuno ha premuto Presente e si e visto registrare assente.
+     Qualunque sia la causa, il danno si ripara nello stesso modo: un
+     tocco sulla stessa notifica. */
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+
+  const conferma = sw.mostrate[1];
+  assert.equal(conferma.titolo, 'Segnato assente');
+  assert.deepEqual(conferma.opzioni.actions,
+    [{ action: 'presente', title: 'No, sono presente' }]);
+  assert.equal(conferma.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
+});
+
+await provaLenta('e quel bottone rimanda davvero il contrario', async () => {
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+
+  // Adesso si preme il bottone della conferma.
+  await sw.premi(sw.mostrate[1], 'presente');
+
+  assert.equal(sw.inviate.length, 2);
+  assert.equal(sw.inviate[1].corpo.stato, 'presente');
+  assert.equal(sw.inviate[1].corpo.data, '2026-09-03');
+});
+
+await provaLenta('dopo un presente il bottone offre l\'assente', async () => {
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'presente', ora: '21:30' } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.deepEqual(sw.mostrate[1].opzioni.actions,
+    [{ action: 'assente', title: 'No, sono assente' }]);
+});
+
 await provaLenta('se il server rifiuta non si mostra una conferma falsa', async () => {
   /* Sessione scaduta, giornata chiusa, rete assente: si apre il sito,
      dove la persona vede cosa e successo. Dire "segnato presente"

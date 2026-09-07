@@ -126,16 +126,41 @@ self.addEventListener('notificationclick', evento => {
          momento esatto in cui succede. */
       const salvato = (esito && esito.stato) || azione;
 
+      /* IL CONTRARIO, A PORTATA DI POLLICE.
+
+         Qualcuno ha premuto Presente e si e visto registrare assente.
+         Non sappiamo ancora perche — i due bottoni sono uno accanto
+         all'altro e larghi un dito, e fra il dito e il server ci sono
+         parecchie mani che non sono le nostre.
+
+         Qualunque sia la causa, il danno e lo stesso e si ripara
+         nello stesso modo: la conferma porta con se il bottone per
+         dire il contrario. Un tocco, dalla stessa notifica, senza
+         aprire niente. Non e la spiegazione, e il modo di non
+         pagarla.
+
+         "Puoi cambiarla dal sito" restava vero e non serviva a
+         niente: chi ha appena risposto dal telefono non apre il sito
+         per controllare che il telefono abbia fatto quel che diceva
+         di fare. */
+      const contrario = salvato === 'presente' ? 'assente' : 'presente';
+
       await self.registration.showNotification(
         salvato === 'presente'
           ? 'Segnato presente' + (esito && esito.ora ? ' — arrivi alle ' + esito.ora : '')
           : 'Segnato assente',
         {
-          body:  'Risposta registrata. Puoi cambiarla dal sito.',
+          body:  'Se volevi dire il contrario, cambia qui sotto.',
           icon:  ICONA,
           badge: SEGNO,
           tag:   'esito-' + dati.data,
-          silent: true
+          silent: true,
+          // La data se la porta dietro: e quella che serve al bottone.
+          data:  { data: dati.data, vai: dati.vai },
+          actions: dati.data
+            ? [{ action: contrario,
+                 title: contrario === 'presente' ? 'No, sono presente' : 'No, sono assente' }]
+            : []
         });
     } catch {
       // Sessione scaduta, accesso revocato, rete assente: invece di
