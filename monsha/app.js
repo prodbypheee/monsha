@@ -1552,7 +1552,9 @@
          sfasato si sbaglia di poco e per poco, perche a ogni rilettura
          della giornata arrivano i secondi giusti — e comunque la pausa
          vera la fa rispettare il server, non questo conto. */
-      let scadenze = {};
+      /* Quando e partito l'ultimo sollecito, per persona. Non frena
+         niente: e solo quel che il bottone racconta. */
+      let mandati = {};
       let bottoniSollecito = {};
 
       /* ---- a che ora arrivi ----
@@ -1930,9 +1932,12 @@
         // I secondi del server diventano istanti locali. Si riparte
         // dalla risposta del server ogni volta: e lui che tiene il
         // conto, questo e solo il modo di mostrarlo.
-        scadenze = {};
+        /* Il server manda i secondi passati; qui diventano un istante
+           locale, cosi la scritta invecchia da sola senza chiedere
+           niente a nessuno. */
+        mandati = {};
         Object.entries(dati.solleciti || {}).forEach(([k, s]) => {
-          scadenze[k] = Date.now() + s * 1000;
+          mandati[k] = Date.now() - s * 1000;
         });
 
         const muti = elenco.filter(v => !v.stato);
@@ -1941,7 +1946,7 @@
           ? muti.length + (muti.length === 1 ? ' persona' : ' persone')
           : 'nessuno';
         $('solNota').textContent = muti.length
-          ? 'Una persona alla volta. Dopo averne sollecitato uno, per quella persona si riparte fra quindici minuti.'
+          ? 'Una persona alla volta. Il bottone dice da quanto l’hai già chiamata.'
           : '';
 
         const box = $('solElenco');
@@ -1986,8 +1991,15 @@
             btn.className = 'sol-btn';
             btn.addEventListener('click', () => sollecita(v.idGioco, btn));
 
+            /* Da quanto e stato chiamato l'ultima volta, accanto al
+               bottone: e l'informazione che prima stava dentro il
+               conto alla rovescia, senza il divieto che si portava
+               dietro. */
+            const quando = document.createElement('em');
+            quando.className = 'sol-quando';
+
             bottoniSollecito[idPiatto(v.idGioco)] = btn;
-            riga.append(faccia, nome, btn);
+            riga.append(faccia, nome, quando, btn);
             box.appendChild(riga);
           });
 
@@ -1995,36 +2007,67 @@
         });
       }
 
-      /* Aggiorna solo le scritte dei bottoni: si chiama ogni dieci
-         secondi e non deve ridisegnare niente, altrimenti la lista
-         sfarfalla sotto le dita. */
+      /* Aggiorna solo le scritte: si chiama ogni dieci secondi e non
+         deve ridisegnare niente, altrimenti la lista sfarfalla sotto
+         le dita.
+
+         NON SPEGNE PIU IL BOTTONE. C'era un conto alla rovescia — "fra
+         12 min" — e sotto c'era un divieto di un quarto d'ora. Frenava
+         anche quando serviva ripremere davvero: la prima notifica non
+         arriva perche il telefono era scarico, e ci si trovava davanti
+         un bottone spento e nessun modo di insistere.
+
+         Al suo posto, accanto al bottone, da quanto e stato chiamato.
+         Non vieta: racconta. Se e passato poco il server chiede
+         conferma una volta, e chi preme decide. */
       function battito() {
         Object.entries(bottoniSollecito).forEach(([k, btn]) => {
-          const manca = scadenze[k] ? scadenze[k] - Date.now() : 0;
-          if (manca > 0) {
-            const min = Math.ceil(manca / 60000);
-            btn.disabled = true;
-            btn.textContent = 'fra ' + min + ' min';
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'Sollecita';
-          }
+          const da = mandati[k];
+          btn.disabled = false;
+          btn.textContent = da === undefined ? 'Sollecita' : 'Di nuovo';
+
+          const nota = btn.parentElement && btn.parentElement.querySelector('.sol-quando');
+          if (nota) nota.textContent = da === undefined ? '' : daQuanto(da);
         });
       }
       setInterval(battito, 10000);
 
-      async function sollecita(idGioco, btn) {
+      /* "appena adesso", "3 min fa", "un'ora fa". Sotto il minuto non
+         si scrive un numero: fra "0 min fa" e "appena adesso", la
+         seconda e quella che si legge senza pensarci. */
+      function daQuanto(quandoMs) {
+        const min = Math.floor((Date.now() - quandoMs) / 60000);
+        if (min < 1)  return 'appena adesso';
+        if (min < 60) return min + ' min fa';
+        const ore = Math.round(min / 60);
+        return ore === 1 ? 'un’ora fa' : ore + ' ore fa';
+      }
+
+      async function sollecita(idGioco, btn, insisti) {
         const k = idPiatto(idGioco);
         btn.disabled = true;
         btn.textContent = 'Mando…';
         esito($('solEsito'), '');
 
-        const r = await apiConv('sollecita', { data: attivo, idGioco });
+        const r = await apiConv('sollecita',
+          { data: attivo, idGioco, ...(insisti ? { insisti: true } : {}) });
 
         if (!r.ok) {
-          // Se il server dice quanto manca, gli si crede: e lui che
-          // tiene il conto vero.
-          if (r.dati.attesa) scadenze[k] = Date.now() + r.dati.attesa * 1000;
+          /* Sollecitato da poco. Il server non lo vieta, lo fa notare:
+             si chiede una volta e chi preme decide. La domanda dice da
+             quanto, perche e l'unica cosa che serve per rispondere. */
+          if (r.dati.attesa !== undefined && !insisti) {
+            const passati = 15 - Math.ceil(r.dati.attesa / 60);
+            const quanto = passati < 1 ? 'meno di un minuto fa' : passati + ' minuti fa';
+            if (confirm('Hai già chiamato ' + idGioco + ' ' + quanto + '.\n\n' +
+                        'Gli faccio suonare di nuovo il telefono?'))
+              return sollecita(idGioco, btn, true);
+
+            esito($('solEsito'), '');
+            battito();
+            return;
+          }
+
           esito($('solEsito'), r.dati.errore || 'Non sono riuscito a sollecitare.');
           // Puo aver risposto proprio mentre guardavi l'elenco: allora
           // l'elenco e vecchio e va riletto.
@@ -2043,7 +2086,7 @@
           return;
         }
 
-        scadenze[k] = Date.now() + (r.dati.attesa || 900) * 1000;
+        mandati[k] = Date.now();
         esito($('solEsito'), 'Fatto: ' + idGioco + ' è stato avvisato.', true);
         battito();
       }
@@ -2784,7 +2827,7 @@
         $('arOggi').hidden = true;
         $('convPresenze').hidden = true;
         $('convSolleciti').hidden = true;
-        scadenze = {}; bottoniSollecito = {};
+        mandati = {}; bottoniSollecito = {};
         oreScelte = {}; mioStato = {};
         sopra = null;
         io = null; giorni = []; scelti = new Set(); attivo = null;

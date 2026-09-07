@@ -1842,6 +1842,13 @@ body.con-presa #pan-formazione { padding-bottom: 124px; }
 }
 .sol-riga:first-child { border-top: 0; }
 .sol-nome { font-size: 13.5px; color: var(--txt-2); word-break: break-word; }
+/* Da quanto e stato chiamato, accanto al bottone. Piccolo e spento:
+   e un promemoria per chi preme, non una notizia. */
+.sol-quando {
+  font-style: normal; font-size: 10px; color: var(--txt-5);
+  white-space: nowrap; margin-right: 2px;
+}
+
 .sol-btn {
   font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .02em;
   padding: 9px 15px; border-radius: 999px; cursor: pointer; white-space: nowrap;

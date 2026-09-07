@@ -29,7 +29,7 @@ import {
 import {
   leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, cancellaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
-  destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
+  destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito, daSollecito,
   PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT, oraTardi, fasciaDi
 } from '../lib/convocazioni.mjs';
 
@@ -124,17 +124,22 @@ async function giorno(req, segreto, indirizzo) {
      lettura d'archivio in piu addosso a ogni rilettura della giornata,
      che adesso avviene da sola ogni mezzo minuto.
 
-     Si mandano i SECONDI CHE MANCANO e non l'ora dell'ultimo
-     sollecito: il conto lo fa il server, che e l'unico orologio di cui
-     ci si possa fidare. Un telefono col fuso sbagliato non deve poter
-     accorciare la pausa. */
+     Si mandano i SECONDI PASSATI dall'ultimo sollecito, e non l'ora a
+     cui e partito: il conto lo fa il server, che e l'unico orologio di
+     cui ci si possa fidare quando dall'altra parte c'e un telefono col
+     fuso di chissa dove.
+
+     Erano i secondi che MANCAVANO, e servivano a spegnere il bottone
+     con un conto alla rovescia sopra. Adesso il bottone non si spegne
+     piu e la pausa chiede conferma invece di vietare, quindi quel che
+     serve e l'altra meta: da quanto. */
   let solleciti;
   if (puoConvocare(g.utente)) {
     const segnati = await leggiSolleciti(data);
     solleciti = {};
     membri.forEach(u => {
-      const manca = attesaSollecito((segnati[chiave(u.email)] || {}).quando);
-      if (manca > 0) solleciti[normId(u.idGioco)] = Math.ceil(manca / 1000);
+      const passato = daSollecito((segnati[chiave(u.email)] || {}).quando);
+      if (passato !== null) solleciti[normId(u.idGioco)] = Math.round(passato / 1000);
     });
   }
 
@@ -483,12 +488,31 @@ async function sollecita(req, segreto) {
   if (risposte[chiave(chi.email)])
     return json({ errore: 'Nel frattempo ha risposto: non serve più.', risposto: true }, 409);
 
+  /* LA PAUSA CHIEDE, NON VIETA PIU.
+
+     C'era un quarto d'ora di divieto secco, e serviva a non far
+     tempestare di notifiche chi non aveva ancora risposto. Frenava
+     pero anche quando serviva ripremere davvero — la prima notifica
+     non arriva perche il telefono e scarico, e chi convoca si trova
+     davanti un bottone spento con un numero sopra e nessun modo di
+     insistere.
+
+     La ragione per cui puo bastare una domanda e che dall'altra parte
+     non c'e un automatismo: c'e una persona che sceglie un nome e
+     preme. Chi preme due volte di fila sa cosa sta facendo. La pausa
+     resta come attrito — la prima volta ti fermi e leggi da quanto lo
+     hai gia chiamato — e non come muro.
+
+     Il primo colpo arriva senza insisti, e se e troppo presto si
+     torna indietro con il 429 e i secondi. Il sito lo racconta e
+     richiede lo stesso colpo con insisti, che passa. */
   const segnati = await leggiSolleciti(data);
   const manca = attesaSollecito((segnati[chiave(chi.email)] || {}).quando);
-  if (manca > 0)
+  if (manca > 0 && !corpo.insisti)
     return json({
       errore: 'Sollecitato da poco: riprova fra ' + Math.ceil(manca / 60000) + ' minuti.',
-      attesa: Math.ceil(manca / 1000)
+      attesa: Math.ceil(manca / 1000),
+      idGioco: chi.idGioco
     }, 429);
 
   if (!pushConfigurato())
@@ -512,15 +536,14 @@ async function sollecita(req, segreto) {
      pausa non comincia: sarebbe un quarto d'ora di attesa in cambio di
      niente. Si dice com'e andata invece di far finta di si. */
   if (!partite)
-    return json({ ok: true, partite: 0, attesa: 0, idGioco: chi.idGioco });
+    return json({ ok: true, partite: 0, idGioco: chi.idGioco });
 
   await segnaSollecito(data, chi, g.utente.idGioco);
 
   return json({
     ok: true,
     partite,
-    idGioco: chi.idGioco,
-    attesa: Math.ceil(PAUSA_SOLLECITO_MS / 1000)
+    idGioco: chi.idGioco
   });
 }
 
