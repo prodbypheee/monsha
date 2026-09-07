@@ -2212,6 +2212,23 @@
               nome.appendChild(b);
             }
 
+            /* Ha cambiato idea: si vede da cosa a cosa, e da dove
+               sono arrivate le due risposte. Compare solo quando le
+               due sono diverse, e solo a chi convoca — a tutti gli
+               altri non serve, e su venti facce sarebbe rumore.
+
+               E scritto in piccolo sotto il nome e non dentro un
+               title: mezza squadra risponde dal telefono, e su un
+               telefono un suggerimento che appare passandoci sopra
+               col mouse non lo legge nessuno. */
+            if (v.prima && io && io.convoca) {
+              const s = document.createElement('em');
+              s.className = 'conv-prima';
+              s.textContent = 'prima ' + v.prima.stato +
+                (v.prima.da === 'notifica' ? ' 🔔' : '');
+              nome.appendChild(s);
+            }
+
             tessera.append(avatar, nome);
 
             if (v.incarico && v.incarico !== 'giocatore') {
