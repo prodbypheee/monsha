@@ -81,6 +81,12 @@
       "descrizione_estesa": "CECIO 🧆 Jolly sulla fascia! Sulla fascia Destra alterna fase offensiva e difensiva. Ottimo aiuto in caso si bisogno. Player dal cuore d'oro e dalla forte costanza e presenza"
     },
     {
+      "nick": "xZioFerra", "img": "ferra.jpeg", "ruolo": "Centrocampista", "reparto": "centrocampisti",
+      "epiteto": "Lo Zio 🕺",
+      "punti": ["Fisico e gambe lunghe in mezzo al campo", "Recupera palla e riparte senza chiedere il permesso", "Il ballo dopo il gol è compreso nel prezzo"],
+      "descrizione_estesa": "LO ZIO 🕺 Centrocampista di fisico e di gambe lunghe: recupera in mezzo e riparte senza chiedere il permesso. Tocco morbido quando serve, spallata quando non serve. Il ballo dopo il gol è compreso nel prezzo."
+    },
+    {
       "nick": "RageeVII", "img": "rage.jpeg", "ruolo": "Seconda punta", "reparto": "attaccanti",
       "epiteto": "Il Capitano 🐺",
       "punti": ["L'anima della squadra", "Assistman e gol a valanga da seconda punta", "C'è solo un capitano 🗣️"],
