@@ -192,7 +192,7 @@ async function rispondi(req, segreto) {
      deve avere chi non tocca niente. */
   const ora = scelta === 'presente' ? oraArrivo(corpo.ora) : null;
 
-  await salvaRisposta(data, g.utente, scelta, ora);
+  await salvaRisposta(data, g.utente, scelta, ora, corpo.da);
 
   /* Chi si sfila esce dal campo. Una formazione con dentro qualcuno
      che ha appena detto "non vengo" e peggio di una casella vuota: il

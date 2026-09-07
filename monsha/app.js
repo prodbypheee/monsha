@@ -1637,10 +1637,44 @@
         if (!b || b.disabled || !sopra) return;
         scorriOra(sopra, Number(b.dataset.passo), $('oggiEsito'));
       });
-      /* Quel che ho appena risposto, per giornata. Serve solo finche
-         il server non conferma la stessa cosa: e la rete di sicurezza
-         contro una rilettura che arriva indietro. */
+      /* Quel che ho appena risposto, per giornata: la rete di
+         sicurezza contro una rilettura che arriva indietro, partita
+         prima della mia risposta e atterrata dopo.
+
+         HA UNA SCADENZA, e la scadenza e la correzione di un difetto
+         vero. Prima la rete cadeva a una condizione sola — quando il
+         server rimandava la stessa risposta — e finche quella non
+         arrivava difendeva la mia scelta contro tutto. Contro tutto
+         vuol dire anche contro una risposta PIU RECENTE data da
+         un'altra parte, e ce n'e un'altra: i bottoni dentro la
+         notifica su Android.
+
+         Si vedeva cosi. Uno segna ASSENTE nell'app e la chiude subito
+         (la pagina resta viva, in secondo piano, con la rete alzata).
+         Piu tardi gli arriva la notifica e preme PRESENTE: il
+         telefono lo registra davvero, il server scrive presente. Poi
+         riapre l'app — la stessa pagina di prima — che rilegge,
+         riceve presente dal server, e lo copre con l'assente di ore
+         prima. La rete non sarebbe mai caduta: il server quell'assente
+         non lo avrebbe rimandato mai piu.
+
+         Otto secondi sono la vita di quella rete perche e la vita del
+         problema che risolve: una richiesta in volo, non una scelta.
+         Passati quelli, il server ha ragione lui. */
       const mieRisposte = {};
+      const RETE_MS = 8000;
+
+      const armaRete = (data, scelta) =>
+        (mieRisposte[data] = { scelta, fino: Date.now() + RETE_MS });
+
+      /* Legge la rete e la butta se e scaduta: cosi non c'e nessun
+         posto dove ricordarsi di ripulirla. */
+      function reteAlzata(data) {
+        const v = mieRisposte[data];
+        if (!v) return undefined;
+        if (Date.now() > v.fino) { delete mieRisposte[data]; return undefined; }
+        return v.scelta;
+      }
 
       function vicinanza(d) {
         if (d === oggi) return 'Oggi';
@@ -1814,7 +1848,7 @@
         // sulla pagina deve ritrovare l'ora che ha scelto, non le 21:30.
         if (mia.stato === 'presente' && mia.ora) oreScelte[data] = mia.ora;
 
-        const miaSalvata = mieRisposte[data];
+        const miaSalvata = reteAlzata(data);
         const suaVersione = mia.stato || null;
         if (miaSalvata && suaVersione === miaSalvata) delete mieRisposte[data];
 
@@ -2150,7 +2184,7 @@
            veniva alzata un attimo troppo tardi. */
         const prima = mieRisposte[data];
         const primaStato = mioStato[data];
-        mieRisposte[data] = scelta;
+        armaRete(data, scelta);
         mioStato[data] = scelta;
 
         const r = await apiConv('rispondi', {
@@ -2231,7 +2265,7 @@
         mioStato[data] = mio.stato || null;
         if (mio.stato === 'presente' && mio.ora) oreScelte[data] = mio.ora;
 
-        const mia = mieRisposte[data] || mio.stato || null;
+        const mia = reteAlzata(data) || mio.stato || null;
         segnaScelta(mia, !r.dati.apribile, $('oggiScelta'));
         vestiOra(data);
         if (!r.dati.apribile)

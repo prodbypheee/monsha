@@ -496,6 +496,48 @@ stare nella schermata Home: Condividi → «Aggiungi alla schermata
 Home», poi si riapre da lì. Senza, iOS non consegna niente. La scheda
 delle notifiche lo spiega da sola a chi apre da iPhone.
 
+### La conferma dice quel che ha scritto il server
+
+Dopo aver premuto arriva una seconda notifica: «Segnato presente —
+arrivi alle 21:30», o «Segnato assente».
+
+Quel titolo **lo detta la risposta del server**, non il bottone
+premuto. Prima ripeteva l'azione, e quindi non poteva contraddire
+nessuno: se dall'altra parte fosse finita una cosa diversa, avrebbe
+detto lo stesso che era andato tutto bene. Una conferma che non può
+sbagliare è un'eco. Adesso, se i due non combaciano, si vede sul
+telefono nel momento esatto in cui succede.
+
+Se il server rifiuta — sessione scaduta, giornata chiusa, rete assente
+— **non compare nessuna conferma**: si apre il sito, dove la persona
+vede cosa è successo. Dire «segnato presente» quando non è stato
+segnato niente è il modo più sicuro di ritrovarsi con una squadra in
+meno.
+
+### Da dove è arrivata la risposta
+
+Ogni risposta salvata porta con sé un campo `da`: `notifica` se nata
+dai bottoni dentro la notifica, `app` se dal sito.
+
+Non cambia niente di come funziona. Serve a poterlo guardare dopo: chi
+risponde da un telefono non ha modo di mostrare cosa è partito, e senza
+questa riga una segnalazione come «ho premuto presente e mi segna
+assente» si può solo provare a indovinare.
+
+### Le prove
+
+I bottoni della notifica erano l'unico pezzo del sito **senza nessuna
+prova addosso**, ed è quello che si controlla meno: gira dentro il
+telefono, senza pagina, e non lascia traccia.
+
+`strumenti/sw-finto.mjs` carica `monsha/sw.js` — il file vero, non una
+copia — dentro una `vm` con attorno un mondo finto: `self`, `fetch`, le
+notifiche. Poi gli si premono i bottoni e si guarda cosa parte.
+
+Non è un browser e non pretende di esserlo: **non prova che Android
+consegni l'azione giusta**. Prova che, data l'azione, il service worker
+mandi la cosa giusta — che è la metà di cui rispondiamo noi.
+
 ## 6. Dove sta il codice
 
 | File | Cosa fa |
@@ -515,6 +557,7 @@ delle notifiche lo spiega da sola a chi apre da iPhone.
 | `netlify/functions/convocazioni-cron-mezza.mjs` | lo chiama alla mezza |
 | `strumenti/anteprima-mail.mjs` | `npm run anteprima-mail` — genera la mail su file per guardarla |
 | `monsha/sw.js` | la notifica e i suoi due bottoni |
+| `strumenti/sw-finto.mjs` | il service worker in provetta, per premerne i bottoni |
 | `monsha/manifest.webmanifest` | l'aggiunta alla schermata Home |
 | `monsha/index.html` | il markup, dentro `#arDentro` |
 | `monsha/app.js` | in fondo, il modulo `convocazioni` |
