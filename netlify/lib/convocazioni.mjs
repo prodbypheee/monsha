@@ -307,6 +307,24 @@ export function attesaSollecito(ultimo, adesso = Date.now(), pausa = PAUSA_SOLLE
   return Math.max(0, pausa - passato);
 }
 
+/* Quanto tempo e passato dall'ultimo sollecito, in millisecondi.
+   null vuol dire che non e mai stato mandato.
+
+   E il rovescio di attesaSollecito, e serve a un mestiere diverso:
+   quella dice se si puo, questa dice cosa scriverci sopra. Da quando
+   la pausa non vieta piu ma chiede conferma, e questa la cosa che il
+   capitano legge: "l'ho gia chiamato tre minuti fa".
+
+   Una data illeggibile o nel futuro vale null e zero: qui non si
+   decide niente, si racconta, e la cosa peggiore che possa fare e
+   tacere. */
+export function daSollecito(ultimo, adesso = Date.now()) {
+  if (!ultimo) return null;
+  const t = Date.parse(ultimo);
+  if (!Number.isFinite(t)) return null;
+  return Math.max(0, adesso - t);
+}
+
 /* ---------- chi va convocato -----------------------------------
    Tutti i membri approvati, capitano compreso: anche lui deve dire
    se c'e, altrimenti la lista che gli arriva alle 20:00 e monca

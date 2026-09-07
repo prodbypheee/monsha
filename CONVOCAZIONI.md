@@ -134,8 +134,8 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
    avviso, **alle 18:00** l’ultima chiamata.
 3. Chi non risponde lo si va a cercare **uno alla volta**: in fondo
    alla tab, chi convoca trova l'elenco di chi non ha ancora detto
-   niente e un bottone per persona. Quindici minuti di pausa prima di
-   poter risollecitare la stessa persona.
+   niente e un bottone per persona. Accanto al bottone c’è da quanto
+   l’hai già chiamata.
 3bis. Se qualcuno ha premuto il bottone sbagliato, o ha detto a voce
    che non viene più, chi convoca può **togliere la sua risposta**: la ✕
    sopra la sua faccia nell’elenco. Non è «segnalo assente» — quella
@@ -245,22 +245,35 @@ dentro il nome di chi la sta cercando — un promemoria automatico si
 ignora, una persona che ti aspetta no. Su Android la notifica porta
 con sé i due bottoni Presente e Assente.
 
-**La pausa è di quindici minuti ed è per chi la riceve, non per chi la
-manda.** Se il conto fosse di chi preme, capitano e amministrazione
-potrebbero sollecitare la stessa persona a un minuto di distanza e
-farle suonare il telefono due volte, che è proprio la cosa da evitare.
-A chi guarda, il bottone si spegne e diventa «fra 12 min».
+**La pausa chiede, non vieta.** C’era un divieto secco di un quarto
+d’ora, e il bottone si spegneva con sopra «fra 12 min». Serviva a non
+tempestare di notifiche chi non aveva ancora risposto, ma frenava
+anche quando serviva ripremere davvero: la prima notifica non arriva
+perché il telefono è scarico, e chi convoca si trova davanti un
+bottone spento e nessun modo di insistere.
 
-Il conto lo tiene il **server**: il bottone spento è cortesia verso chi
-guarda, non sicurezza. Una richiesta costruita a mano salterebbe il
-bottone, e infatti il server rifiuta lo stesso — così come rifiuta di
-sollecitare per un giorno senza allenamento, per una giornata ormai
-chiusa, o una persona che nel frattempo ha risposto.
+Adesso il bottone resta acceso, dice **«Di nuovo»**, e accanto c’è da
+quanto: «3 min fa». Se sono passati meno di quindici minuti il server
+risponde di no una volta, il sito lo chiede — «Hai già chiamato Tizio
+3 minuti fa. Gli faccio suonare di nuovo il telefono?» — e chi preme
+decide. Un sì, e la stessa richiesta riparte con un insisti.
+
+Può bastare una domanda perché dall'altra parte **non c'è un
+automatismo**: c'è una persona che sceglie un nome e preme. Chi preme
+due volte di fila sa cosa sta facendo, e se esagera è un problema fra
+lui e la persona che ha davanti, non fra loro e il sito.
+
+Il conto lo tiene il **server**, che è l'unico orologio di cui fidarsi
+quando dall'altra parte c'è un telefono col fuso di chissà dove. E il
+server rifiuta lo stesso, comunque arrivi la richiesta, di sollecitare
+per un giorno senza allenamento, per una giornata ormai chiusa, o una
+persona che nel frattempo ha risposto.
 
 Se quella persona non ha acceso le notifiche non parte niente, e lo si
-dice apertamente invece di far finta: in quel caso la pausa non
-comincia nemmeno, perché sarebbe un quarto d'ora di attesa in cambio
-di niente.
+dice apertamente invece di far finta: in quel caso non si segna nemmeno
+il sollecito, perché scrivere «chiamato adesso» di una notifica che non
+è mai suonata manderebbe il capitano a credere di aver fatto una cosa
+che non ha fatto.
 
 ### Rispondere in anticipo
 
