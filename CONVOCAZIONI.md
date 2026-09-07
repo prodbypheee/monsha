@@ -498,21 +498,66 @@ Gli annunci vivono in `annunci/<chiave>` nello stesso store, uno per
 annuncio: se due persone scrivono nello stesso momento su un unico
 documento, una delle due sparisce.
 
-## 5. I due bottoni dentro la notifica
+## 5. La notifica: si tocca e si apre l'app
 
-**Su Android funzionano davvero**: si tocca "Presente" e la risposta
-parte, il sito non si apre nemmeno. Il service worker chiama il server
-da solo, con il cookie di sessione che il browser attacca lui.
+**La notifica non ha bottoni.** Si tocca, si apre il sito già sulla
+giornata giusta, e si risponde lì — dove i due bottoni sono grandi e
+lontani fra loro. Su iPhone è sempre stato così, perché Safari i
+bottoni dentro le notifiche non li ha mai mostrati; adesso vale anche
+su Android.
 
-**Su iPhone no, e non è un limite risolvibile**: Safari ignora i
-bottoni dentro le notifiche. Lì il tocco apre il sito, già aperto sulla
-giornata giusta, con i due bottoni grandi in mezzo allo schermo. È un
-tocco in più, non c'è modo di evitarlo.
+### Perché sono stati tolti
 
-**Sempre su iPhone**, per ricevere qualsiasi notifica il sito deve
-stare nella schermata Home: Condividi → «Aggiungi alla schermata
-Home», poi si riapre da lì. Senza, iOS non consegna niente. La scheda
-delle notifiche lo spiega da sola a chi apre da iPhone.
+C'erano, e su Android funzionavano: si toccava «Presente» e la risposta
+partiva senza aprire niente. Poi è arrivata una segnalazione — *premo
+presente e mi segna assente* — e si è ripetuta **tre volte su tre**.
+
+La traccia (§ più sotto) ha detto ogni volta la stessa cosa: **una
+richiesta sola**, dalla notifica giusta, con tutti e due i bottoni
+addosso e nell'ordine giusto, e l'azione riferita dal browser era **la
+seconda**.
+
+Da dentro un service worker **non si vede quale bottone venga toccato**,
+e non si vedrà mai. Quindi ogni rimedio era una scommessa su quale
+fosse il pezzo rotto:
+
+| tentativo | scommessa | esito |
+| --- | --- | --- |
+| etichette `✅ Ci sono` / `❌ Non ci sono` | «PRESENTE e ASSENTE si somigliano» | risultato uguale |
+| tolto il bottone dalla conferma | «il secondo tocco finisce lì» | risultato uguale |
+| ordine invertito | «sbaglia posizione» | ritirato: mai arrivato su quel telefono |
+
+Tre scommesse, tre volte lo stesso finale. Allora si toglie la
+scommessa invece di rilanciare: **senza bottoni non esiste più nessun
+gesto — né umano né del sistema — che possa registrare una risposta che
+nessuno ha voluto dare.** Il tocco fa una cosa sola, e la fa sotto gli
+occhi di chi lo dà.
+
+Il codice che risponde all'azione resta al suo posto, e con lui la
+traccia: il giorno che i bottoni tornassero, tornerebbe anche il modo
+di sapere cosa hanno fatto.
+
+**Su iPhone**, per ricevere qualsiasi notifica il sito deve stare nella
+schermata Home: Condividi → «Aggiungi alla schermata Home», poi si
+riapre da lì. Senza, iOS non consegna niente. La scheda delle notifiche
+lo spiega da sola a chi apre da iPhone.
+
+### Il service worker si aggiorna da solo
+
+Una correzione ai bottoni non serve a niente se sul telefono continua a
+girare la versione di ieri. Ed è successo: per un'ora intera abbiamo
+guardato le prove di un telefono che aveva ancora addosso il codice di
+prima, e ogni ragionamento su «adesso dovrebbe funzionare» era campato
+per aria. Si riconosceva da un dettaglio nelle foto — quella conferma
+aveva ancora un bottone che era già stato rimosso.
+
+Il file non è in cache — glielo dice `netlify.toml` — ma **nessuno
+chiedeva mai al browser di andare a rileggerlo**. Adesso il sito lo
+chiede a ogni apertura: `registration.update()` è silenzioso, non
+chiede permessi, e se non c'è niente di nuovo non fa niente.
+`skipWaiting` e `clients.claim`, dentro il service worker, fanno il
+resto: la versione nuova entra in servizio subito invece di aspettare
+che si chiudano tutte le schede.
 
 ### La conferma dice quel che ha scritto il server
 
@@ -532,7 +577,7 @@ vede cosa è successo. Dire «segnato presente» quando non è stato
 segnato niente è il modo più sicuro di ritrovarsi con una squadra in
 meno.
 
-### Perché la conferma non ha bottoni
+### Nemmeno la conferma ha bottoni
 
 Per mezza giornata ne ha avuto uno: l’opposto di quel che era stato
 registrato, per riparare in un tocco. Idea giusta, posto sbagliato.
@@ -545,10 +590,9 @@ risposta appena data.
 
 Un rimedio che può causare la cosa da cui ripara è peggio del danno.
 
-La correzione resta, ma per la via lunga: si tocca la conferma, si apre
-il sito sulla giornata giusta, e lì i due bottoni sono grandi e lontani
-fra loro. Una prova tiene fermo che la conferma non abbia bottoni, così
-non tornano per distrazione.
+La correzione resta, per la via lunga: si tocca la conferma, si apre il
+sito sulla giornata giusta. Una prova tiene fermo che la conferma non
+abbia bottoni, così non tornano per distrazione.
 
 ### Da dove è arrivata la risposta
 
