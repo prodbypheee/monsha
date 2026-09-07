@@ -109,7 +109,13 @@ export async function leggiRisposte(data) {
   return mappa;
 }
 
-export async function salvaRisposta(data, utente, stato, ora) {
+/* `da` dice da dove e nata la risposta: 'notifica' se dai bottoni
+   dentro la notifica su Android, 'app' se dal sito. Non cambia niente
+   di come funziona — serve a poterlo guardare dopo. Chi risponde da
+   un telefono non ha modo di mostrare cosa e partito, e senza questa
+   riga una segnalazione come "ho premuto presente e mi segna assente"
+   si puo solo provare a indovinare. */
+export async function salvaRisposta(data, utente, stato, ora, da) {
   const k = chiave(utente.email);
   await convoc().setJSON(RISPOSTE + data + '/' + k, {
     chiave:  k,
@@ -117,6 +123,7 @@ export async function salvaRisposta(data, utente, stato, ora) {
     idGioco: utente.idGioco,
     stato,                      // 'presente' oppure 'assente'
     ora:     ora || null,       // a che ora arriva; solo per i presenti
+    da:      da === 'notifica' ? 'notifica' : 'app',
     quando:  new Date().toISOString()
   });
 }

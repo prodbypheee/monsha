@@ -73,9 +73,16 @@ async function rispondi(data, stato) {
     // gia chi sei senza chiedere niente.
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ data, stato })
+    // "da" serve solo a lasciare traccia di dove e nata la risposta:
+    // il server la scrive accanto allo stato, e quando qualcuno dice
+    // "ho premuto presente e mi segna assente" si guarda li invece di
+    // indovinare.
+    body: JSON.stringify({ data, stato, da: 'notifica' })
   });
   if (!r.ok) throw new Error('risposta rifiutata: ' + r.status);
+  // Quel che il server dice di aver scritto, non quel che gli abbiamo
+  // chiesto: e la differenza fra una conferma e un'eco.
+  return await r.json().catch(() => ({}));
 }
 
 async function apri(indirizzo) {
@@ -104,9 +111,25 @@ self.addEventListener('notificationclick', evento => {
 
   evento.waitUntil((async () => {
     try {
-      await rispondi(dati.data, azione);
+      const esito = await rispondi(dati.data, azione);
+
+      /* LA CONFERMA DICE QUEL CHE IL SERVER HA SCRITTO, non quel che
+         abbiamo premuto. Prima ripeteva l'azione — "Segnato presente"
+         perche avevi premuto Presente — e quindi non poteva
+         contraddire nessuno: se dall'altra parte fosse finita una
+         cosa diversa, la conferma avrebbe detto lo stesso che era
+         andato tutto bene.
+
+         Una conferma che non puo sbagliare non e una conferma, e una
+         eco. Adesso legge lo stato dalla risposta del server, e se un
+         giorno i due non combaciano lo si vede sul telefono nel
+         momento esatto in cui succede. */
+      const salvato = (esito && esito.stato) || azione;
+
       await self.registration.showNotification(
-        azione === 'presente' ? 'Segnato presente' : 'Segnato assente',
+        salvato === 'presente'
+          ? 'Segnato presente' + (esito && esito.ora ? ' — arrivi alle ' + esito.ora : '')
+          : 'Segnato assente',
         {
           body:  'Risposta registrata. Puoi cambiarla dal sito.',
           icon:  ICONA,

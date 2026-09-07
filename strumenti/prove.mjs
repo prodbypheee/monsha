@@ -23,12 +23,26 @@ import { CASELLE, verificaSchieramento, soloPresenti, partitaValida, PARTITE }
 import { scegliEvento, trovaNoi, raccogliStatistiche, piatto }
   from '../netlify/lib/campionato.mjs';
 import { indicizzaRosa } from '../netlify/lib/mail-riepilogo.mjs';
+import { accendiSW } from './sw-finto.mjs';
 import { validaProvinante, repartoDi as repartoProvino, MAX_RUOLI, RUOLI as RUOLI_PROVINO }
   from '../netlify/lib/provinanti.mjs';
 import { validaCandidatura, attesaInvio, LIMITI, PAUSA_INVIO_MS, numeroWhatsApp }
   from '../netlify/lib/candidature.mjs';
 
 let fatte = 0, rotte = 0;
+/* Le prove che aspettano qualcosa. Il service worker risponde a
+   eventi, e un evento finisce quando finisce il suo waitUntil: senza
+   aspettarlo si guarderebbe il risultato prima che il lavoro sia
+   fatto, e passerebbero tutte per finta.
+
+   Sta separata da prova() invece di renderla asincrona: quella la
+   chiamano cento righe piu su senza await, e diventando asincrona
+   conterebbero i risultati dopo che il totale e gia stampato. */
+async function provaLenta(nome, fn) {
+  try { await fn(); fatte++; console.log('  ok   ' + nome); }
+  catch (e) { rotte++; console.log('  ROTTA ' + nome + '\n        ' + e.message); }
+}
+
 function prova(nome, fn) {
   try { fn(); fatte++; console.log('  ok   ' + nome); }
   catch (e) { rotte++; console.log('  ROTTA ' + nome + '\n        ' + e.message); }
@@ -969,6 +983,115 @@ prova('le caselle stanno dentro il campo', () => {
     assert.ok(c.x >= 5 && c.x <= 95, c.id + ' fuori in orizzontale');
     assert.ok(c.y >= 5 && c.y <= 95, c.id + ' fuori in verticale');
   });
+});
+
+/* ============================================================
+   I BOTTONI DENTRO LA NOTIFICA
+   ------------------------------------------------------------
+   Il service worker era l'unico pezzo senza nessuna prova addosso,
+   ed e quello che si controlla meno: gira dentro il telefono, senza
+   pagina, e quando qualcuno dice "ho premuto presente e mi ha
+   segnato assente" non c'e niente da guardare.
+
+   Queste prove caricano il file vero e gli premono i bottoni. Non
+   sono un browser: non provano che Android consegni l'azione giusta.
+   Provano che, data l'azione, parta la cosa giusta — la meta di cui
+   rispondiamo noi.
+   ============================================================ */
+
+console.log('\nI bottoni dentro la notifica');
+
+const CARICO = {
+  titolo: 'Allenamento oggi',
+  testo:  'Giovedì 3 settembre: ci sei stasera?',
+  data:   '2026-09-03',
+  vai:    'https://monacishaolin.it/area-riservata?giorno=2026-09-03'
+};
+
+await provaLenta('la notifica di una giornata porta i due bottoni', async () => {
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica(CARICO);
+  assert.deepEqual(n.opzioni.actions, [
+    { action: 'presente', title: 'Presente' },
+    { action: 'assente',  title: 'Assente'  }
+  ]);
+  assert.equal(n.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
+});
+
+await provaLenta('premendo PRESENTE parte presente', async () => {
+  /* La segnalazione era esattamente questa: "su Android premo
+     presente e mi segna assente". Qui si vede cosa parte davvero. */
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'presente', ora: '21:30' } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+
+  assert.equal(sw.inviate.length, 1, 'una sola richiesta');
+  assert.equal(sw.inviate[0].indirizzo, '/api/convocazioni/rispondi');
+  assert.equal(sw.inviate[0].corpo.stato, 'presente');
+  assert.equal(sw.inviate[0].corpo.data, '2026-09-03', 'e sulla giornata della notifica');
+});
+
+await provaLenta('premendo ASSENTE parte assente', async () => {
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'assente');
+  assert.equal(sw.inviate[0].corpo.stato, 'assente');
+});
+
+await provaLenta('la risposta dice da dove viene', async () => {
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.equal(sw.inviate[0].corpo.da, 'notifica');
+});
+
+await provaLenta('la conferma dice quel che ha scritto il server, non quel che si e premuto', async () => {
+  /* Prima la conferma ripeteva l'azione, e quindi non poteva
+     contraddire nessuno: era un'eco, non una conferma. Se un giorno
+     dall'altra parte finisce una cosa diversa, si deve vedere sul
+     telefono nel momento in cui succede. */
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'assente', ora: null } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.equal(sw.mostrate[1].titolo, 'Segnato assente');
+});
+
+await provaLenta('la conferma di un presente dice anche a che ora', async () => {
+  const sw = accendiSW('monsha/sw.js', { ok: true, dati: { ok: true, stato: 'presente', ora: '22:30' } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.equal(sw.mostrate[1].titolo, 'Segnato presente — arrivi alle 22:30');
+});
+
+await provaLenta('un tocco sul corpo apre il sito e non risponde per nessuno', async () => {
+  /* E sempre questo su iPhone, dove i bottoni non esistono. Se
+     toccare la notifica registrasse una risposta, meta squadra
+     risulterebbe presente per aver solo guardato. */
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, '');
+  assert.equal(sw.inviate.length, 0, 'niente e partito');
+  assert.deepEqual(sw.aperte, ['https://monacishaolin.it/area-riservata?giorno=2026-09-03']);
+});
+
+await provaLenta('un annuncio senza giornata non ha bottoni', async () => {
+  /* "Presente / Assente" sotto un avviso della bacheca non vorrebbe
+     dire niente, e premerli scriverebbe su una data vuota. */
+  const sw = accendiSW();
+  const n = await sw.arrivaNotifica({ titolo: 'Bacheca', testo: 'Nuovo avviso' });
+  assert.deepEqual(n.opzioni.actions, []);
+});
+
+await provaLenta('se il server rifiuta non si mostra una conferma falsa', async () => {
+  /* Sessione scaduta, giornata chiusa, rete assente: si apre il sito,
+     dove la persona vede cosa e successo. Dire "segnato presente"
+     quando non e stato segnato niente e il modo piu sicuro di
+     ritrovarsi con una squadra in meno. */
+  const sw = accendiSW('monsha/sw.js', { ok: false, stato: 409, dati: { errore: 'chiusa' } });
+  const n = await sw.arrivaNotifica(CARICO);
+  await sw.premi(n, 'presente');
+  assert.equal(sw.mostrate.length, 1, 'solo la notifica di partenza');
+  assert.equal(sw.aperte.length, 1, 'si apre il sito');
 });
 
 console.log('\n' + fatte + ' passate, ' + rotte + ' rotte\n');
