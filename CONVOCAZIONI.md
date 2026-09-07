@@ -571,6 +571,36 @@ finora l’unico modo di saperlo era fidarsi del racconto.
 Sulle risposte scritte prima che il campo esistesse non compare: di
 quelle non lo sappiamo, e inventarlo sarebbe peggio che non dirlo.
 
+### Perché i bottoni sono in quest’ordine
+
+Prima il no, poi il sì. Non è una scelta di stile: è un **esperimento in
+corso**.
+
+La traccia di una risposta sbagliata diceva questo:
+
+    azione premuta: assente
+    bottoni: presente·✅ Ci sono   assente·❌ Non ci sono
+    etichetta: convocazione-2026-09-07
+
+Cioè: una richiesta sola, la notifica giusta, i bottoni giusti e
+nell’ordine giusto, con le etichette nuove che non si possono
+confondere — e il browser che riferisce **il secondo**. Sempre, a ogni
+tentativo.
+
+Da dentro il service worker non si vede quale pixel venga toccato, e
+non si vedrà mai. Ma se qualcosa preme sistematicamente il secondo
+bottone — un orologio che ne mostra uno solo, una tendina che li
+accorpa, un dito che va a memoria — allora scambiandoli quella persona
+da domani risulta **presente**, e l’esperimento risponde da solo alla
+domanda che il codice non può risolvere.
+
+Se invece continua a risultare assente, non è la posizione: è
+l’etichetta o l’identificativo, e si guarda lì.
+
+In tutti e due i casi la traccia lo dirà, perché **registra anche
+l’ordine dei bottoni**: da ora in poi ogni risposta si porta dietro con
+quale versione è stata data.
+
 ### La traccia: cosa aveva visto il service worker
 
 Quando la risposta arriva dai bottoni della notifica, il service

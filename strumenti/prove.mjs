@@ -1011,13 +1011,21 @@ const CARICO = {
 await provaLenta('la notifica di una giornata porta i due bottoni', async () => {
   const sw = accendiSW();
   const n = await sw.arrivaNotifica(CARICO);
-  /* I titoli non sono decorazione: PRESENTE e ASSENTE finivano uguali
-     per cinque lettere su sette, e Android li scrive in maiuscolo uno
-     accanto all'altro. Questa prova tiene ferma la distanza fra i due,
-     che e la cosa che si e rotta davvero. */
+  /* L'ORDINE E ROVESCIATO DI PROPOSITO, prima il no e poi il si: un
+     telefono riferiva sempre il secondo bottone qualunque cosa
+     venisse premuta, e scambiandoli l'esperimento risponde da solo.
+
+     I titoli non sono decorazione: prima erano Presente e Assente,
+     che finiscono uguali per cinque lettere su sette e che Android
+     scrive in maiuscolo uno accanto all'altro.
+
+     Questa prova tiene ferme tutte e due le cose. Se un giorno
+     cambiano deve essere una decisione, non una svista — e siccome
+     l'ordine e un esperimento in corso, il giorno che si torna
+     indietro questa riga e il posto dove accorgersene. */
   assert.deepEqual(n.opzioni.actions, [
-    { action: 'presente', title: '✅ Ci sono' },
-    { action: 'assente',  title: '❌ Non ci sono' }
+    { action: 'assente',  title: '❌ Non ci sono' },
+    { action: 'presente', title: '✅ Ci sono' }
   ]);
   assert.equal(n.opzioni.data.data, '2026-09-03', 'la data se la porta dietro');
 });
@@ -1055,8 +1063,8 @@ await provaLenta('la risposta porta la traccia di cosa ha visto il service worke
   const t = sw.inviate[0].corpo.traccia;
   assert.equal(t.azione, 'presente', 'quel che il browser dice sia stato premuto');
   assert.equal(t.tag, 'convocazione-2026-09-03');
-  assert.deepEqual(t.bottoni, ['presente·✅ Ci sono', 'assente·❌ Non ci sono'],
-    'i bottoni che la notifica aveva davvero addosso');
+  assert.deepEqual(t.bottoni, ['assente·❌ Non ci sono', 'presente·✅ Ci sono'],
+    'i bottoni che la notifica aveva davvero addosso, nell’ordine in cui li aveva');
 });
 
 await provaLenta('la traccia si porta dietro anche un ordine rovesciato', async () => {

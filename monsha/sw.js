@@ -73,9 +73,36 @@ self.addEventListener('push', evento => {
        ognuna il suo segno davanti. Gli identificativi restano quelli
        di prima: cambia cosa legge chi preme, non cosa capisce il
        server. */
+    /* I DUE BOTTONI SONO INVERTITI DI PROPOSITO: prima il no, poi il
+       si. Non e una scelta di stile, e un esperimento.
+
+       La traccia di una risposta sbagliata diceva questo:
+
+         azione premuta: assente
+         bottoni: presente·✅ Ci sono   assente·❌ Non ci sono
+         etichetta: convocazione-2026-09-07
+
+       Cioe: una richiesta sola, la notifica giusta, i bottoni giusti
+       e nell'ordine giusto, con le etichette nuove che non si possono
+       confondere — e il browser che riferisce il SECONDO. Sempre, a
+       ogni tentativo.
+
+       Da qui dentro non si vede quale pixel venga toccato, e non si
+       vedra mai. Ma se qualcosa preme sistematicamente il secondo
+       bottone — un orologio che ne mostra uno solo, una tendina che
+       li accorpa, un dito che va a memoria — allora scambiandoli
+       quella persona da domani risulta PRESENTE, e l'esperimento
+       risponde da solo alla domanda che il codice non puo risolvere.
+
+       Se invece continua a risultare assente, allora non e la
+       posizione: e l'etichetta o l'identificativo, e si guarda li.
+
+       In tutti e due i casi la traccia lo dira, perche registra anche
+       l'ordine dei bottoni: da ora in poi ogni risposta si porta
+       dietro con quale versione e stata data. */
     actions: d.data
-      ? [{ action: 'presente', title: '✅ Ci sono' },
-         { action: 'assente',  title: '❌ Non ci sono' }]
+      ? [{ action: 'assente',  title: '❌ Non ci sono' },
+         { action: 'presente', title: '✅ Ci sono' }]
       : []
   };
 
