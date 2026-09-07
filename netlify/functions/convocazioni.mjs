@@ -27,7 +27,7 @@ import {
 } from '../lib/comune.mjs';
 
 import {
-  leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, fraGiorni,
+  leggiGiorni, salvaGiorni, leggiRisposte, salvaRisposta, cancellaRisposta, fraGiorni,
   prossimoGiorno, rispostaAmmessa, daConvocare, ORIZZONTE_GIORNI,
   destinatariRiepilogo, leggiSolleciti, segnaSollecito, attesaSollecito,
   PAUSA_SOLLECITO_MS, oraArrivo, ORA_DEFAULT, oraTardi, fasciaDi
@@ -390,6 +390,52 @@ async function togliProvinante(req, segreto) {
   return json({ ok: true });
 }
 
+/* ---------- togliere una risposta -----------------------------
+   Fino a ieri una risposta la poteva cambiare solo chi l'aveva data.
+   Nella pratica manca un caso e capita spesso: uno preme il bottone
+   sbagliato e non se ne accorge, oppure dice a voce che non viene
+   piu. Il capitano vedeva quel presente e non poteva farci niente.
+
+   Togliere non e segnare assente, e la differenza conta: assente vuol
+   dire "ho chiesto e non viene", nessuna risposta vuol dire "non lo so
+   ancora" — ed e l'unica delle due che rimette quella persona
+   nell'elenco di chi va sollecitato, che e poi il motivo per cui
+   serviva.
+
+   Lo puo fare chi convoca, sulle giornate ancora aperte: le stesse due
+   condizioni con cui si sollecita, perche e lo stesso gesto visto
+   dall'altra parte. */
+
+async function togliRisposta(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono togliere una risposta.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+  const data = String(corpo.data || '');
+  if (!dataValida(data)) return errore('Data non valida.');
+
+  const giorni = await leggiGiorni();
+  if (!giorni.includes(data)) return errore('Quel giorno non c’è allenamento.', 409);
+  if (!rispostaAmmessa(data))
+    return errore('Quella giornata è chiusa: non si può più cambiare.', 409);
+
+  const chi = daConvocare(await tuttiGliUtenti())
+    .find(u => normId(u.idGioco) === normId(corpo.id));
+  if (!chi) return errore('Non trovo quella persona.', 404);
+
+  await cancellaRisposta(data, chi);
+
+  /* E fuori dal campo, perche adesso non e piu fra i presenti. La
+     regola "in campo va solo chi c'e" non distingue fra chi ha detto
+     di no e chi non ha detto niente: in tutti e due i casi, contarci
+     sopra sarebbe un buco scoperto la sera stessa. */
+  const sfilato = await togliDalCampo(data, chi.idGioco).catch(() => false);
+
+  return json({ ok: true, idGioco: chi.idGioco, toltoDalCampo: sfilato });
+}
+
 /* ---------- il colpetto sulla spalla --------------------------
    Chi convoca sceglie una persona sola fra quelle che non hanno
    ancora risposto e le manda una notifica.
@@ -681,6 +727,7 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'giorni')       return await giorni(req, segreto);
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
     if (req.method === 'POST' && azione === 'sollecita')    return await sollecita(req, segreto);
+    if (req.method === 'POST' && azione === 'togli-risposta') return await togliRisposta(req, segreto);
     if (req.method === 'POST' && azione === 'provinante')   return await aggiungiProvinante(req, segreto);
     if (req.method === 'POST' && azione === 'provinante-via') return await togliProvinante(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);

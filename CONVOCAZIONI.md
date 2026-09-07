@@ -136,6 +136,11 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
    alla tab, chi convoca trova l'elenco di chi non ha ancora detto
    niente e un bottone per persona. Quindici minuti di pausa prima di
    poter risollecitare la stessa persona.
+3bis. Se qualcuno ha premuto il bottone sbagliato, o ha detto a voce
+   che non viene più, chi convoca può **togliere la sua risposta**: la ✕
+   sopra la sua faccia nell’elenco. Non è «segnalo assente» — quella
+   persona torna a non aver detto niente, e quindi torna fra quelli da
+   sollecitare. Se era in campo, esce.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
    amministrazione e amministratore.
 
