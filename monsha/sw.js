@@ -84,7 +84,29 @@ self.addEventListener('push', evento => {
 
 /* ---------- risposta dai bottoni ------------------------------ */
 
-async function rispondi(data, stato) {
+/* Quel che il service worker aveva sotto gli occhi quando ha deciso.
+
+   Serve a una domanda che senza di questo non ha risposta: uno preme
+   il bottone di sinistra e il server riceve assente, sempre, a ogni
+   tentativo. Da qui dentro non si vede il dito — ma si vede cosa il
+   browser dice sia stato premuto, e soprattutto QUALI BOTTONI la
+   notifica avesse davvero addosso in quel momento.
+
+   Se un giorno arrivasse una traccia con i bottoni in ordine
+   rovesciato, o con dentro roba che non abbiamo mai scritto noi, la
+   caccia finisce li. Se invece dice esattamente quel che ci
+   aspettiamo, allora il guasto e piu in la e almeno sappiamo dove non
+   e. */
+function tracciaDi(evento) {
+  const n = evento.notification || {};
+  const bottoni = [];
+  try {
+    (n.actions || []).forEach(a => bottoni.push(a.action + '·' + a.title));
+  } catch (e) { /* se il browser non li espone, pazienza */ }
+  return { azione: evento.action, tag: n.tag, titolo: n.title, bottoni };
+}
+
+async function rispondi(data, stato, traccia) {
   const r = await fetch('/api/convocazioni/rispondi', {
     method: 'POST',
     // Il cookie di sessione e HttpOnly: non lo vediamo, ma il browser
@@ -96,7 +118,7 @@ async function rispondi(data, stato) {
     // il server la scrive accanto allo stato, e quando qualcuno dice
     // "ho premuto presente e mi segna assente" si guarda li invece di
     // indovinare.
-    body: JSON.stringify({ data, stato, da: 'notifica' })
+    body: JSON.stringify({ data, stato, da: 'notifica', traccia })
   });
   if (!r.ok) throw new Error('risposta rifiutata: ' + r.status);
   // Quel che il server dice di aver scritto, non quel che gli abbiamo
@@ -130,7 +152,7 @@ self.addEventListener('notificationclick', evento => {
 
   evento.waitUntil((async () => {
     try {
-      const esito = await rispondi(dati.data, azione);
+      const esito = await rispondi(dati.data, azione, tracciaDi(evento));
 
       /* LA CONFERMA DICE QUEL CHE IL SERVER HA SCRITTO, non quel che
          abbiamo premuto. Prima ripeteva l'azione — "Segnato presente"

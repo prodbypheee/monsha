@@ -570,6 +570,27 @@ finora l’unico modo di saperlo era fidarsi del racconto.
 Sulle risposte scritte prima che il campo esistesse non compare: di
 quelle non lo sappiamo, e inventarlo sarebbe peggio che non dirlo.
 
+### La traccia: cosa aveva visto il service worker
+
+Quando la risposta arriva dai bottoni della notifica, il service
+worker manda anche **quel che aveva sotto gli occhi**: l’azione che il
+browser dice sia stata premuta, l’etichetta della notifica, e **i
+bottoni che quella notifica aveva davvero addosso**, uno per uno.
+
+Si legge dal pannello dell’amministratore, in fondo a **«Perché non è
+arrivata?»**:
+
+
+
+Serve a una segnalazione che senza questo non si chiude: *premo
+presente e mi segna assente, sempre*. Da dentro il service worker il
+dito non si vede — ma si vede se il browser ha riferito l’azione
+sbagliata, se i bottoni erano in ordine rovesciato, o se è arrivata
+roba che non abbiamo mai scritto noi.
+
+La traccia arriva dal telefono di qualcun altro: si prende quel che
+serve, tagliato corto, e si butta il resto.
+
 ### La risposta di prima
 
 Ogni risposta si porta dentro **quella che ha sovrascritto**: stato,

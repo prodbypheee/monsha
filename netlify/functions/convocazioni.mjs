@@ -206,7 +206,7 @@ async function rispondi(req, segreto) {
      deve avere chi non tocca niente. */
   const ora = scelta === 'presente' ? oraArrivo(corpo.ora) : null;
 
-  await salvaRisposta(data, g.utente, scelta, ora, corpo.da);
+  await salvaRisposta(data, g.utente, scelta, ora, corpo.da, corpo.traccia);
 
   /* Chi si sfila esce dal campo. Una formazione con dentro qualcuno
      che ha appena detto "non vengo" e peggio di una casella vuota: il
@@ -609,8 +609,32 @@ async function diagnosi(req, segreto) {
   const ultimo = await ultimoGiro();
   const biglietto = await leggiBiglietto();
 
+  /* Le risposte arrivate oggi DAI BOTTONI DELLA NOTIFICA, con dentro
+     quel che il service worker aveva sotto gli occhi.
+
+     E qui e non nell'elenco della giornata perche e roba da indagine:
+     serve quando qualcuno dice "premo presente e mi segna assente", e
+     in quel momento si vuole vedere cosa e arrivato davvero invece di
+     dedurlo. Chi guarda l'elenco tutti i giorni non deve inciamparci.
+
+     Solo quelle della notifica: le risposte dal sito le abbiamo gia
+     viste partire, e non sono mai state in discussione. */
+  const oggiRisposte = await leggiRisposte(oggi);
+  const dallaNotifica = Object.values(oggiRisposte)
+    .filter(r => r && r.da === 'notifica')
+    .sort((a, b) => String(b.quando).localeCompare(String(a.quando)))
+    .slice(0, 8)
+    .map(r => ({
+      idGioco: r.idGioco,
+      stato:   r.stato,
+      quando:  r.quando,
+      prima:   r.prima ? { stato: r.prima.stato, da: r.prima.da, quando: r.prima.quando } : null,
+      traccia: r.traccia || null
+    }));
+
   return json({
     provaInAttesa: !!biglietto,
+    dallaNotifica,
     adesso: { data: oggi, ora, minuto, fascia: fasciaDi(ora, minuto) },
     orologio: ultimo ? { quando: ultimo.quando, esito: ultimo.esito } : null,
     allenamentoOggi: giorni.includes(oggi),
