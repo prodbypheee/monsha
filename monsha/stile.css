@@ -1863,6 +1863,47 @@ body.con-presa #pan-formazione { padding-bottom: 124px; }
 .sol-btn:disabled { opacity: .45; cursor: default; }
 .sol-vuoto { font-size: 13px; color: var(--txt-4); margin: 18px 0 0; }
 
+/* ---------- segnare al posto di qualcuno ----------
+   La stessa riga dei solleciti, con due bottoni al posto di uno. Il
+   bottone acceso ha il colore della spunta sopra le facce — verde chi
+   c'e, arancio chi no — cosi le due liste si leggono allo stesso modo. */
+.seg-elenco { margin-top: 18px; }
+.seg-riga {
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center; gap: 12px;
+  padding: 10px 0; border-top: 1px solid var(--line);
+}
+.seg-riga:first-child { border-top: 0; }
+.seg-riga.zero .pres-faccia { opacity: .45; filter: grayscale(1); }
+.seg-nome { font-size: 13.5px; color: var(--txt-2); word-break: break-word; }
+.seg-nota { display: block; font-style: normal; font-size: 10.5px; color: var(--txt-5); margin-top: 2px; }
+.seg-riga.zero .seg-nota { color: var(--acc); }
+
+.seg-scelta { display: flex; gap: 6px; }
+.seg-btn {
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .02em;
+  min-height: 40px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line-2); background: var(--bg-3); color: var(--txt-3);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.seg-btn b { font-size: 13px; line-height: 1; }
+.seg-btn:hover:not(:disabled):not([aria-pressed="true"]) { border-color: var(--acc); color: var(--txt); }
+.seg-btn.si[aria-pressed="true"] { background: #7fd6a0; border-color: #7fd6a0; color: #0b0b0d; }
+.seg-btn.no[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #0b0b0d; }
+.seg-btn:disabled { opacity: .45; cursor: default; }
+
+/* Sul telefono restano solo la spunta e la croce: con le parole il
+   nome resterebbe con un dito di spazio. Quadrati da 44, la misura
+   minima per non prendere il vicino. */
+@media (max-width: 460px) {
+  .seg-riga { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; }
+  .seg-riga .pres-faccia { width: 34px; height: 34px; }
+  .seg-btn { width: 44px; min-height: 44px; padding: 0; }
+  .seg-btn span { display: none; }
+  .seg-btn b { font-size: 16px; }
+}
+
 .pres-conto { font-size: 13px; font-weight: 600; color: var(--txt); white-space: nowrap; }
 .pres-riga.pieno .pres-conto { color: #7fd6a0; }
 .pres-riga.zero .pres-conto { color: var(--acc); }

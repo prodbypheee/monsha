@@ -749,6 +749,25 @@
             <div class="sol-elenco" id="solElenco"></div>
           </div>
         </div>
+
+        <!-- Tutta la squadra, con presente e assente per ciascuno: chi
+             convoca segna al posto di chi si e scordato. Sta dopo i
+             solleciti perche e il passo successivo — prima lo si
+             chiama, se non risponde lo si segna. -->
+        <div class="ar-scheda" id="convSegna" hidden style="margin-top:22px;">
+          <div class="ar-corpo">
+            <div class="ar-intestazione">
+              <div>
+                <div class="eyebrow">Al posto loro</div>
+                <h3 class="wiz-tit" style="margin-top:14px;">Segna tu presenze e assenze</h3>
+              </div>
+              <span class="conv-stato" id="segQuanti">—</span>
+            </div>
+            <p class="ar-aiuto" style="margin-top:16px;">Per chi si è scordato di rispondere o te l’ha detto a voce. Il giocatore vede che l’hai segnato tu, e se poi risponde da solo vale la sua. Ritocca il bottone acceso per togliere la risposta.</p>
+            <p class="ar-esito" id="segEsito" role="status" aria-live="polite"></p>
+            <div class="seg-elenco" id="segElenco"></div>
+          </div>
+        </div>
       </section>
 
       <!-- ===================== FORMAZIONE ===================== -->
