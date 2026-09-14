@@ -111,6 +111,8 @@ async function giorno(req, segreto, indirizzo) {
          esistesse non hanno niente, ed e giusto cosi: di quelle non
          lo sappiamo, e inventarlo sarebbe peggio che non dirlo. */
       da:       r ? (r.da || null) : null,
+      // Chi l'ha segnata, quando non e stata la persona stessa.
+      autore:   (r && r.da === 'capitano') ? (r.autore || null) : null,
       /* La risposta di prima, ma solo quando dice qualcosa: se era
          gia quella non c'e niente da raccontare. Serve a vedere una
          risposta che ne ha sovrascritta un'altra, e da dove. */
@@ -206,7 +208,13 @@ async function rispondi(req, segreto) {
      deve avere chi non tocca niente. */
   const ora = scelta === 'presente' ? oraArrivo(corpo.ora) : null;
 
-  await salvaRisposta(data, g.utente, scelta, ora, corpo.da, corpo.traccia);
+  /* La provenienza la dice il client, quindi se ne accettano solo le
+     due che un giocatore puo davvero dare. 'capitano' passa solo da
+     segna-per: altrimenti chiunque potrebbe far credere che la sua
+     risposta l'abbia scritta qualcun altro. */
+  const da = corpo.da === 'notifica' ? 'notifica' : 'app';
+
+  await salvaRisposta(data, g.utente, scelta, ora, da, corpo.traccia);
 
   /* Chi si sfila esce dal campo. Una formazione con dentro qualcuno
      che ha appena detto "non vengo" e peggio di una casella vuota: il
@@ -448,6 +456,58 @@ async function togliRisposta(req, segreto) {
   const sfilato = await togliDalCampo(data, chi.idGioco).catch(() => false);
 
   return json({ ok: true, idGioco: chi.idGioco, toltoDalCampo: sfilato });
+}
+
+/* ---------- segnare al posto di qualcuno ----------------------
+   Chi convoca mette presente o assente al posto di un giocatore: si e
+   scordato di rispondere, oppure l'ha detto a voce o su WhatsApp.
+
+   E il gemello di togli-risposta, con le stesse condizioni — chi
+   convoca, giornata di allenamento, ancora aperta — e con una
+   differenza che conta: la risposta resta firmata. `da` e 'capitano' e
+   `autore` e chi l'ha segnata, cosi il giocatore che si ritrova
+   "presente" sa da dove arriva, e se poi risponde da solo vince lui. */
+
+async function segnaPer(req, segreto) {
+  const g = await esigiMembro(req, segreto);
+  if (g.errore) return g.errore;
+  if (!puoConvocare(g.utente))
+    return errore('Solo il capitano o l’amministrazione possono segnare al posto di un altro.', 403);
+
+  const corpo = await req.json().catch(() => ({}));
+  const data = String(corpo.data || '');
+  const scelta = String(corpo.stato || '');
+
+  if (!dataValida(data))                        return errore('Data non valida.');
+  if (!['presente', 'assente'].includes(scelta)) return errore('Risposta non valida.');
+
+  // Da ieri, come rispondi: la finestra della notte fonda vale anche qui.
+  const giorni = await leggiGiorni(fraGiorni(oggiRoma(), -1));
+  if (!giorni.includes(data)) return errore('Quel giorno non c’è allenamento.', 409);
+  if (!rispostaAmmessa(data))
+    return errore('Quella giornata è chiusa: non si può più cambiare.', 409);
+
+  const chi = daConvocare(await tuttiGliUtenti())
+    .find(u => normId(u.idGioco) === normId(corpo.id));
+  if (!chi) return errore('Non trovo quella persona.', 404);
+
+  /* L'ora: chi convoca non la sceglie. Se quella persona era gia
+     presente con un'ora sua la si tiene — ha detto "arrivo alle 22:30"
+     e non deve tornare alle 21:30 perche il capitano ha ripremuto —
+     altrimenti vale quella solita. */
+  const vecchia = (await leggiRisposte(data))[chiave(chi.email)];
+  const ora = scelta === 'presente'
+    ? oraArrivo(vecchia && vecchia.stato === 'presente' ? vecchia.ora : null)
+    : null;
+
+  await salvaRisposta(data, chi, scelta, ora, 'capitano', null, g.utente.idGioco);
+
+  // Stessa regola di rispondi: chi e assente non resta in campo.
+  const sfilato = scelta === 'assente'
+    ? await togliDalCampo(data, chi.idGioco).catch(() => false)
+    : false;
+
+  return json({ ok: true, idGioco: chi.idGioco, stato: scelta, ora, toltoDalCampo: sfilato });
 }
 
 /* ---------- il colpetto sulla spalla --------------------------
@@ -784,6 +844,7 @@ export default async (req) => {
     if (req.method === 'POST' && azione === 'rispondi')     return await rispondi(req, segreto);
     if (req.method === 'POST' && azione === 'sollecita')    return await sollecita(req, segreto);
     if (req.method === 'POST' && azione === 'togli-risposta') return await togliRisposta(req, segreto);
+    if (req.method === 'POST' && azione === 'segna-per')    return await segnaPer(req, segreto);
     if (req.method === 'POST' && azione === 'provinante')   return await aggiungiProvinante(req, segreto);
     if (req.method === 'POST' && azione === 'provinante-via') return await togliProvinante(req, segreto);
     if (req.method === 'POST' && azione === 'push-iscrivi') return await pushIscrivi(req, segreto);

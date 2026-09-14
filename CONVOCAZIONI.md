@@ -141,6 +141,12 @@ incarico, altrimenti un capitano sparito lascerebbe la squadra ferma.
    sopra la sua faccia nell’elenco. Non è «segnalo assente» — quella
    persona torna a non aver detto niente, e quindi torna fra quelli da
    sollecitare. Se era in campo, esce.
+3ter. Se qualcuno si è scordato di rispondere, chi convoca **segna al
+   posto suo**: in fondo alla tab c’è tutta la squadra con presente e
+   assente accanto a ogni nome. La risposta resta firmata — nell’elenco
+   compare «segnato da» e l’ID di chi l’ha messa, e lo vede anche il
+   giocatore — e se poi quel giocatore risponde da solo vale la sua.
+   Ritoccare il bottone già acceso toglie la risposta, come la ✕.
 4. **Alle 20:00** parte la mail del riepilogo a capitano,
    amministrazione e amministratore.
 

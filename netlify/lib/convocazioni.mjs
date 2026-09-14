@@ -133,7 +133,14 @@ export function ripulisciTraccia(t) {
   };
 }
 
-export async function salvaRisposta(data, utente, stato, ora, da, traccia) {
+/* `da` dice da dove e arrivata: 'notifica', 'app', oppure 'capitano'
+   quando l'ha scritta chi convoca al posto di quella persona. In quel
+   caso `autore` e l'ID di gioco di chi l'ha segnata: una presenza messa
+   da un altro deve dirlo, altrimenti il giocatore si ritrova "presente"
+   senza ricordarsi di averlo premuto. */
+const PROVENIENZE = ['notifica', 'app', 'capitano'];
+
+export async function salvaRisposta(data, utente, stato, ora, da, traccia, autore) {
   const k = chiave(utente.email);
   const dove = RISPOSTE + data + '/' + k;
 
@@ -154,11 +161,13 @@ export async function salvaRisposta(data, utente, stato, ora, da, traccia) {
     idGioco: utente.idGioco,
     stato,                      // 'presente' oppure 'assente'
     ora:     ora || null,       // a che ora arriva; solo per i presenti
-    da:      da === 'notifica' ? 'notifica' : 'app',
+    da:      PROVENIENZE.includes(da) ? da : 'app',
+    autore:  da === 'capitano' ? String(autore || '') : null,
     traccia: ripulisciTraccia(traccia),
     quando:  new Date().toISOString(),
     prima:   vecchia
-      ? { stato: vecchia.stato, da: vecchia.da || null, quando: vecchia.quando || null }
+      ? { stato: vecchia.stato, da: vecchia.da || null, autore: vecchia.autore || null,
+          quando: vecchia.quando || null }
       : null
   });
 }

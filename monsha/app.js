@@ -1789,6 +1789,7 @@
       function svuotaGiornata() {
         attivo = null;
         $('convSolleciti').hidden = true;
+        $('convSegna').hidden = true;
         $('convEtichetta').textContent = 'Allenamenti';
         $('convQuando').textContent = 'Nessun allenamento in calendario';
         $('convScelta').hidden = true;
@@ -1878,6 +1879,7 @@
         disegnaElenco(elenco);
         vestiOra(data);
         mostraSolleciti(r.dati, elenco);
+        mostraSegna(r.dati, elenco);
       }
 
       /* ---- il colpetto sulla spalla ----
@@ -1899,7 +1901,11 @@
          piccolo e sta sopra una faccia in mezzo ad altre venti: un
          tocco per sbaglio qui vuol dire una risposta cancellata a
          qualcun altro. */
-      async function togliRisposta(id, data, bottone) {
+      /* `cassetta` e dove scrivere com'e andata: la ✕ sopra le facce
+         scrive sotto la giornata, la lista in fondo scrive in fondo —
+         altrimenti l'esito finirebbe fuori schermo, due schede sopra. */
+      async function togliRisposta(id, data, bottone, cassetta) {
+        const dove = cassetta || $('convEsito');
         if (!confirm('Togliere la risposta di ' + id + '?\n\n' +
                      'Tornerà fra chi non ha ancora risposto, e potrai sollecitarlo.'))
           return;
@@ -1909,12 +1915,132 @@
 
         if (!r.ok) {
           bottone.disabled = false;
-          esito($('convEsito'), r.dati.errore || 'Non riuscito.');
+          esito(dove, r.dati.errore || 'Non riuscito.');
           return;
         }
 
         await caricaGiornata(data, true);
-        esito($('convEsito'), 'Risposta di ' + id + ' tolta' +
+        esito(dove, 'Risposta di ' + id + ' tolta' +
+          (r.dati.toltoDalCampo ? ': era in campo, ed è uscito.' : '.'), true);
+      }
+
+      /* ---- segnare al posto loro ----
+         Tutta la squadra tranne se stessi — per quello ci sono i due
+         bottoni in cima — con presente e assente per ciascuno.
+
+         In ordine alfabetico e fermo: mettere in cima chi non ha
+         risposto farebbe saltare la riga appena toccata in un altro
+         punto della lista, e il tocco dopo cadrebbe sulla persona
+         sbagliata. Chi manca si riconosce lo stesso, in penombra. */
+      function mostraSegna(dati, elenco) {
+        const scheda = $('convSegna');
+
+        if (!io || !io.convoca || !dati.allenamento || !dati.apribile) {
+          scheda.hidden = true;
+          return;
+        }
+        scheda.hidden = false;
+
+        const altri = elenco.filter(v => !v.io);
+        const muti = altri.filter(v => !v.stato).length;
+        $('segQuanti').textContent = muti
+          ? muti + ' senza risposta'
+          : 'tutti segnati';
+
+        const box = $('segElenco');
+        const perQuale = attivo;
+
+        rosaPronta.then(() => {
+          if (attivo !== perQuale) return;
+          box.textContent = '';
+
+          altri.forEach(v => {
+            const g = trovaGiocatore(v.idGioco);
+
+            const riga = document.createElement('div');
+            riga.className = 'seg-riga' + (v.stato ? '' : ' zero');
+
+            const faccia = document.createElement('div');
+            faccia.className = 'pres-faccia' + (g ? ' con-foto' : '');
+            if (g) {
+              const foto = document.createElement('i');
+              foto.style.backgroundImage = "url('./immagini/" + g.img + "')";
+              faccia.appendChild(foto);
+            }
+            const iniziale = document.createElement('span');
+            iniziale.textContent = (v.idGioco || '?').charAt(0).toUpperCase();
+            faccia.appendChild(iniziale);
+
+            const nome = document.createElement('div');
+            nome.className = 'seg-nome';
+            nome.textContent = v.idGioco;
+
+            const nota = document.createElement('em');
+            nota.className = 'seg-nota';
+            nota.textContent = !v.stato
+              ? 'non ha risposto'
+              : (v.da === 'capitano'
+                  ? 'segnato da ' + (v.autore || 'chi convoca')
+                  : 'ha risposto da solo');
+            nome.appendChild(nota);
+
+            const scelta = document.createElement('div');
+            scelta.className = 'seg-scelta';
+
+            [['presente', 'si', '✓', 'Presente'], ['assente', 'no', '✕', 'Assente']]
+              .forEach(([stato, classe, segno, parola]) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'seg-btn ' + classe;
+                b.dataset.risposta = stato;
+                b.setAttribute('aria-pressed', String(v.stato === stato));
+                b.setAttribute('aria-label', parola + ': ' + v.idGioco);
+                const s = document.createElement('b');
+                s.textContent = segno;
+                const p = document.createElement('span');
+                p.textContent = parola;
+                b.append(s, p);
+                b.addEventListener('click', () => segnaPer(v, stato, scelta, perQuale));
+                scelta.appendChild(b);
+              });
+
+            riga.append(faccia, nome, scelta);
+            box.appendChild(riga);
+          });
+        });
+      }
+
+      async function segnaPer(v, stato, scelta, data) {
+        const cassetta = $('segEsito');
+
+        // Il bottone gia acceso toglie la risposta: e lo stesso gesto
+        // della ✕ sopra la faccia, con la stessa domanda prima.
+        if (v.stato === stato)
+          return togliRisposta(v.idGioco, data,
+            scelta.querySelector('[data-risposta="' + stato + '"]'), cassetta);
+
+        /* Si chiede solo quando si sta per cambiare una risposta che
+           ha dato lui: correggere una cosa segnata da chi convoca non
+           tocca la parola di nessuno, sovrascrivere la sua si. */
+        if (v.stato && v.da !== 'capitano' &&
+            !confirm(v.idGioco + ' ha risposto «' + v.stato + '» da solo.\n\n' +
+                     'Lo segno ' + stato + ' al posto suo?'))
+          return;
+
+        const bottoni = scelta.querySelectorAll('button');
+        bottoni.forEach(b => { b.disabled = true; });
+        esito(cassetta, '');
+
+        const r = await apiConv('segna-per', { data, id: v.idGioco, stato });
+
+        if (!r.ok) {
+          bottoni.forEach(b => { b.disabled = false; });
+          esito(cassetta, r.dati.errore || 'Non riuscito.');
+          return;
+        }
+
+        await caricaGiornata(data, true);
+        esito(cassetta, v.idGioco + ' segnato ' + stato +
           (r.dati.toltoDalCampo ? ': era in campo, ed è uscito.' : '.'), true);
       }
 
@@ -2269,6 +2395,16 @@
               s.className = 'conv-prima';
               s.textContent = 'prima ' + v.prima.stato +
                 (v.prima.da === 'notifica' ? ' 🔔' : '');
+              nome.appendChild(s);
+            }
+
+            /* Segnato da chi convoca. Lo vede chi convoca e lo vede
+               l'interessato: e proprio lui che deve capire perche
+               risulta presente senza aver premuto niente. */
+            if (v.da === 'capitano' && io && (io.convoca || v.io)) {
+              const s = document.createElement('em');
+              s.className = 'conv-prima';
+              s.textContent = 'segnato da ' + (v.autore || 'chi convoca');
               nome.appendChild(s);
             }
 
@@ -2880,6 +3016,7 @@
         $('arOggi').hidden = true;
         $('convPresenze').hidden = true;
         $('convSolleciti').hidden = true;
+        $('convSegna').hidden = true;
         mandati = {}; bottoniSollecito = {};
         oreScelte = {}; mioStato = {};
         sopra = null;
